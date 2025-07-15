@@ -44,6 +44,7 @@ const CT_DonDatHang = require('./CT_DonDatHang');
 const BinhLuan = require('./BinhLuan');
 const DotGiamGia = require('./DotGiamGia');
 const CT_DotGiamGia = require('./CT_DotGiamGia');
+const AnhSanPham = require('./AnhSanPham');
 
 // Associations
 // SanPham
@@ -51,6 +52,7 @@ SanPham.belongsTo(LoaiSP, { foreignKey: 'MaLoaiSP' });
 SanPham.belongsTo(NhaCungCap, { foreignKey: 'MaNCC' });
 SanPham.hasMany(ThayDoiGia, { foreignKey: 'MaSP' });
 SanPham.hasMany(ChiTietSanPham, { foreignKey: 'MaSP' });
+SanPham.hasMany(AnhSanPham, { foreignKey: 'MaSP' });
 
 // ThayDoiGia
 ThayDoiGia.belongsTo(SanPham, { foreignKey: 'MaSP' });
@@ -143,7 +145,10 @@ CT_DotGiamGia.belongsTo(DotGiamGia, { foreignKey: 'MaDot' });
 SanPham.hasMany(CT_DotGiamGia, { foreignKey: 'MaSP' });
 CT_DotGiamGia.belongsTo(SanPham, { foreignKey: 'MaSP' });
 
+// AnhSanPham
+AnhSanPham.belongsTo(SanPham, { foreignKey: 'MaSP' });
+
 module.exports = {
   sequelize, Sequelize,
-  BoPhan, NhaCungCap, LoaiSP, KichThuoc, Mau, SanPham, ThayDoiGia, ChiTietSanPham, VaiTro, TaiKhoan, NhanVien, NhanVien_BoPhan, KhachHang, TrangThaiDatHangNCC, PhieuDatHangNCC, CT_PhieuDatHangNCC, PhieuNhap, CT_PhieuNhap, TrangThaiDH, DonDatHang, HoaDon, PhieuTraHang, CT_DonDatHang, BinhLuan, DotGiamGia, CT_DotGiamGia
+  BoPhan, NhaCungCap, LoaiSP, KichThuoc, Mau, SanPham, ThayDoiGia, ChiTietSanPham, VaiTro, TaiKhoan, NhanVien, NhanVien_BoPhan, KhachHang, TrangThaiDatHangNCC, PhieuDatHangNCC, CT_PhieuDatHangNCC, PhieuNhap, CT_PhieuNhap, TrangThaiDH, DonDatHang, HoaDon, PhieuTraHang, CT_DonDatHang, BinhLuan, DotGiamGia, CT_DotGiamGia, AnhSanPham
 }; 

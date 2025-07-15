@@ -10,30 +10,41 @@ const PhieuNhapService = {
     if (!data.NgayNhap || !data.MaNV || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
       throw new Error('Thiếu thông tin phiếu nhập hoặc chi tiết phiếu nhập');
     }
+  
     const SoPN = uuidv4();
+  
     const phieu = await PhieuNhap.create({
       SoPN,
       NgayNhap: data.NgayNhap,
       MaPDH: data.MaPDH,
       MaNV: data.MaNV,
     });
+  
     for (const ct of data.chiTiet) {
       if (!ct.MaCTSP || !ct.SoLuong || !ct.DonGia) {
         throw new Error('Chi tiết phiếu nhập thiếu trường bắt buộc');
       }
+  
       const ctsp = await ChiTietSanPham.findByPk(ct.MaCTSP);
       if (!ctsp) throw new Error(`Mã chi tiết sản phẩm không tồn tại: ${ct.MaCTSP}`);
       if (ct.SoLuong <= 0) throw new Error('Số lượng phải lớn hơn 0');
       if (ct.DonGia <= 0) throw new Error('Đơn giá phải lớn hơn 0');
+  
       await CT_PhieuNhap.create({
         SoPN,
         MaCTSP: ct.MaCTSP,
         SoLuong: ct.SoLuong,
         DonGia: ct.DonGia,
       });
+  
+      await ChiTietSanPham.increment(
+        { SoLuongTon: ct.SoLuong },
+        { where: { MaCTSP: ct.MaCTSP } }
+      );
     }
+  
     return phieu;
-  },
+  },  
   getAll: async () => {
     return PhieuNhap.findAll({ include: [CT_PhieuNhap] });
   },
