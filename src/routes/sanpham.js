@@ -13,6 +13,8 @@ router.get('/details', SanPhamController.getProductDetails);
 router.get('/details/:id', SanPhamController.getProductDetailById);
 // Lấy sản phẩm theo nhà cung cấp
 router.get('/supplier/:supplierId', SanPhamController.getBySupplier);
+// Lấy màu và size của sản phẩm
+router.get('/:productId/colors-sizes', SanPhamController.getColorsSizesByProductId);
 // Lấy sản phẩm theo id
 router.get('/:id', SanPhamController.getById);
 // Thêm sản phẩm

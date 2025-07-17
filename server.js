@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const logger = require('./src/middlewares/logger');
 require('dotenv').config();
 
 const app = express();
@@ -24,6 +25,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// API Logger Middleware - Log all API calls
+app.use('/api', logger);
 
 // Routes
 app.get('/', (req, res) => {
@@ -67,6 +71,8 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 3tshop server is running on port ${PORT}`);
   console.log(`📱 Visit http://localhost:${PORT} to view the application`);
+  console.log(`📝 API Logging is enabled - All API calls will be logged`);
+  console.log(`🔍 Watch the console for API request/response details`);
 });
 
 module.exports = app; 

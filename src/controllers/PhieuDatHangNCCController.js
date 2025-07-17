@@ -5,12 +5,20 @@ const PhieuDatHangNCCController = {
   create: async (req, res) => {
     try {
       // Lấy MaNV từ user đăng nhập
-      const MaNV = req.user && req.user.MaNV;
+      const MaNV = req.body.MaNV;
       if (!MaNV) return error(res, null, 'Không xác định được nhân viên lập phiếu', 401);
-      const data = { ...req.body, MaNV };
+      
+      // Map frontend "details" to backend "chiTiet"
+      const data = { 
+        ...req.body, 
+        MaNV,
+        chiTiet: req.body.details || req.body.chiTiet  // Support both "details" and "chiTiet"
+      };
+      
       const result = await PhieuDatHangNCCService.create(data);
       return success(res, result, 'Tạo phiếu đặt hàng NCC thành công', 201);
     } catch (err) {
+      console.log(err);
       return error(res, err);
     }
   },
