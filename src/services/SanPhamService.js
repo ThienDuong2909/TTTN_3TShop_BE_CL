@@ -97,6 +97,37 @@ const SanPhamService = {
     await sanPham.destroy();
     return sanPham;
   },
+  
+  getColorsSizesByProductId: async (productId) => {
+    return await ChiTietSanPham.findAll({
+      where: { MaSP: productId },
+      include: [
+        { 
+          model: KichThuoc,
+          attributes: ['MaKichThuoc', 'TenKichThuoc']
+        },
+        { 
+          model: Mau,
+          attributes: ['MaMau', 'TenMau', 'MaHex']
+        },
+        { 
+          model: SanPham,
+          attributes: ['MaSP', 'TenSP', 'MaLoaiSP', 'MaNCC', 'MoTa'],
+          include: [
+            { 
+              model: NhaCungCap,
+              attributes: ['MaNCC', 'TenNCC', 'DiaChi', 'SDT', 'Email']
+            },
+            { 
+              model: LoaiSP,
+              attributes: ['MaLoaiSP', 'TenLoai']
+            }
+          ]
+        }
+      ],
+      attributes: ['MaCTSP', 'MaSP', 'MaKichThuoc', 'MaMau', 'SoLuongTon']
+    });
+  },
 };
 
 module.exports = SanPhamService; 

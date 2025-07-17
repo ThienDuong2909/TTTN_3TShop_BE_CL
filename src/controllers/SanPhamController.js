@@ -77,6 +77,15 @@ const SanPhamController = {
       return response.error(res, err);
     }
   },
+  
+  getColorsSizesByProductId: async (req, res) => {
+    try {
+      const data = await SanPhamService.getColorsSizesByProductId(req.params.productId);
+      return response.success(res, data, 'Lấy danh sách màu và size của sản phẩm thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
 };
 
 module.exports = SanPhamController; 
