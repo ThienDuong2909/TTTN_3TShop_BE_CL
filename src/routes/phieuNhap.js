@@ -10,6 +10,7 @@ const router = express.Router();
 router.post('/', authenticateJWT, authorize('Admin', 'NhanVien'), controller.create);
 router.get('/', controller.getAll);
 router.get('/:id', controller.getById);
+router.put('/:id/update-inventory', /*authenticateJWT, authorize('Admin', 'NhanVien'),*/ controller.updateInventory);
 router.post('/excel', authenticateJWT, authorize('Admin', 'NhanVien'), upload.single('file'), controller.importExcel);
 
 module.exports = router; 
