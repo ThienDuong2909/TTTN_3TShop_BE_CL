@@ -1,5 +1,6 @@
 const express = require('express');
 const mauRoutes = require('./mau');
+const loaiSPRoutes = require('./loaiSP');
 const phieuDatHangNCCRoutes = require('./phieuDatHangNCC');
 const phieuNhapRoutes = require('./phieuNhap');
 const nhanVienRoutes = require('./nhanvien');
@@ -26,6 +27,9 @@ router.use('/sizes', kichThuocRoutes);
 router.use('/purchase-order-statuses', trangThaiDatHangRoutes);
 router.use('/purchase-orders', phieuDatHangNCCRoutes);
 router.use('/goods-receipts', phieuNhapRoutes);
+
+// Route cho loại sản phẩm (category)
+router.use('/category', loaiSPRoutes);
 router.use('/auth', authRoutes);
 
 module.exports = router; 
