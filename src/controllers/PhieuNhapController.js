@@ -45,6 +45,15 @@ const PhieuNhapController = {
       return error(res, err);
     }
   },
+  
+  updateInventory: async (req, res) => {
+    try {
+      const result = await PhieuNhapService.updateInventory(req.params.id);
+      return success(res, result, 'Cập nhật tồn kho thành công');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
 };
 
 module.exports = PhieuNhapController; 

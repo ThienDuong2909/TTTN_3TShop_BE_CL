@@ -1,6 +1,13 @@
-const PhieuNhap = require('../models/PhieuNhap');
-const CT_PhieuNhap = require('../models/CT_PhieuNhap');
-const ChiTietSanPham = require('../models/ChiTietSanPham');
+const { 
+  PhieuNhap, 
+  CT_PhieuNhap, 
+  ChiTietSanPham, 
+  PhieuDatHangNCC,
+  NhanVien,
+  SanPham,
+  KichThuoc,
+  Mau 
+} = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const xlsx = require('xlsx');
 const fs = require('fs');
@@ -46,10 +53,67 @@ const PhieuNhapService = {
     return phieu;
   },  
   getAll: async () => {
-    return PhieuNhap.findAll({ include: [CT_PhieuNhap] });
+    return await PhieuNhap.findAll({ 
+      include: [
+        {
+          model: CT_PhieuNhap,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                { model: SanPham },
+                { model: KichThuoc },
+                { model: Mau }
+              ]
+            }
+          ]
+        },
+        { model: PhieuDatHangNCC },
+        { model: NhanVien }
+      ]
+    });
   },
+  
   getById: async (id) => {
-    return PhieuNhap.findByPk(id, { include: [CT_PhieuNhap] });
+    return await PhieuNhap.findByPk(id, { 
+      include: [
+        {
+          model: CT_PhieuNhap,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                { model: SanPham },
+                { model: KichThuoc },
+                { model: Mau }
+              ]
+            }
+          ]
+        },
+        { model: PhieuDatHangNCC },
+        { model: NhanVien }
+      ]
+    });
+  },
+  
+  updateInventory: async (receiptId) => {
+    const phieuNhap = await PhieuNhap.findByPk(receiptId, {
+      include: [CT_PhieuNhap]
+    });
+    
+    if (!phieuNhap) {
+      throw new Error('Không tìm thấy phiếu nhập');
+    }
+    
+    // Update inventory for each item in the receipt
+    for (const ct of phieuNhap.CT_PhieuNhaps) {
+      await ChiTietSanPham.increment(
+        { SoLuongTon: ct.SoLuong },
+        { where: { MaCTSP: ct.MaCTSP } }
+      );
+    }
+    
+    return { message: 'Cập nhật tồn kho thành công' };
   },
   importExcel: async (file, MaNV) => {
     if (!file) throw new Error('Không có file được upload');

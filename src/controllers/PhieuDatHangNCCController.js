@@ -31,6 +31,36 @@ const PhieuDatHangNCCController = {
       return error(res, err);
     }
   },
+  
+  updateStatus: async (req, res) => {
+    try {
+      const { MaTrangThai } = req.body;
+      const data = await PhieuDatHangNCCService.updateStatus(req.params.id, MaTrangThai);
+      if (!data) return notFound(res, 'Không tìm thấy phiếu đặt hàng NCC');
+      return success(res, data, 'Cập nhật trạng thái phiếu đặt hàng NCC thành công');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
+  
+  getAvailableForReceipt: async (req, res) => {
+    try {
+      const data = await PhieuDatHangNCCService.getAvailableForReceipt();
+      return success(res, data, 'Lấy danh sách phiếu đặt hàng có thể tạo phiếu nhập thành công');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
+  
+  getForReceipt: async (req, res) => {
+    try {
+      const data = await PhieuDatHangNCCService.getForReceipt(req.params.id);
+      if (!data) return notFound(res, 'Không tìm thấy phiếu đặt hàng NCC');
+      return success(res, data, 'Lấy phiếu đặt hàng để tạo phiếu nhập thành công');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
 };
 
 module.exports = PhieuDatHangNCCController; 
