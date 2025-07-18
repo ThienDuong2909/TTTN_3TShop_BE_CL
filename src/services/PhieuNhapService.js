@@ -18,8 +18,6 @@ const PhieuNhapService = {
       throw new Error('Thiếu thông tin phiếu nhập hoặc chi tiết phiếu nhập');
     }
   
-    const SoPN = uuidv4();
-  
     const phieu = await PhieuNhap.create({
       SoPN,
       NgayNhap: data.NgayNhap,

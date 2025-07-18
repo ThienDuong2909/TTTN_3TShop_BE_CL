@@ -6,6 +6,7 @@ const PhieuDatHangNCCController = {
     try {
       // Lấy MaNV từ user đăng nhập
       const MaNV = req.body.MaNV;
+      console.log("res",req.body);
       if (!MaNV) return error(res, null, 'Không xác định được nhân viên lập phiếu', 401);
       
       // Map frontend "details" to backend "chiTiet"
@@ -56,6 +57,7 @@ const PhieuDatHangNCCController = {
       const data = await PhieuDatHangNCCService.getAvailableForReceipt();
       return success(res, data, 'Lấy danh sách phiếu đặt hàng có thể tạo phiếu nhập thành công');
     } catch (err) {
+      console.log(err);
       return error(res, err);
     }
   },
