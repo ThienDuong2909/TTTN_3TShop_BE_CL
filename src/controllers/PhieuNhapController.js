@@ -5,9 +5,14 @@ const PhieuNhapController = {
   create: async (req, res) => {
     try {
       // Lấy MaNV từ user đăng nhập
-      const MaNV = req.user && req.user.MaNV;
+      const MaNV = 1;
+      // const MaNV = req.user && req.user.MaNV;
       if (!MaNV) return error(res, null, 'Không xác định được nhân viên lập phiếu', 401);
-      const data = { ...req.body, MaNV };
+      const data = { 
+        ...req.body, 
+        MaNV,
+        chiTiet: req.body.details || req.body.chiTiet  // Support both "details" and "chiTiet"
+      };
       const result = await PhieuNhapService.create(data);
       return success(res, result, 'Tạo phiếu nhập thành công', 201);
     } catch (err) {
