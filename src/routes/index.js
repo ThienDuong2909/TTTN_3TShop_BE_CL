@@ -9,6 +9,7 @@ const sanPhamRoutes = require('./sanpham');
 const kichThuocRoutes = require('./kichthuoc');
 const trangThaiDatHangRoutes = require('./trangthaidathang');
 const authRoutes = require('./auth');
+const boPhanRoutes = require('./bophan'); // Import BoPhan routes
 
 const router = express.Router();
 
@@ -30,6 +31,7 @@ router.use('/goods-receipts', phieuNhapRoutes);
 
 // Route cho loại sản phẩm (category)
 router.use('/category', loaiSPRoutes);
+router.use('/department', boPhanRoutes);
 router.use('/auth', authRoutes);
 
 module.exports = router; 
