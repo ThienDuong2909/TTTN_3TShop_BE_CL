@@ -7,5 +7,6 @@ router.post("/them", GioHangController.addToCart);
 router.delete("/xoa", GioHangController.removeFromCart);
 router.post("/dat-hang", GioHangController.placeOrder);
 router.get("/:maKH", GioHangController.getCartByCustomer);
+router.post("/xoa-tat-ca", GioHangController.clearCart);
 
 module.exports = router;
