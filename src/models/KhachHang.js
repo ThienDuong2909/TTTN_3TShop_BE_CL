@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./sequelize');
+const { DataTypes } = require("sequelize");
+const sequelize = require("./sequelize");
 
-const KhachHang = sequelize.define('KhachHang', {
+const KhachHang = sequelize.define("KhachHang", {
   MaKH: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -17,8 +17,8 @@ const KhachHang = sequelize.define('KhachHang', {
   MaTK: {
     type: DataTypes.INTEGER,
     unique: true,
-    references: { model: 'TaiKhoan', key: 'MaTK' },
+    references: { model: "TaiKhoan", key: "MaTK" },
   },
 });
 
-module.exports = KhachHang; 
+module.exports = KhachHang;
