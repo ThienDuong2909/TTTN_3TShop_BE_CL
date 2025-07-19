@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-const dbConfig = require('../configs/database');
+const { Sequelize } = require("sequelize");
+const dbConfig = require("../configs/database");
 
 const sequelize = new Sequelize(
   dbConfig.database,
@@ -18,6 +18,7 @@ const sequelize = new Sequelize(
 );
 
 // Import models
+
 const BoPhan = require('./BoPhan');
 const NhaCungCap = require('./NhaCungCap');
 const LoaiSP = require('./LoaiSP');
@@ -55,100 +56,129 @@ SanPham.hasMany(ChiTietSanPham, { foreignKey: 'MaSP' });
 SanPham.hasMany(AnhSanPham, { foreignKey: 'MaSP' });
 
 // ThayDoiGia
-ThayDoiGia.belongsTo(SanPham, { foreignKey: 'MaSP' });
+ThayDoiGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 
 // ChiTietSanPham
-ChiTietSanPham.belongsTo(SanPham, { foreignKey: 'MaSP' });
-ChiTietSanPham.belongsTo(KichThuoc, { foreignKey: 'MaKichThuoc' });
-ChiTietSanPham.belongsTo(Mau, { foreignKey: 'MaMau' });
-SanPham.hasMany(ChiTietSanPham, { foreignKey: 'MaSP' });
-KichThuoc.hasMany(ChiTietSanPham, { foreignKey: 'MaKichThuoc' });
-Mau.hasMany(ChiTietSanPham, { foreignKey: 'MaMau' });
+ChiTietSanPham.belongsTo(SanPham, { foreignKey: "MaSP" });
+ChiTietSanPham.belongsTo(KichThuoc, { foreignKey: "MaKichThuoc" });
+ChiTietSanPham.belongsTo(Mau, { foreignKey: "MaMau" });
+SanPham.hasMany(ChiTietSanPham, { foreignKey: "MaSP" });
+KichThuoc.hasMany(ChiTietSanPham, { foreignKey: "MaKichThuoc" });
+Mau.hasMany(ChiTietSanPham, { foreignKey: "MaMau" });
 
 // TaiKhoan
-TaiKhoan.belongsTo(VaiTro, { foreignKey: 'MaVaiTro' });
-VaiTro.hasMany(TaiKhoan, { foreignKey: 'MaVaiTro' });
-NhanVien.belongsTo(TaiKhoan, { foreignKey: 'MaTK' });
-TaiKhoan.hasOne(NhanVien, { foreignKey: 'MaTK' });
-KhachHang.belongsTo(TaiKhoan, { foreignKey: 'MaTK' });
-TaiKhoan.hasOne(KhachHang, { foreignKey: 'MaTK' });
+TaiKhoan.belongsTo(VaiTro, { foreignKey: "MaVaiTro" });
+VaiTro.hasMany(TaiKhoan, { foreignKey: "MaVaiTro" });
+NhanVien.belongsTo(TaiKhoan, { foreignKey: "MaTK" });
+TaiKhoan.hasOne(NhanVien, { foreignKey: "MaTK" });
+KhachHang.belongsTo(TaiKhoan, { foreignKey: "MaTK" });
+TaiKhoan.hasOne(KhachHang, { foreignKey: "MaTK" });
 
 // NhanVien_BoPhan
-NhanVien_BoPhan.belongsTo(NhanVien, { foreignKey: 'MaNV' });
-NhanVien_BoPhan.belongsTo(BoPhan, { foreignKey: 'MaBoPhan' });
-NhanVien.hasMany(NhanVien_BoPhan, { foreignKey: 'MaNV' });
-BoPhan.hasMany(NhanVien_BoPhan, { foreignKey: 'MaBoPhan' });
+NhanVien_BoPhan.belongsTo(NhanVien, { foreignKey: "MaNV" });
+NhanVien_BoPhan.belongsTo(BoPhan, { foreignKey: "MaBoPhan" });
+NhanVien.hasMany(NhanVien_BoPhan, { foreignKey: "MaNV" });
+BoPhan.hasMany(NhanVien_BoPhan, { foreignKey: "MaBoPhan" });
 
 // PhieuDatHangNCC
-PhieuDatHangNCC.belongsTo(NhanVien, { foreignKey: 'MaNV' });
-PhieuDatHangNCC.belongsTo(NhaCungCap, { foreignKey: 'MaNCC' });
-PhieuDatHangNCC.belongsTo(TrangThaiDatHangNCC, { foreignKey: 'MaTrangThai' });
-NhanVien.hasMany(PhieuDatHangNCC, { foreignKey: 'MaNV' });
-NhaCungCap.hasMany(PhieuDatHangNCC, { foreignKey: 'MaNCC' });
-TrangThaiDatHangNCC.hasMany(PhieuDatHangNCC, { foreignKey: 'MaTrangThai' });
+PhieuDatHangNCC.belongsTo(NhanVien, { foreignKey: "MaNV" });
+PhieuDatHangNCC.belongsTo(NhaCungCap, { foreignKey: "MaNCC" });
+PhieuDatHangNCC.belongsTo(TrangThaiDatHangNCC, { foreignKey: "MaTrangThai" });
+NhanVien.hasMany(PhieuDatHangNCC, { foreignKey: "MaNV" });
+NhaCungCap.hasMany(PhieuDatHangNCC, { foreignKey: "MaNCC" });
+TrangThaiDatHangNCC.hasMany(PhieuDatHangNCC, { foreignKey: "MaTrangThai" });
 
 // CT_PhieuDatHangNCC
-CT_PhieuDatHangNCC.belongsTo(PhieuDatHangNCC, { foreignKey: 'MaPDH' });
-CT_PhieuDatHangNCC.belongsTo(ChiTietSanPham, { foreignKey: 'MaCTSP' });
-PhieuDatHangNCC.hasMany(CT_PhieuDatHangNCC, { foreignKey: 'MaPDH' });
-ChiTietSanPham.hasMany(CT_PhieuDatHangNCC, { foreignKey: 'MaCTSP' });
+CT_PhieuDatHangNCC.belongsTo(PhieuDatHangNCC, { foreignKey: "MaPDH" });
+CT_PhieuDatHangNCC.belongsTo(ChiTietSanPham, { foreignKey: "MaCTSP" });
+PhieuDatHangNCC.hasMany(CT_PhieuDatHangNCC, { foreignKey: "MaPDH" });
+ChiTietSanPham.hasMany(CT_PhieuDatHangNCC, { foreignKey: "MaCTSP" });
 
 // PhieuNhap
-PhieuNhap.belongsTo(PhieuDatHangNCC, { foreignKey: 'MaPDH' });
-PhieuNhap.belongsTo(NhanVien, { foreignKey: 'MaNV' });
-PhieuDatHangNCC.hasMany(PhieuNhap, { foreignKey: 'MaPDH' });
-NhanVien.hasMany(PhieuNhap, { foreignKey: 'MaNV' });
+PhieuNhap.belongsTo(PhieuDatHangNCC, { foreignKey: "MaPDH" });
+PhieuNhap.belongsTo(NhanVien, { foreignKey: "MaNV" });
+PhieuDatHangNCC.hasMany(PhieuNhap, { foreignKey: "MaPDH" });
+NhanVien.hasMany(PhieuNhap, { foreignKey: "MaNV" });
 
 // CT_PhieuNhap
-CT_PhieuNhap.belongsTo(PhieuNhap, { foreignKey: 'SoPN' });
-CT_PhieuNhap.belongsTo(ChiTietSanPham, { foreignKey: 'MaCTSP' });
-PhieuNhap.hasMany(CT_PhieuNhap, { foreignKey: 'SoPN' });
-ChiTietSanPham.hasMany(CT_PhieuNhap, { foreignKey: 'MaCTSP' });
+CT_PhieuNhap.belongsTo(PhieuNhap, { foreignKey: "SoPN" });
+CT_PhieuNhap.belongsTo(ChiTietSanPham, { foreignKey: "MaCTSP" });
+PhieuNhap.hasMany(CT_PhieuNhap, { foreignKey: "SoPN" });
+ChiTietSanPham.hasMany(CT_PhieuNhap, { foreignKey: "MaCTSP" });
 
 // DonDatHang
-DonDatHang.belongsTo(KhachHang, { foreignKey: 'MaKH' });
-DonDatHang.belongsTo(NhanVien, { as: 'NguoiDuyet', foreignKey: 'MaNV_Duyet' });
-DonDatHang.belongsTo(NhanVien, { as: 'NguoiGiao', foreignKey: 'MaNV_Giao' });
-DonDatHang.belongsTo(TrangThaiDH, { foreignKey: 'MaTTDH' });
-KhachHang.hasMany(DonDatHang, { foreignKey: 'MaKH' });
-NhanVien.hasMany(DonDatHang, { foreignKey: 'MaNV_Duyet', as: 'DonDuyet' });
-NhanVien.hasMany(DonDatHang, { foreignKey: 'MaNV_Giao', as: 'DonGiao' });
-TrangThaiDH.hasMany(DonDatHang, { foreignKey: 'MaTTDH' });
+DonDatHang.belongsTo(KhachHang, { foreignKey: "MaKH" });
+DonDatHang.belongsTo(NhanVien, { as: "NguoiDuyet", foreignKey: "MaNV_Duyet" });
+DonDatHang.belongsTo(NhanVien, { as: "NguoiGiao", foreignKey: "MaNV_Giao" });
+DonDatHang.belongsTo(TrangThaiDH, { foreignKey: "MaTTDH" });
+KhachHang.hasMany(DonDatHang, { foreignKey: "MaKH" });
+NhanVien.hasMany(DonDatHang, { foreignKey: "MaNV_Duyet", as: "DonDuyet" });
+NhanVien.hasMany(DonDatHang, { foreignKey: "MaNV_Giao", as: "DonGiao" });
+TrangThaiDH.hasMany(DonDatHang, { foreignKey: "MaTTDH" });
 
 // HoaDon
-HoaDon.belongsTo(DonDatHang, { foreignKey: 'MaDDH' });
-DonDatHang.hasOne(HoaDon, { foreignKey: 'MaDDH' });
+HoaDon.belongsTo(DonDatHang, { foreignKey: "MaDDH" });
+DonDatHang.hasOne(HoaDon, { foreignKey: "MaDDH" });
 
 // PhieuTraHang
-PhieuTraHang.belongsTo(HoaDon, { foreignKey: 'SoHD' });
-PhieuTraHang.belongsTo(NhanVien, { foreignKey: 'NVLap' });
-HoaDon.hasOne(PhieuTraHang, { foreignKey: 'SoHD' });
-NhanVien.hasMany(PhieuTraHang, { foreignKey: 'NVLap' });
+PhieuTraHang.belongsTo(HoaDon, { foreignKey: "SoHD" });
+PhieuTraHang.belongsTo(NhanVien, { foreignKey: "NVLap" });
+HoaDon.hasOne(PhieuTraHang, { foreignKey: "SoHD" });
+NhanVien.hasMany(PhieuTraHang, { foreignKey: "NVLap" });
 
 // CT_DonDatHang
-CT_DonDatHang.belongsTo(DonDatHang, { foreignKey: 'MaDDH' });
-CT_DonDatHang.belongsTo(ChiTietSanPham, { foreignKey: 'MaCTSP' });
-CT_DonDatHang.belongsTo(PhieuTraHang, { foreignKey: 'MaPhieuTra' });
-DonDatHang.hasMany(CT_DonDatHang, { foreignKey: 'MaDDH' });
-ChiTietSanPham.hasMany(CT_DonDatHang, { foreignKey: 'MaCTSP' });
-PhieuTraHang.hasMany(CT_DonDatHang, { foreignKey: 'MaPhieuTra' });
+CT_DonDatHang.belongsTo(DonDatHang, { foreignKey: "MaDDH" });
+CT_DonDatHang.belongsTo(ChiTietSanPham, { foreignKey: "MaCTSP" });
+CT_DonDatHang.belongsTo(PhieuTraHang, { foreignKey: "MaPhieuTra" });
+DonDatHang.hasMany(CT_DonDatHang, { foreignKey: "MaDDH" });
+ChiTietSanPham.hasMany(CT_DonDatHang, { foreignKey: "MaCTSP" });
+PhieuTraHang.hasMany(CT_DonDatHang, { foreignKey: "MaPhieuTra" });
 
 // BinhLuan
-BinhLuan.belongsTo(KhachHang, { foreignKey: 'MaKH' });
-BinhLuan.belongsTo(CT_DonDatHang, { foreignKey: 'MaCTDonDatHang' });
-KhachHang.hasMany(BinhLuan, { foreignKey: 'MaKH' });
-CT_DonDatHang.hasMany(BinhLuan, { foreignKey: 'MaCTDonDatHang' });
+BinhLuan.belongsTo(KhachHang, { foreignKey: "MaKH" });
+BinhLuan.belongsTo(CT_DonDatHang, { foreignKey: "MaCTDonDatHang" });
+KhachHang.hasMany(BinhLuan, { foreignKey: "MaKH" });
+CT_DonDatHang.hasMany(BinhLuan, { foreignKey: "MaCTDonDatHang" });
 
 // DotGiamGia
-DotGiamGia.hasMany(CT_DotGiamGia, { foreignKey: 'MaDot' });
-CT_DotGiamGia.belongsTo(DotGiamGia, { foreignKey: 'MaDot' });
-SanPham.hasMany(CT_DotGiamGia, { foreignKey: 'MaSP' });
-CT_DotGiamGia.belongsTo(SanPham, { foreignKey: 'MaSP' });
+DotGiamGia.hasMany(CT_DotGiamGia, { foreignKey: "MaDot" });
+CT_DotGiamGia.belongsTo(DotGiamGia, { foreignKey: "MaDot" });
+SanPham.hasMany(CT_DotGiamGia, { foreignKey: "MaSP" });
+CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 
 // AnhSanPham
 AnhSanPham.belongsTo(SanPham, { foreignKey: 'MaSP' });
 
 module.exports = {
-  sequelize, Sequelize,
-  BoPhan, NhaCungCap, LoaiSP, KichThuoc, Mau, SanPham, ThayDoiGia, ChiTietSanPham, VaiTro, TaiKhoan, NhanVien, NhanVien_BoPhan, KhachHang, TrangThaiDatHangNCC, PhieuDatHangNCC, CT_PhieuDatHangNCC, PhieuNhap, CT_PhieuNhap, TrangThaiDH, DonDatHang, HoaDon, PhieuTraHang, CT_DonDatHang, BinhLuan, DotGiamGia, CT_DotGiamGia, AnhSanPham
-}; 
+
+  sequelize,
+  Sequelize,
+  BoPhan,
+  NhaCungCap,
+  LoaiSP,
+  KichThuoc,
+  Mau,
+  SanPham,
+  ThayDoiGia,
+  ChiTietSanPham,
+  VaiTro,
+  TaiKhoan,
+  NhanVien,
+  NhanVien_BoPhan,
+  KhachHang,
+  TrangThaiDatHangNCC,
+  PhieuDatHangNCC,
+  CT_PhieuDatHangNCC,
+  PhieuNhap,
+  CT_PhieuNhap,
+  TrangThaiDH,
+  DonDatHang,
+  HoaDon,
+  PhieuTraHang,
+  CT_DonDatHang,
+  BinhLuan,
+  DotGiamGia,
+  CT_DotGiamGia,
+  AnhSanPham
+};
+

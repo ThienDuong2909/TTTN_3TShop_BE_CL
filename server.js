@@ -1,8 +1,10 @@
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const logger = require('./src/middlewares/logger');
 require('dotenv').config();
+
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -24,47 +26,48 @@ app.use(cors({
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 // API Logger Middleware - Log all API calls
 app.use('/api', logger);
 
 // Routes
-app.get('/', (req, res) => {
-  res.send('Welcome to 3tshop!');
+app.get("/", (req, res) => {
+  res.send("Welcome to 3tshop!");
 });
 
 // API routes
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: '3tshop server is running' });
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK", message: "3tshop server is running" });
 });
 
-const apiRoutes = require('./src/routes');
-app.use('/api', apiRoutes);
+const apiRoutes = require("./src/routes");
+app.use("/api", apiRoutes);
 
-const { sequelize } = require('./src/models');
-const dbConfig = require('./src/configs/database');
+const { sequelize } = require("./src/models");
+const dbConfig = require("./src/configs/database");
 
-console.log('DB config:', dbConfig);
+console.log("DB config:", dbConfig);
 
-sequelize.authenticate()
+sequelize
+  .authenticate()
   .then(() => {
-    console.log('✅ Kết nối database thành công!');
+    console.log("✅ Kết nối database thành công!");
   })
   .catch((err) => {
-    console.error('❌ Kết nối database thất bại:', err);
+    console.error("❌ Kết nối database thất bại:", err);
     process.exit(1);
   });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ error: "Something went wrong!" });
 });
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // Start server
@@ -75,4 +78,4 @@ app.listen(PORT, () => {
   console.log(`🔍 Watch the console for API request/response details`);
 });
 
-module.exports = app; 
+module.exports = app;

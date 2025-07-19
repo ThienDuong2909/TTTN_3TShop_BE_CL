@@ -1,7 +1,6 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./sequelize');
-
-const SanPham = sequelize.define('SanPham', {
+const { DataTypes } = require("sequelize");
+const sequelize = require("./sequelize");
+const SanPham = sequelize.define("SanPham", {
   MaSP: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -13,13 +12,12 @@ const SanPham = sequelize.define('SanPham', {
   },
   MaLoaiSP: {
     type: DataTypes.INTEGER,
-    references: { model: 'LoaiSP', key: 'MaLoaiSP' },
+    references: { model: "LoaiSP", key: "MaLoaiSP" },
   },
   MaNCC: {
     type: DataTypes.INTEGER,
-    references: { model: 'NhaCungCap', key: 'MaNCC' },
+    references: { model: "NhaCungCap", key: "MaNCC" },
   },
   MoTa: DataTypes.TEXT,
 });
-
-module.exports = SanPham; 
+module.exports = SanPham;

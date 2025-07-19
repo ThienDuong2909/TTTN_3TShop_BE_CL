@@ -1,4 +1,6 @@
-const { SanPham, ChiTietSanPham, NhaCungCap, LoaiSP, KichThuoc, Mau, AnhSanPham } = require('../models');
+
+const { SanPham, ChiTietSanPham, NhaCungCap, LoaiSP, KichThuoc, Mau, AnhSanPham, ThayDoiGia } = require('../models');
+const { Op } = require("sequelize");
 
 const SanPhamService = {
   getAll: async () => {
@@ -127,6 +129,43 @@ const SanPhamService = {
       ],
       attributes: ['MaCTSP', 'MaSP', 'MaKichThuoc', 'MaMau', 'SoLuongTon']
     });
+  },
+  getChiTietSanPham: async (maCTSP) => {
+    const chiTiet = await ChiTietSanPham.findOne({
+      where: { MaCTSP: maCTSP },
+      include: [
+        { model: SanPham, attributes: ["MaSP", "TenSP"] },
+        { model: KichThuoc, attributes: ["TenKichThuoc"] },
+        { model: Mau, attributes: ["TenMau", "MaHex"] },
+      ],
+    });
+    if (!chiTiet) {
+      throw new Error("Chi tiết sản phẩm không tồn tại");
+    }
+    return chiTiet;
+  },
+
+  getCurrentPrice: async (maSP) => {
+    console.log("maSP:", maSP, "Type:", typeof maSP); // Debug kiểu dữ liệu
+    const parsedMaSP = Number(maSP); // Ép kiểu thành số nguyên
+    if (isNaN(parsedMaSP)) {
+      throw new Error("MaSP không hợp lệ");
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const price = await ThayDoiGia.findOne({
+      where: {
+        MaSP: parsedMaSP,
+        NgayApDung: { [Op.lte]: today },
+      },
+      order: [["NgayApDung", "DESC"]],
+    });
+
+    console.log("price:", price.dataValues); // Debug dữ liệu trả về
+    if (!price) {
+      throw new Error("Không tìm thấy giá hiện tại cho sản phẩm");
+    }
+    return price.Gia;
   },
 };
 
