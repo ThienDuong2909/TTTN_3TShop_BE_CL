@@ -48,7 +48,32 @@ const NhanVienService = {
   },
   
   create: async (data) => {
-    return await NhanVien.create(data);
+    // Tách bộ phận ra khỏi data
+    const { departments, ...nhanVienData } = data;
+    // Tạo nhân viên
+    const nhanVien = await NhanVien.create(nhanVienData);
+    // Nếu có danh sách bộ phận, tạo bản ghi trung gian với đầy đủ trường
+    if (departments && Array.isArray(departments)) {
+      for (const dep of departments) {
+        // dep: { MaBoPhan, NgayBatDau, NgayKetThuc, ChucVu, TrangThai, GhiChu }
+        await NhanVien_BoPhan.create({
+          MaNV: nhanVien.MaNV,
+          MaBoPhan: dep.MaBoPhan,
+          NgayBatDau: dep.NgayBatDau,
+          NgayKetThuc: dep.NgayKetThuc || null,
+          ChucVu: dep.ChucVu || null,
+          TrangThai: dep.TrangThai || 'DANGLAMVIEC',
+          GhiChu: dep.GhiChu || null
+        });
+      }
+    }
+    // Trả về nhân viên vừa tạo kèm các bộ phận
+    return await NhanVien.findByPk(nhanVien.MaNV, {
+      include: [
+        { model: TaiKhoan, include: [{ model: VaiTro }] },
+        { model: NhanVien_BoPhan, include: [{ model: BoPhan }] }
+      ]
+    });
   },
   
   update: async (id, data) => {

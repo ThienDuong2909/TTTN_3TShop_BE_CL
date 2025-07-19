@@ -11,6 +11,10 @@ const KichThuoc = sequelize.define('KichThuoc', {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
+  NgayTao: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+  },
 });
 
 module.exports = KichThuoc; 
