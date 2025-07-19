@@ -42,16 +42,23 @@ const NhanVienController = {
       const data = await NhanVienService.create(req.body);
       return response.success(res, data, 'Tạo nhân viên thành công', 201);
     } catch (err) {
+      if (err && err.code === 'EMAIL_EXISTS') {
+        return response.error(res, null, 'Email đã tồn tại', 409);
+      }
       return response.error(res, err);
     }
   },
   
   update: async (req, res) => {
     try {
+      // Nếu có Email, kiểm tra và cập nhật vào TaiKhoan
       const data = await NhanVienService.update(req.params.id, req.body);
       if (!data) return response.notFound(res, 'Không tìm thấy nhân viên');
       return response.success(res, data, 'Cập nhật nhân viên thành công');
     } catch (err) {
+      if (err && err.code === 'EMAIL_EXISTS') {
+        return response.error(res, null, 'Email đã tồn tại', 409);
+      }
       return response.error(res, err);
     }
   },
@@ -61,6 +68,29 @@ const NhanVienController = {
       const data = await NhanVienService.delete(req.params.id);
       if (!data) return response.notFound(res, 'Không tìm thấy nhân viên');
       return response.success(res, data, 'Xóa nhân viên thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  chuyenBoPhan: async (req, res) => {
+    try {
+      const MaNV = req.body.MaNV;
+      const data = await NhanVienService.chuyenBoPhan(MaNV, req.body);
+      return response.success(res, data, 'Chuyển bộ phận thành công');
+    } catch (err) {
+      if (err && err.code === 'NO_ACTIVE_DEPARTMENT') {
+        return response.error(res, null, 'Nhân viên chưa thuộc bộ phận nào đang làm việc', 400);
+      }
+      return response.error(res, err);
+    }
+  },
+
+  getLichSuBoPhan: async (req, res) => {
+    try {
+      const MaNV = req.params.id;
+      const data = await NhanVienService.getLichSuBoPhan(MaNV);
+      return response.success(res, data, 'Lấy lịch sử bộ phận thành công');
     } catch (err) {
       return response.error(res, err);
     }

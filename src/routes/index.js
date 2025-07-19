@@ -11,7 +11,7 @@ const gioHangRoutes = require("./gioHang");
 const kichThuocRoutes = require('./kichthuoc');
 const trangThaiDatHangRoutes = require('./trangthaidathang');
 const authRoutes = require('./auth');
-const boPhanRoutes = require('./bophan'); // Import BoPhan routes
+const boPhanRoutes = require('./bophan');
 
 const router = express.Router();
 
