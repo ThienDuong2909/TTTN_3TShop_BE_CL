@@ -82,6 +82,20 @@ const GioHangController = {
       return response.error(res, err.message || "Lỗi lấy giỏ hàng");
     }
   },
+  clearCart: async (req, res) => {
+    try {
+      const { maKH } = req.body;
+
+      if (!maKH) {
+        return response.error(res, null, "Thiếu mã khách hàng");
+      }
+
+      const result = await GioHangService.clearCart(maKH);
+      return response.success(res, result, "Đã xoá toàn bộ giỏ hàng");
+    } catch (err) {
+      return response.error(res, err.message || "Lỗi xoá toàn bộ giỏ hàng");
+    }
+  },
 };
 
 module.exports = GioHangController;

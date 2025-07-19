@@ -113,7 +113,7 @@ const GioHangService = {
     // 3. Lấy chi tiết sản phẩm (maCTSP)
     const chiTietSP = await ChiTietSanPham.findOne({
       where: {
-        MaSP: Number(maSP),
+        MaCTSP: Number(maSP),
         MaMau: mau.MaMau,
         MaKichThuoc: kichThuoc.MaKichThuoc,
       },
@@ -335,6 +335,25 @@ const GioHangService = {
     return {
       MaDDH: donDatHang.MaDDH,
       items: cartItems,
+    };
+  },
+  clearCart: async (maKH) => {
+    const donDatHang = await DonDatHang.findOne({
+      where: { MaKH: Number(maKH), MaTTDH: 6 },
+      include: [{ model: CT_DonDatHang }],
+    });
+
+    if (!donDatHang) throw new Error("Không tìm thấy giỏ hàng của khách hàng");
+
+    // Xoá tất cả CT_DonDatHang thuộc đơn đó
+    await CT_DonDatHang.destroy({
+      where: { MaDDH: donDatHang.MaDDH },
+    });
+
+    // Trả lại đơn hàng rỗng
+    return {
+      MaDDH: donDatHang.MaDDH,
+      items: [],
     };
   },
 };

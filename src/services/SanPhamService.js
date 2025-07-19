@@ -178,6 +178,13 @@ const SanPhamService = {
     }
     return price.Gia;
   },
+  getStockByMaCTSP: async (maCTSP) => {
+    const chiTiet = await ChiTietSanPham.findByPk(maCTSP);
+    if (!chiTiet) {
+      throw new Error("Không tìm thấy chi tiết sản phẩm");
+    }
+    return chiTiet.SoLuongTon;
+  },
 };
 
 module.exports = SanPhamService;
