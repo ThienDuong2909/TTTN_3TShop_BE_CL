@@ -1,8 +1,21 @@
 const BoPhan = require('../models/BoPhan');
+const sequelize = require('../models/sequelize');
 
 const BoPhanService = {
   async getAll() {
-    return await BoPhan.findAll();
+    return await BoPhan.findAll({
+      attributes: {
+        include: [
+          [
+            sequelize.literal(`(
+              SELECT COUNT(*) FROM NhanVien_BoPhan AS nvb
+              WHERE nvb.MaBoPhan = BoPhan.MaBoPhan AND nvb.TrangThai = 'DANGLAMVIEC'
+            )`),
+            'SoLuongNhanVien'
+          ]
+        ]
+      }
+    });
   },
   async getById(id) {
     return await BoPhan.findByPk(id);

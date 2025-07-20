@@ -5,28 +5,34 @@ const SanPhamController = require("../controllers/SanPhamController");
 
 const router = express.Router();
 
-// Lấy danh sách sản phẩm
 router.get("/", SanPhamController.getAll);
-
-// Lấy sản phẩm theo nhà cung cấp
-router.get("/supplier/:supplierId", SanPhamController.getBySupplier);
-
 // Lấy chi tiết sản phẩm
 router.get("/details", SanPhamController.getProductDetails);
+// Lấy chi tiết sản phẩm theo ID
 router.get("/details/:id", SanPhamController.getProductDetailById);
-
-// Lấy danh sách màu và size của sản phẩm (chi tiết đầy đủ)
-router.get("/:productId/colors-sizes", SanPhamController.getColorsSizesByProductId);
-
-// Lấy danh sách size và màu có sẵn của sản phẩm (tổng hợp)
-router.get("/:productId/available-options", SanPhamController.getAvailableSizesAndColors);
-
-// Lấy sản phẩm theo ID (phải đặt sau các route cụ thể)
+// Lấy sản phẩm theo nhà cung cấp
+router.get("/supplier/:supplierId", SanPhamController.getBySupplier);
+// Lấy màu và size của sản phẩm
+router.get(
+  "/:productId/colors-sizes",
+  SanPhamController.getColorsSizesByProductId
+);
+// Lấy sản phẩm theo id
 router.get("/:id", SanPhamController.getById);
-
-// CRUD operations
-router.post("/", SanPhamController.create);
-router.put("/:id", SanPhamController.update);
-router.delete("/:id", SanPhamController.delete);
-
+// Thêm sản phẩm
+router.post(
+  "/",
+  /*authenticateJWT, authorize('Admin'),*/ SanPhamController.create
+);
+// Sửa sản phẩm
+router.put(
+  "/:id",
+  /*authenticateJWT, authorize('Admin'),*/ SanPhamController.update
+);
+// Xóa sản phẩm
+router.delete(
+  "/:id",
+  /*authenticateJWT, authorize('Admin'),*/ SanPhamController.delete
+);
+router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 module.exports = router;
