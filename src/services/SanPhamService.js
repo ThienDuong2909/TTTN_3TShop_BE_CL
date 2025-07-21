@@ -7,16 +7,19 @@ const {
   Mau,
   AnhSanPham,
   ThayDoiGia,
+  sequelize,
 } = require("../models");
 const { Op } = require("sequelize");
 
 const SanPhamService = {
-  getAll: async () => {
-    return await SanPham.findAll({
+  getAll: async ({ page = 1, pageSize = 8 } = {}) => {
+    const offset = (page - 1) * pageSize;
+    const { rows, count } = await SanPham.findAndCountAll({
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
         { model: AnhSanPham },
+        { model: ThayDoiGia },
         {
           model: ChiTietSanPham,
           as: "ChiTietSanPhams",
@@ -27,7 +30,11 @@ const SanPhamService = {
           attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
         },
       ],
+      limit: pageSize,
+      offset,
+      distinct: true,
     });
+    return { rows, count };
   },
 
   getById: async (id) => {
@@ -36,6 +43,7 @@ const SanPhamService = {
         { model: NhaCungCap },
         { model: LoaiSP },
         { model: AnhSanPham },
+        { model: ThayDoiGia },
         {
           model: ChiTietSanPham,
           include: [{ model: KichThuoc }, { model: Mau }],
@@ -236,6 +244,128 @@ const SanPhamService = {
     }
     return chiTiet.SoLuongTon;
   },
+  updateStock: async (MaCTSP, SoLuongTon) => {
+    const chiTiet = await ChiTietSanPham.findByPk(MaCTSP);
+    if (!chiTiet) throw new Error('Không tìm thấy chi tiết sản phẩm');
+    chiTiet.SoLuongTon = SoLuongTon;
+    await chiTiet.save();
+    return chiTiet;
+  },
+  updateMultipleStocks: async (items) => {
+    if (!Array.isArray(items)) throw new Error('Dữ liệu phải là mảng');
+    const results = [];
+    for (const item of items) {
+      const { MaCTSP, SoLuongTon } = item;
+      if (MaCTSP === undefined || SoLuongTon === undefined) {
+        results.push({ MaCTSP, success: false, message: 'Thiếu MaCTSP hoặc SoLuongTon' });
+        continue;
+      }
+      try {
+        const chiTiet = await ChiTietSanPham.findByPk(MaCTSP);
+        if (!chiTiet) {
+          results.push({ MaCTSP, success: false, message: 'Không tìm thấy chi tiết sản phẩm' });
+          continue;
+        }
+        chiTiet.SoLuongTon = SoLuongTon;
+        await chiTiet.save();
+        results.push({ MaCTSP, success: true });
+      } catch (err) {
+        results.push({ MaCTSP, success: false, message: err.message });
+      }
+    }
+    return results;
+  },
+  createProduct: async ({ TenSP, MaLoaiSP, MaNCC, MoTa, details, images, Gia, NgayApDung }) => {
+    return await sequelize.transaction(async (t) => {
+      // 1. Tạo sản phẩm
+      const product = await SanPham.create({ TenSP, MaLoaiSP, MaNCC, MoTa }, { transaction: t });
+
+      // 2. Tạo chi tiết sản phẩm
+      for (const detail of details) {
+        await ChiTietSanPham.create({
+          MaSP: product.MaSP,
+          MaKichThuoc: detail.MaKichThuoc,
+          MaMau: detail.MaMau,
+          SoLuongTon: detail.SoLuongTon
+        }, { transaction: t });
+      }
+
+      // 3. Lưu ảnh sản phẩm từ URL
+      let index = 1;
+      for (const img of images) {
+        await AnhSanPham.create({
+          MaSP: product.MaSP,
+          TenFile: img.TenFile,
+          DuongDan: img.url,
+          AnhChinh: img.AnhChinh || (index === 1 ? 1 : 0),
+          ThuTu: img.ThuTu || index,
+          MoTa: img.MoTa || ''
+        }, { transaction: t });
+        index++;
+      }
+
+      // 4. Thêm giá sản phẩm vào bảng ThayDoiGia
+      if (Gia) {
+        const today = new Date().toISOString().split('T')[0];
+        await ThayDoiGia.create({
+          MaSP: product.MaSP,
+          Gia: Gia,
+          NgayThayDoi: today,
+          NgayApDung: NgayApDung || today
+        }, { transaction: t });
+      }
+
+      return product;
+    });
+  },
+  updateProductInfo: async ({ id, TenSP, MaLoaiSP, MaNCC, MoTa, Gia, NgayApDung, images }) => {
+    const product = await SanPham.findByPk(id);
+    if (!product) throw new Error('Không tìm thấy sản phẩm');
+    // Cập nhật thông tin cơ bản
+    if (TenSP !== undefined) product.TenSP = TenSP;
+    if (MaLoaiSP !== undefined) product.MaLoaiSP = MaLoaiSP;
+    if (MaNCC !== undefined) product.MaNCC = MaNCC;
+    if (MoTa !== undefined) product.MoTa = MoTa;
+    await product.save();
+
+    // Cập nhật lại ảnh sản phẩm nếu có images
+    if (images && Array.isArray(images)) {
+      // Xóa toàn bộ ảnh cũ
+      await AnhSanPham.destroy({ where: { MaSP: id } });
+      // Thêm lại ảnh mới
+      let index = 1;
+      for (const img of images) {
+        await AnhSanPham.create({
+          MaSP: id,
+          TenFile: img.TenFile,
+          DuongDan: img.url,
+          AnhChinh: img.AnhChinh || (index === 1 ? 1 : 0),
+          ThuTu: img.ThuTu || index,
+          MoTa: img.MoTa || ''
+        });
+        index++;
+      }
+    }
+
+    // So sánh giá
+    if (Gia !== undefined) {
+      // Lấy giá hiện tại (áp dụng mới nhất)
+      const latestPrice = await ThayDoiGia.findOne({
+        where: { MaSP: id },
+        order: [['NgayApDung', 'DESC']]
+      });
+      if (!latestPrice || Number(latestPrice.Gia) !== Number(Gia)) {
+        const today = new Date().toISOString().split('T')[0];
+        await ThayDoiGia.create({
+          MaSP: id,
+          Gia: Gia,
+          NgayThayDoi: today,
+          NgayApDung: NgayApDung || today
+        });
+      }
+    }
+    return product;
+  }
 };
 
 module.exports = SanPhamService;
