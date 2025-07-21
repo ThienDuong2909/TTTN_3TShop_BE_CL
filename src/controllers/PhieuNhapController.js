@@ -5,13 +5,13 @@ const PhieuNhapController = {
   create: async (req, res) => {
     try {
       // Lấy MaNV từ user đăng nhập
-      const MaNV = 1;
-      // const MaNV = req.user && req.user.MaNV;
-      if (!MaNV) return error(res, null, 'Không xác định được nhân viên lập phiếu', 401);
-      const data = { 
-        ...req.body, 
-        MaNV,
-        chiTiet: req.body.details || req.body.chiTiet  // Support both "details" and "chiTiet"
+      const MaTK = req.user?.MaTK || req.user?.id;
+      if (!MaTK) return error(res, null, 'Không xác định được tài khoản đăng nhập', 401);
+      // Map frontend "details" to backend "chiTiet"
+      const data = {
+        ...req.body,
+        MaTK,
+        chiTiet: req.body.details || req.body.chiTiet
       };
       const result = await PhieuNhapService.create(data);
       return success(res, result, 'Tạo phiếu nhập thành công', 201);

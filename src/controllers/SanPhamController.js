@@ -106,16 +106,13 @@ const SanPhamController = {
       return response.error(res, err);
     }
   },
-};
   checkStockAvailability: async (req, res) => {
     try {
       const { maCTSP } = req.body;
       if (!maCTSP) {
         return response.error(res, null, "Thiếu mã chi tiết sản phẩm (maCTSP)");
       }
-
       const tonKho = await SanPhamService.getStockByMaCTSP(maCTSP);
-
       return response.success(
         res,
         { soLuongTon: tonKho },
@@ -125,7 +122,7 @@ const SanPhamController = {
       console.error("Lỗi kiểm tra tồn kho:", err);
       return response.error(res, err.message || "Lỗi server");
     }
-  },
+  }
 };
 
 module.exports = SanPhamController;
