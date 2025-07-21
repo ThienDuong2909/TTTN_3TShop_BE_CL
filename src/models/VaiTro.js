@@ -1,3 +1,7 @@
+// Các vai trò mặc định:
+// 1: Admin
+// 2: NhanVien
+// 3: KhachHang
 const { DataTypes } = require('sequelize');
 const sequelize = require('./sequelize');
 

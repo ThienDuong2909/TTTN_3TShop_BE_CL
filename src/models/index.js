@@ -150,7 +150,6 @@ CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 AnhSanPham.belongsTo(SanPham, { foreignKey: 'MaSP' });
 
 module.exports = {
-
   sequelize,
   Sequelize,
   BoPhan,

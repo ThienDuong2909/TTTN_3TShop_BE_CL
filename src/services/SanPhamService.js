@@ -149,6 +149,57 @@ const SanPhamService = {
       attributes: ["MaCTSP", "MaSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
     });
   },
+
+  getAvailableSizesAndColors: async (productId) => {
+    const chiTietSanPham = await ChiTietSanPham.findAll({
+      where: { MaSP: productId },
+      include: [
+        { 
+          model: KichThuoc,
+          attributes: ['MaKichThuoc', 'TenKichThuoc']
+        },
+        { 
+          model: Mau,
+          attributes: ['MaMau', 'TenMau', 'MaHex']
+        }
+      ],
+      attributes: ['MaKichThuoc', 'MaMau', 'SoLuongTon']
+    });
+
+    // Lấy danh sách size và màu duy nhất
+    const sizes = [];
+    const colors = [];
+    const sizeMap = new Map();
+    const colorMap = new Map();
+
+    chiTietSanPham.forEach(item => {
+      // Thêm size nếu chưa có
+      if (!sizeMap.has(item.KichThuoc.MaKichThuoc)) {
+        sizeMap.set(item.KichThuoc.MaKichThuoc, true);
+        sizes.push({
+          MaKichThuoc: item.KichThuoc.MaKichThuoc,
+          TenKichThuoc: item.KichThuoc.TenKichThuoc
+        });
+      }
+
+      // Thêm màu nếu chưa có
+      if (!colorMap.has(item.Mau.MaMau)) {
+        colorMap.set(item.Mau.MaMau, true);
+        colors.push({
+          MaMau: item.Mau.MaMau,
+          TenMau: item.Mau.TenMau,
+          MaHex: item.Mau.MaHex
+        });
+      }
+    });
+
+    return {
+      sizes,
+      colors,
+      totalSizes: sizes.length,
+      totalColors: colors.length
+    };
+  },
   getChiTietSanPham: async (maCTSP) => {
     const chiTiet = await ChiTietSanPham.findOne({
       where: { MaCTSP: maCTSP },

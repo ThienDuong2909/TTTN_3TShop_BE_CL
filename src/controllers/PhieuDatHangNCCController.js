@@ -4,18 +4,17 @@ const PhieuDatHangNCCService = require('../services/PhieuDatHangNCCService');
 const PhieuDatHangNCCController = {
   create: async (req, res) => {
     try {
-      // Lấy MaNV từ user đăng nhập
-      const MaNV = req.body.MaNV;
-      console.log("res",req.body);
-      if (!MaNV) return error(res, null, 'Không xác định được nhân viên lập phiếu', 401);
-      
+      console.log('headers', req.headers);
+      console.log('req.user', req.user);
+      // Lấy MaTK từ user đăng nhập
+      const MaTK = req.user?.MaTK || req.user?.id;
+      if (!MaTK) return error(res, null, 'Không xác định được tài khoản đăng nhập', 401);
       // Map frontend "details" to backend "chiTiet"
-      const data = { 
-        ...req.body, 
-        MaNV,
-        chiTiet: req.body.details || req.body.chiTiet  // Support both "details" and "chiTiet"
+      const data = {
+        ...req.body,
+        MaTK,
+        chiTiet: req.body.details || req.body.chiTiet
       };
-      
       const result = await PhieuDatHangNCCService.create(data);
       return success(res, result, 'Tạo phiếu đặt hàng NCC thành công', 201);
     } catch (err) {
