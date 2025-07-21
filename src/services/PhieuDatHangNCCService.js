@@ -15,9 +15,12 @@ const sequelize = require('../models/sequelize');
 
 const PhieuDatHangNCCService = {
   create: async (data) => {
-    // data: { NgayDat, MaNV, MaNCC, MaTrangThai, chiTiet: [{ MaCTSP, SoLuong, DonGia }] }
-    console.log("ngày đặt hàng",data.NgayDat, "mã nhân viên",data.MaNV, "mã nhà cung cấp",data.MaNCC, "chi tiết phiếu đặt hàng", data.chiTiet);
-    if (!data.NgayDat || !data.MaNV || !data.MaNCC || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
+    // data: { NgayDat, MaTK, MaNCC, MaTrangThai, chiTiet: [{ MaCTSP, SoLuong, DonGia }] }
+    // Lấy MaNV từ MaTK
+    const nhanVien = await NhanVien.findOne({ where: { MaTK: data.MaTK } });
+    if (!nhanVien) throw new Error('Không xác định được nhân viên lập phiếu');
+    const MaNV = nhanVien.MaNV;
+    if (!data.NgayDat || !MaNV || !data.MaNCC || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
       throw new Error('Thiếu thông tin phiếu đặt hàng hoặc chi tiết phiếu');
     }
 
@@ -50,7 +53,7 @@ const PhieuDatHangNCCService = {
       const phieu = await PhieuDatHangNCC.create({
         MaPDH: MaPDH,
         NgayDat: data.NgayDat,
-        MaNV: data.MaNV,
+        MaNV: MaNV,
         MaNCC: data.MaNCC,
         MaTrangThai: data.MaTrangThai,
       }, { transaction });
