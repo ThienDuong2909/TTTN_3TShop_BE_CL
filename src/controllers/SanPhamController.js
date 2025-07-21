@@ -4,8 +4,15 @@ const response = require("../utils/response");
 const SanPhamController = {
   getAll: async (req, res) => {
     try {
-      const data = await SanPhamService.getAll();
-      return response.success(res, data, "Lấy danh sách sản phẩm thành công");
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 8;
+      const { rows, count } = await SanPhamService.getAll({ page, pageSize });
+      return response.success(res, {
+        data: rows,
+        total: count,
+        page,
+        pageSize
+      }, "Lấy danh sách sản phẩm thành công");
     } catch (err) {
       return response.error(res, err);
     }
@@ -114,6 +121,68 @@ const SanPhamController = {
     } catch (err) {
       console.error("Lỗi kiểm tra tồn kho:", err);
       return response.error(res, err.message || "Lỗi server");
+    }
+  },
+  createProduct: async (req, res) => {
+    try {
+      const { TenSP, MaLoaiSP, MaNCC, MoTa, details, images, Gia, NgayApDung } = req.body;
+      const product = await SanPhamService.createProduct({
+        TenSP,
+        MaLoaiSP,
+        MaNCC,
+        MoTa,
+        details: typeof details === 'string' ? JSON.parse(details) : details,
+        images: typeof images === 'string' ? JSON.parse(images) : images,
+        Gia,
+        NgayApDung
+      });
+      return response.success(res, product, 'Product created successfully');
+    } catch (err) {
+      return response.error(res, err.message);
+    }
+  },
+  updateProductDetailStock: async (req, res) => {
+    try {
+      const { maCTSP } = req.params;
+      const { SoLuongTon } = req.body;
+      if (SoLuongTon === undefined) {
+        return response.validationError(res, null, 'Thiếu trường SoLuongTon');
+      }
+      const result = await SanPhamService.updateStock(maCTSP, SoLuongTon);
+      return response.success(res, result, 'Cập nhật tồn kho thành công');
+    } catch (err) {
+      return response.error(res, err.message);
+    }
+  },
+  updateProduct: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { TenSP, MaLoaiSP, MaNCC, MoTa, Gia, NgayApDung, images } = req.body;
+      const result = await SanPhamService.updateProductInfo({
+        id,
+        TenSP,
+        MaLoaiSP,
+        MaNCC,
+        MoTa,
+        Gia,
+        NgayApDung,
+        images: typeof images === 'string' ? JSON.parse(images) : images
+      });
+      return response.success(res, result, 'Cập nhật thông tin sản phẩm thành công');
+    } catch (err) {
+      return response.error(res, err.message);
+    }
+  },
+  updateMultipleProductDetailStocks: async (req, res) => {
+    try {
+      const items = req.body;
+      if (!Array.isArray(items)) {
+        return response.validationError(res, null, 'Dữ liệu phải là mảng');
+      }
+      const result = await SanPhamService.updateMultipleStocks(items);
+      return response.success(res, result, 'Cập nhật tồn kho nhiều chi tiết sản phẩm thành công');
+    } catch (err) {
+      return response.error(res, err.message);
     }
   },
 };
