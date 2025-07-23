@@ -4,9 +4,6 @@ const PhieuDatHangNCCService = require('../services/PhieuDatHangNCCService');
 const PhieuDatHangNCCController = {
   create: async (req, res) => {
     try {
-      console.log('headers', req.headers);
-      console.log('req.user', req.user);
-      // Lấy MaTK từ user đăng nhập
       const MaTK = req.user?.MaTK || req.user?.id;
       if (!MaTK) return error(res, null, 'Không xác định được tài khoản đăng nhập', 401);
       // Map frontend "details" to backend "chiTiet"
