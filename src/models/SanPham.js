@@ -19,5 +19,8 @@ const SanPham = sequelize.define("SanPham", {
     references: { model: "NhaCungCap", key: "MaNCC" },
   },
   MoTa: DataTypes.TEXT,
+  TrangThai: {
+    type: DataTypes.BOOLEAN,
+  }
 });
 module.exports = SanPham;

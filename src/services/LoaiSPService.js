@@ -1,9 +1,37 @@
-const { LoaiSP } = require('../models');
+const {
+  LoaiSP,
+  SanPham,
+  AnhSanPham,
+  ChiTietSanPham,
+  ThayDoiGia,
+  CT_DotGiamGia,
+  DotGiamGia,
+  Mau,
+  KichThuoc,
+} = require("../models");
+const { Sequelize, Op } = require("sequelize");
 
 const LoaiSPService = {
   // Lấy tất cả loại sản phẩm
   async getAll() {
-    return await LoaiSP.findAll();
+    return await LoaiSP.findAll({
+      attributes: {
+        include: [
+          // Thêm cột đếm số lượng sản phẩm
+          [
+            Sequelize.fn("COUNT", Sequelize.col("SanPhams.MaSP")),
+            "soLuongSanPham",
+          ],
+        ],
+      },
+      include: [
+        {
+          model: SanPham,
+          attributes: [], // Không lấy chi tiết sản phẩm, chỉ cần đếm
+        },
+      ],
+      group: ["LoaiSP.MaLoaiSP"],
+    });
   },
 
   // Lấy loại sản phẩm theo id
@@ -30,6 +58,52 @@ const LoaiSPService = {
     if (!loaiSP) return null;
     await loaiSP.destroy();
     return true;
+  },
+  getProductsById: async (id) => {
+    console.log("Lấy sản phẩm theo mã loại:", id);
+    const today = new Date().toISOString().split("T")[0];
+
+    return await SanPham.findAll({
+      where: { MaLoaiSP: id },
+      include: [
+        { model: LoaiSP },
+        { model: AnhSanPham },
+        {
+          model: ChiTietSanPham,
+          as: "ChiTietSanPhams",
+          include: [
+            { model: KichThuoc, attributes: ["TenKichThuoc"] },
+            { model: Mau, attributes: ["TenMau", "MaHex"] },
+          ],
+          attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
+        },
+        {
+          model: ThayDoiGia,
+          where: {
+            NgayApDung: { [Op.lte]: today },
+          },
+          separate: true,
+          limit: 1,
+          order: [["NgayApDung", "DESC"]],
+          attributes: ["Gia", "NgayApDung"],
+        },
+        {
+          model: CT_DotGiamGia,
+          include: [
+            {
+              model: DotGiamGia,
+              where: {
+                NgayBatDau: { [Op.lte]: today },
+                NgayKetThuc: { [Op.gte]: today },
+              },
+              required: true,
+              attributes: ["NgayBatDau", "NgayKetThuc", "MoTa"],
+            },
+          ],
+          attributes: ["PhanTramGiam"],
+        },
+      ],
+    });
   },
 };
 
