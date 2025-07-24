@@ -16,8 +16,11 @@ const fs = require('fs');
 
 const PhieuNhapService = {
   create: async (data) => {
-    if (!data.NgayNhap || !data.MaNV || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
-      console.log("ngày nhập",data.NgayNhap, "mã nhân viên",data.MaNV, "chi tiết phiếu nhập", data.chiTiet);
+    const nhanVien = await NhanVien.findOne({ where: { MaTK: data.MaTK } });
+    if (!nhanVien) throw new Error('Không xác định được nhân viên lập phiếu');
+    const MaNV = nhanVien.MaNV;
+    if (!data.NgayNhap || !MaNV || !data.MaPDH || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
+      console.log("Ngay nhập",data.NgayNhap, "mã nhân viên",MaNV, "mã phiếu đặt hàng",data.MaPDH, "chi tiết phiếu nhập", data.chiTiet);
       throw new Error('Thiếu thông tin phiếu nhập hoặc chi tiết phiếu nhập');
     }
 
@@ -93,7 +96,7 @@ const PhieuNhapService = {
         SoPN,
         NgayNhap: data.NgayNhap,
         MaPDH: data.MaPDH,
-        MaNV: data.MaNV,
+        MaNV: MaNV,
       }, { transaction });
 
       for (const ct of data.chiTiet) {

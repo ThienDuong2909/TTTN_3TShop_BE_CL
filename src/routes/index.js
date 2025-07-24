@@ -7,10 +7,12 @@ const nhanVienRoutes = require("./nhanvien");
 const nhaCungCapRoutes = require("./nhacungcap");
 const sanPhamRoutes = require("./sanPham");
 const gioHangRoutes = require("./gioHang");
+
 const kichThuocRoutes = require("./kichthuoc");
 const trangThaiDatHangRoutes = require("./trangthaidathang");
 const authRoutes = require("./auth");
 const boPhanRoutes = require("./bophan"); // Import BoPhan routes
+
 
 const router = express.Router();
 
