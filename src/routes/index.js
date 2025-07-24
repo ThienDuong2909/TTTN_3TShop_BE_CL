@@ -7,16 +7,17 @@ const nhanVienRoutes = require("./nhanvien");
 const nhaCungCapRoutes = require("./nhacungcap");
 const sanPhamRoutes = require("./sanPham");
 const gioHangRoutes = require("./gioHang");
-
-const kichThuocRoutes = require("./kichthuoc");
-const trangThaiDatHangRoutes = require("./trangthaidathang");
-const authRoutes = require("./auth");
-const boPhanRoutes = require("./bophan"); // Import BoPhan routes
+const kichThuocRoutes = require('./kichthuoc');
+const trangThaiDatHangRoutes = require('./trangthaidathang');
+const authRoutes = require('./auth');
+const boPhanRoutes = require('./bophan');
+const authenticateJWT = require('../middlewares/jwt');
+const authorize = require('../middlewares/authorize');
 
 
 const router = express.Router();
 
-// Existing routes
+
 router.use("/mau", mauRoutes);
 router.use("/phieu-dat-hang-ncc", phieuDatHangNCCRoutes);
 router.use("/phieu-nhap", phieuNhapRoutes);
