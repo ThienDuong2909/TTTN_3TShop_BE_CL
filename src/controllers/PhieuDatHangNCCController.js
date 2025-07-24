@@ -67,6 +67,15 @@ const PhieuDatHangNCCController = {
       return error(res, err);
     }
   },
+  // API: Trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
+  getReceivedStatusByPDH: async (req, res) => {
+    try {
+      const data = await PhieuDatHangNCCService.getReceivedStatusByPDH(req.params.id);
+      return success(res, data, 'Trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
 };
 
 module.exports = PhieuDatHangNCCController; 
