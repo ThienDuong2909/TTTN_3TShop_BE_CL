@@ -37,7 +37,17 @@ const GioHangService = {
 
     const maCTSP = chiTietSP.MaCTSP;
 
-    const donGia = await SanPhamService.getCurrentPrice(maSP);
+    const giaGoc = await SanPhamService.getCurrentPrice(maSP);
+    const phanTramGiam = await SanPhamService.getCurrentDiscount(maSP);
+    const donGia = giaGoc - (giaGoc * phanTramGiam) / 100;
+    console.log(
+      "Giá gốc:",
+      giaGoc,
+      "Phần trăm giảm:",
+      phanTramGiam,
+      "Đơn giá:",
+      donGia
+    );
 
     let donDatHang = await DonDatHang.findOne({
       where: {
@@ -61,7 +71,7 @@ const GioHangService = {
     console.log("dondathang", donDatHang);
 
     const existingItem = donDatHang?.CT_DonDatHangs.find(
-      (item) => item.MaCTSP === maCTSP
+      (item) => item.MaCTSP === maCTSP && item.DonGia === donGia
     );
 
     if (existingItem) {
@@ -94,9 +104,9 @@ const GioHangService = {
     return updatedCart;
   },
 
-  removeFromCart: async (maKH, maSP, maHex, tenKichThuoc) => {
+  removeFromCart: async (maKH, maSP, maHex, tenKichThuoc, donGia) => {
     // 1. Tìm khách hàng và mã sản phẩm
-    if (!maKH || !maSP || !maHex || !tenKichThuoc) {
+    if (!maKH || !maSP || !maHex || !tenKichThuoc || !donGia) {
       throw new Error("Thiếu thông tin để xoá sản phẩm khỏi giỏ hàng");
     }
 
@@ -135,10 +145,13 @@ const GioHangService = {
     if (!donDatHang) {
       throw new Error("Không tìm thấy giỏ hàng của khách hàng");
     }
+    // console.log("donDatHang", donDatHang);
 
     // 5. Tìm chi tiết đơn hàng có MaCTSP
     const item = donDatHang.CT_DonDatHangs.find(
-      (ct) => ct.MaCTSP === chiTietSP.MaCTSP
+      (ct) =>
+        ct.MaCTSP === chiTietSP.MaCTSP &&
+        Number(ct.DonGia).toFixed(2) === Number(donGia).toFixed(2)
     );
 
     if (!item) {

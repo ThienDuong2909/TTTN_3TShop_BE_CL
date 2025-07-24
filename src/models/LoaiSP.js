@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./sequelize');
+const { DataTypes } = require("sequelize");
+const sequelize = require("./sequelize");
 
-const LoaiSP = sequelize.define('LoaiSP', {
+const LoaiSP = sequelize.define("LoaiSP", {
   MaLoaiSP: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -21,4 +21,4 @@ const LoaiSP = sequelize.define('LoaiSP', {
   },
 });
 
-module.exports = LoaiSP; 
+module.exports = LoaiSP;
