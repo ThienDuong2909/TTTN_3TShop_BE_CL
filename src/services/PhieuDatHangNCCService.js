@@ -215,6 +215,60 @@ const PhieuDatHangNCCService = {
     
     return phieu;
   },
+  // Lấy trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
+  getReceivedStatusByPDH: async (maPDH) => {
+    const { CT_PhieuDatHangNCC, ChiTietSanPham, SanPham, KichThuoc, Mau, PhieuNhap, CT_PhieuNhap } = require('../models');
+    // Lấy chi tiết đặt hàng
+    const chiTietDat = await CT_PhieuDatHangNCC.findAll({
+      where: { MaPDH: maPDH },
+      include: [
+        {
+          model: ChiTietSanPham,
+          include: [
+            { model: SanPham, attributes: ['MaSP', 'TenSP'] },
+            { model: KichThuoc, attributes: ['TenKichThuoc'] },
+            { model: Mau, attributes: ['TenMau', 'MaHex'] },
+          ]
+        }
+      ]
+    });
+    // Lấy tất cả phiếu nhập liên quan đến phiếu đặt này
+    const phieuNhapList = await PhieuNhap.findAll({
+      where: { MaPDH: maPDH },
+      attributes: ['SoPN']
+    });
+    const soPNs = phieuNhapList.map(pn => pn.SoPN);
+    // Lấy tổng số lượng đã nhập cho từng MaCTSP
+    let nhapMap = {};
+    if (soPNs.length > 0) {
+      const nhapList = await CT_PhieuNhap.findAll({
+        where: { SoPN: soPNs },
+        attributes: ['MaCTSP', [require('sequelize').fn('SUM', require('sequelize').col('SoLuong')), 'SoLuongNhap']],
+        group: ['MaCTSP']
+      });
+      nhapList.forEach(item => {
+        nhapMap[item.MaCTSP] = Number(item.get('SoLuongNhap')) || 0;
+      });
+    }
+    // Gộp kết quả
+    const result = chiTietDat.map(ct => {
+      const ctsp = ct.ChiTietSanPham;
+      return {
+        MaCTSP: ct.MaCTSP,
+        MaSP: ctsp?.SanPham?.MaSP,
+        TenSP: ctsp?.SanPham?.TenSP,
+        MaKichThuoc: ctsp?.MaKichThuoc,
+        TenKichThuoc: ctsp?.KichThuoc?.TenKichThuoc,
+        MaMau: ctsp?.MaMau,
+        TenMau: ctsp?.Mau?.TenMau,
+        MaHex: ctsp?.Mau?.MaHex,
+        SoLuongDat: ct.SoLuong,
+        SoLuongNhap: nhapMap[ct.MaCTSP] || 0,
+        SoLuongConLai: Math.max(0, ct.SoLuong - (nhapMap[ct.MaCTSP] || 0))
+      };
+    });
+    return result;
+  },
 };
 
 module.exports = PhieuDatHangNCCService; 

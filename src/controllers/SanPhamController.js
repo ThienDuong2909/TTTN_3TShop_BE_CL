@@ -192,6 +192,15 @@ const SanPhamController = {
       return response.error(res, err.message);
     }
   },
+  // API: Thống kê số lượng đã đặt và đã nhập cho từng sản phẩm (theo từng biến thể)
+  getOrderedVsReceived: async (req, res) => {
+    try {
+      const data = await SanPhamService.getOrderedVsReceived();
+      return response.success(res, data, 'Thống kê số lượng đã đặt và đã nhập cho từng sản phẩm');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
 };
 
 module.exports = SanPhamController;
