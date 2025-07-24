@@ -4,7 +4,7 @@ const authenticateJWT = require('../middlewares/jwt');
 const authorize = require('../middlewares/authorize');
 const router = express.Router();
 
-router.post('/',controller.create);
+router.post('/',authenticateJWT, authorize('Admin', 'NhanVien'), controller.create);
 router.get('/', controller.getAll);
 router.get('/available-for-receipt', controller.getAvailableForReceipt);
 router.get('/:id', controller.getById);

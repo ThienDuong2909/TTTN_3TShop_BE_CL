@@ -19,8 +19,8 @@ const router = express.Router();
 
 // Existing routes
 router.use('/mau', mauRoutes);
-router.use('/phieu-dat-hang-ncc', authenticateJWT, authorize('Admin', 'NhanVien'), phieuDatHangNCCRoutes);
-router.use('/phieu-nhap', authenticateJWT, authorize('Admin', 'NhanVien'), phieuNhapRoutes);
+router.use('/phieu-dat-hang-ncc', /*authenticateJWT, authorize('Admin', 'NhanVien'),*/ phieuDatHangNCCRoutes);
+router.use('/phieu-nhap', /*authenticateJWT, authorize('Admin', 'NhanVien'),*/ phieuNhapRoutes);
 
 // New routes for frontend API
 router.use('/employees', nhanVienRoutes);
