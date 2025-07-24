@@ -7,11 +7,15 @@ const {
   Mau,
   AnhSanPham,
   ThayDoiGia,
+  CT_DotGiamGia,
+  DotGiamGia,
 } = require("../models");
 const { Op } = require("sequelize");
 
 const SanPhamService = {
   getAll: async () => {
+    const today = new Date().toISOString().split("T")[0];
+
     return await SanPham.findAll({
       include: [
         { model: NhaCungCap },
@@ -26,11 +30,38 @@ const SanPhamService = {
           ],
           attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
         },
+        // Giá hiện tại
+        {
+          model: ThayDoiGia,
+          where: {
+            NgayApDung: { [Op.lte]: today },
+          },
+          separate: true,
+          limit: 1,
+          order: [["NgayApDung", "DESC"]],
+          attributes: ["Gia", "NgayApDung"],
+        },
+        // Giảm giá nếu có
+        {
+          model: CT_DotGiamGia,
+          include: [
+            {
+              model: DotGiamGia,
+              where: {
+                NgayBatDau: { [Op.lte]: today },
+                NgayKetThuc: { [Op.gte]: today },
+              },
+              required: true,
+              attributes: ["NgayBatDau", "NgayKetThuc", "MoTa"],
+            },
+          ],
+          attributes: ["PhanTramGiam"],
+        },
       ],
     });
   },
-
   getById: async (id) => {
+    const today = new Date().toISOString().split("T")[0];
     return await SanPham.findByPk(id, {
       include: [
         { model: NhaCungCap },
@@ -39,6 +70,32 @@ const SanPhamService = {
         {
           model: ChiTietSanPham,
           include: [{ model: KichThuoc }, { model: Mau }],
+        },
+        {
+          model: ThayDoiGia,
+          where: {
+            NgayApDung: { [Op.lte]: today },
+          },
+          separate: true,
+          limit: 1,
+          order: [["NgayApDung", "DESC"]],
+          attributes: ["Gia", "NgayApDung"],
+        },
+        // Giảm giá nếu có
+        {
+          model: CT_DotGiamGia,
+          include: [
+            {
+              model: DotGiamGia,
+              where: {
+                NgayBatDau: { [Op.lte]: today },
+                NgayKetThuc: { [Op.gte]: today },
+              },
+              required: true,
+              attributes: ["NgayBatDau", "NgayKetThuc", "MoTa"],
+            },
+          ],
+          attributes: ["PhanTramGiam"],
         },
       ],
     });
@@ -154,6 +211,26 @@ const SanPhamService = {
       throw new Error("Chi tiết sản phẩm không tồn tại");
     }
     return chiTiet;
+  },
+  getCurrentDiscount: async (maSP) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const discount = await CT_DotGiamGia.findOne({
+      where: { MaSP: maSP },
+      include: [
+        {
+          model: DotGiamGia,
+          where: {
+            NgayBatDau: { [Op.lte]: today },
+            NgayKetThuc: { [Op.gte]: today },
+          },
+          required: true,
+        },
+      ],
+      attributes: ["PhanTramGiam"],
+    });
+
+    return discount ? Number(discount.PhanTramGiam) : 0;
   },
 
   getCurrentPrice: async (maSP) => {
