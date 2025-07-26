@@ -11,6 +11,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const sequelize = require('../models/sequelize');
+const EmailService = require('./EmailService');
 
 
 const PhieuDatHangNCCService = {
@@ -149,9 +150,58 @@ const PhieuDatHangNCCService = {
   },
   
   updateStatus: async (id, statusId) => {
-    const phieu = await PhieuDatHangNCC.findByPk(id);
+    const phieu = await PhieuDatHangNCC.findByPk(id, {
+      include: [
+        { 
+          model: CT_PhieuDatHangNCC,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                { model: SanPham },
+                { model: KichThuoc },
+                { model: Mau }
+              ]
+            }
+          ]
+        },
+        { model: NhanVien },
+        { model: NhaCungCap },
+        { model: TrangThaiDatHangNCC }
+      ]
+    });
+    
     if (!phieu) return null;
+    
+    // Lưu trạng thái cũ để kiểm tra
+    const oldStatus = phieu.MaTrangThai;
+    
+    // Cập nhật trạng thái mới
     await phieu.update({ MaTrangThai: statusId });
+    
+    // Nếu trạng thái thay đổi từ 1 (PENDING) sang 2 (APPROVED), gửi email
+    let emailResult = null;
+    if (oldStatus === 1 && statusId === 2) {
+      try {
+        // Lấy email nhà cung cấp từ database hoặc sử dụng email mặc định
+        const supplierEmail = 'lvthanh.work@gmail.com';
+        
+        // Gửi email với file Excel đính kèm
+        emailResult = await EmailService.sendPurchaseOrderEmail(phieu, supplierEmail);
+        
+        console.log(`Đã gửi email phiếu đặt hàng ${phieu.MaPDH} đến ${supplierEmail}`);
+      } catch (emailError) {
+        console.error('Lỗi gửi email:', emailError);
+        // Không throw error để không ảnh hưởng đến việc cập nhật trạng thái
+      }
+    }
+    
+    // Trả về kết quả bao gồm thông tin email và file Excel
+    return {
+      phieu: phieu,
+      emailResult: emailResult
+    };
+    
     return phieu;
   },
   
