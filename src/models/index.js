@@ -19,41 +19,42 @@ const sequelize = new Sequelize(
 
 // Import models
 
-const BoPhan = require('./BoPhan');
-const NhaCungCap = require('./NhaCungCap');
-const LoaiSP = require('./LoaiSP');
-const KichThuoc = require('./KichThuoc');
-const Mau = require('./Mau');
-const SanPham = require('./SanPham');
-const ThayDoiGia = require('./ThayDoiGia');
-const ChiTietSanPham = require('./ChiTietSanPham');
-const VaiTro = require('./VaiTro');
-const TaiKhoan = require('./TaiKhoan');
-const NhanVien = require('./NhanVien');
-const NhanVien_BoPhan = require('./NhanVien_BoPhan');
-const KhachHang = require('./KhachHang');
-const TrangThaiDatHangNCC = require('./TrangThaiDatHangNCC');
-const PhieuDatHangNCC = require('./PhieuDatHangNCC');
-const CT_PhieuDatHangNCC = require('./CT_PhieuDatHangNCC');
-const PhieuNhap = require('./PhieuNhap');
-const CT_PhieuNhap = require('./CT_PhieuNhap');
-const TrangThaiDH = require('./TrangThaiDH');
-const DonDatHang = require('./DonDatHang');
-const HoaDon = require('./HoaDon');
-const PhieuTraHang = require('./PhieuTraHang');
-const CT_DonDatHang = require('./CT_DonDatHang');
-const BinhLuan = require('./BinhLuan');
-const DotGiamGia = require('./DotGiamGia');
-const CT_DotGiamGia = require('./CT_DotGiamGia');
-const AnhSanPham = require('./AnhSanPham');
+const BoPhan = require("./BoPhan");
+const NhaCungCap = require("./NhaCungCap");
+const LoaiSP = require("./LoaiSP");
+const KichThuoc = require("./KichThuoc");
+const Mau = require("./Mau");
+const SanPham = require("./SanPham");
+const ThayDoiGia = require("./ThayDoiGia");
+const ChiTietSanPham = require("./ChiTietSanPham");
+const VaiTro = require("./VaiTro");
+const TaiKhoan = require("./TaiKhoan");
+const NhanVien = require("./NhanVien");
+const NhanVien_BoPhan = require("./NhanVien_BoPhan");
+const KhachHang = require("./KhachHang");
+const TrangThaiDatHangNCC = require("./TrangThaiDatHangNCC");
+const PhieuDatHangNCC = require("./PhieuDatHangNCC");
+const CT_PhieuDatHangNCC = require("./CT_PhieuDatHangNCC");
+const PhieuNhap = require("./PhieuNhap");
+const CT_PhieuNhap = require("./CT_PhieuNhap");
+const TrangThaiDH = require("./TrangThaiDH");
+const DonDatHang = require("./DonDatHang");
+const HoaDon = require("./HoaDon");
+const PhieuTraHang = require("./PhieuTraHang");
+const CT_DonDatHang = require("./CT_DonDatHang");
+const BinhLuan = require("./BinhLuan");
+const DotGiamGia = require("./DotGiamGia");
+const CT_DotGiamGia = require("./CT_DotGiamGia");
+const AnhSanPham = require("./AnhSanPham");
 
 // Associations
 // SanPham
-SanPham.belongsTo(LoaiSP, { foreignKey: 'MaLoaiSP' });
-SanPham.belongsTo(NhaCungCap, { foreignKey: 'MaNCC' });
-SanPham.hasMany(ThayDoiGia, { foreignKey: 'MaSP' });
-SanPham.hasMany(ChiTietSanPham, { foreignKey: 'MaSP' });
-SanPham.hasMany(AnhSanPham, { foreignKey: 'MaSP' });
+LoaiSP.hasMany(SanPham, { foreignKey: "MaLoaiSP" });
+SanPham.belongsTo(LoaiSP, { foreignKey: "MaLoaiSP" });
+SanPham.belongsTo(NhaCungCap, { foreignKey: "MaNCC" });
+SanPham.hasMany(ThayDoiGia, { foreignKey: "MaSP" });
+SanPham.hasMany(ChiTietSanPham, { foreignKey: "MaSP" });
+SanPham.hasMany(AnhSanPham, { foreignKey: "MaSP" });
 
 // ThayDoiGia
 ThayDoiGia.belongsTo(SanPham, { foreignKey: "MaSP" });
@@ -149,7 +150,7 @@ SanPham.hasMany(CT_DotGiamGia, { foreignKey: "MaSP" });
 CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 
 // AnhSanPham
-AnhSanPham.belongsTo(SanPham, { foreignKey: 'MaSP' });
+AnhSanPham.belongsTo(SanPham, { foreignKey: "MaSP" });
 
 module.exports = {
   sequelize,
@@ -180,6 +181,5 @@ module.exports = {
   BinhLuan,
   DotGiamGia,
   CT_DotGiamGia,
-  AnhSanPham
+  AnhSanPham,
 };
-

@@ -29,8 +29,9 @@ const GioHangController = {
   },
   removeFromCart: async (req, res) => {
     try {
-      const { maKH, maSP, maHex, tenKichThuoc } = req.body;
-      if (!maKH || !maSP || !maHex || !tenKichThuoc) {
+      const { maKH, maSP, maHex, tenKichThuoc, donGia } = req.body;
+      console.log(maKH, maSP, maHex, tenKichThuoc, donGia);
+      if (!maKH || !maSP || !maHex || !tenKichThuoc || !donGia) {
         return response.error(res, null, "Thiếu thông tin cần thiết");
       }
 
@@ -38,7 +39,8 @@ const GioHangController = {
         maKH,
         maSP,
         maHex,
-        tenKichThuoc
+        tenKichThuoc,
+        donGia
       );
       return response.success(
         res,
