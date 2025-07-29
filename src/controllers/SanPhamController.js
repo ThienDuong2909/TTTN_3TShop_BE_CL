@@ -4,14 +4,24 @@ const response = require("../utils/response");
 const SanPhamController = {
   getAll: async (req, res) => {
     try {
-      // const page = parseInt(req.query.page) || 1;
-      // const pageSize = parseInt(req.query.pageSize) || 8;
+
       const data = await SanPhamService.getAll();
       return response.success(res, data, "Lấy danh sách sản phẩm thành công");
     } catch (err) {
       return response.error(res, err);
     }
   },
+
+  getNewProducts: async (req, res) => {
+    console.log("Fetching new products...");
+    try {
+      const data = await SanPhamService.getNewProducts();
+      return response.success(
+        res,
+        data,
+        "Lấy danh sách sản phẩm mới thành công"
+      );
+
 
   getAllProducts: async (req, res) => {
     try {
@@ -24,6 +34,7 @@ const SanPhamController = {
         page,
         pageSize
       }, "Lấy danh sách sản phẩm thành công");
+
     } catch (err) {
       return response.error(res, err);
     }
@@ -118,8 +129,14 @@ const SanPhamController = {
 
   getAvailableSizesAndColors: async (req, res) => {
     try {
-      const data = await SanPhamService.getAvailableSizesAndColors(req.params.productId);
-      return response.success(res, data, 'Lấy danh sách size và màu có sẵn của sản phẩm thành công');
+      const data = await SanPhamService.getAvailableSizesAndColors(
+        req.params.productId
+      );
+      return response.success(
+        res,
+        data,
+        "Lấy danh sách size và màu có sẵn của sản phẩm thành công"
+      );
     } catch (err) {
       return response.error(res, err);
     }
@@ -143,18 +160,19 @@ const SanPhamController = {
   },
   createProduct: async (req, res) => {
     try {
-      const { TenSP, MaLoaiSP, MaNCC, MoTa, details, images, Gia, NgayApDung } = req.body;
+      const { TenSP, MaLoaiSP, MaNCC, MoTa, details, images, Gia, NgayApDung } =
+        req.body;
       const product = await SanPhamService.createProduct({
         TenSP,
         MaLoaiSP,
         MaNCC,
         MoTa,
-        details: typeof details === 'string' ? JSON.parse(details) : details,
-        images: typeof images === 'string' ? JSON.parse(images) : images,
+        details: typeof details === "string" ? JSON.parse(details) : details,
+        images: typeof images === "string" ? JSON.parse(images) : images,
         Gia,
-        NgayApDung
+        NgayApDung,
       });
-      return response.success(res, product, 'Product created successfully');
+      return response.success(res, product, "Product created successfully");
     } catch (err) {
       return response.error(res, err.message);
     }
@@ -164,10 +182,10 @@ const SanPhamController = {
       const { maCTSP } = req.params;
       const { SoLuongTon } = req.body;
       if (SoLuongTon === undefined) {
-        return response.validationError(res, null, 'Thiếu trường SoLuongTon');
+        return response.validationError(res, null, "Thiếu trường SoLuongTon");
       }
       const result = await SanPhamService.updateStock(maCTSP, SoLuongTon);
-      return response.success(res, result, 'Cập nhật tồn kho thành công');
+      return response.success(res, result, "Cập nhật tồn kho thành công");
     } catch (err) {
       return response.error(res, err.message);
     }
@@ -175,7 +193,8 @@ const SanPhamController = {
   updateProduct: async (req, res) => {
     try {
       const { id } = req.params;
-      const { TenSP, MaLoaiSP, MaNCC, MoTa, Gia, NgayApDung, images } = req.body;
+      const { TenSP, MaLoaiSP, MaNCC, MoTa, Gia, NgayApDung, images } =
+        req.body;
       const result = await SanPhamService.updateProductInfo({
         id,
         TenSP,
@@ -184,9 +203,13 @@ const SanPhamController = {
         MoTa,
         Gia,
         NgayApDung,
-        images: typeof images === 'string' ? JSON.parse(images) : images
+        images: typeof images === "string" ? JSON.parse(images) : images,
       });
-      return response.success(res, result, 'Cập nhật thông tin sản phẩm thành công');
+      return response.success(
+        res,
+        result,
+        "Cập nhật thông tin sản phẩm thành công"
+      );
     } catch (err) {
       return response.error(res, err.message);
     }
@@ -195,14 +218,48 @@ const SanPhamController = {
     try {
       const items = req.body;
       if (!Array.isArray(items)) {
-        return response.validationError(res, null, 'Dữ liệu phải là mảng');
+        return response.validationError(res, null, "Dữ liệu phải là mảng");
       }
       const result = await SanPhamService.updateMultipleStocks(items);
-      return response.success(res, result, 'Cập nhật tồn kho nhiều chi tiết sản phẩm thành công');
+      return response.success(
+        res,
+        result,
+        "Cập nhật tồn kho nhiều chi tiết sản phẩm thành công"
+      );
     } catch (err) {
       return response.error(res, err.message);
     }
   },
+  getBestSellers: async (req, res) => {
+    try {
+      const data = await SanPhamService.getBestSellers();
+      return response.success(
+        res,
+        data,
+        "Lấy danh sách sản phẩm bán chạy thành công"
+      );
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+  searchProducts: async (req, res) => {
+    try {
+      const { keyword } = req.query;
+      const data = await SanPhamService.searchProducts(keyword);
+      return response.success(res, data, "Tìm kiếm sản phẩm thành công");
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+  getAllDiscountProducts: async (req, res) => {
+    try {
+      const data = await SanPhamService.getAllDiscountProducts();
+      return response.success(
+        res,
+        data,
+        "Lấy danh sách sản phẩm giảm giá thành công"
+      );
+
   addProductDetail: async (req, res) => {
     try {
       const { MaSP, MaKichThuoc, MaMau, SoLuongTon } = req.body;
@@ -220,6 +277,7 @@ const SanPhamController = {
     try {
       const data = await SanPhamService.getOrderedVsReceived();
       return response.success(res, data, 'Thống kê số lượng đã đặt và đã nhập cho từng sản phẩm');
+
     } catch (err) {
       return response.error(res, err);
     }

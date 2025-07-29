@@ -54,7 +54,8 @@ const GioHangController = {
 
   placeOrder: async (req, res) => {
     try {
-      const { maKH, dsSanPham, diaChiGiao, nguoiNhan } = req.body;
+      const { maKH, dsSanPham, diaChiGiao, nguoiNhan, SDT, thoiGianGiao } =
+        req.body;
 
       if (!maKH || !Array.isArray(dsSanPham) || dsSanPham.length === 0) {
         return response.error(res, null, "Thiếu thông tin đặt hàng");
@@ -64,7 +65,9 @@ const GioHangController = {
         maKH,
         dsSanPham,
         diaChiGiao,
-        nguoiNhan
+        nguoiNhan,
+        SDT,
+        thoiGianGiao
       );
       return response.success(res, data, "Đặt hàng thành công");
     } catch (err) {
@@ -96,6 +99,44 @@ const GioHangController = {
       return response.success(res, result, "Đã xoá toàn bộ giỏ hàng");
     } catch (err) {
       return response.error(res, err.message || "Lỗi xoá toàn bộ giỏ hàng");
+    }
+  },
+  getAllOrdersByCustomer: async (req, res) => {
+    try {
+      const { maKH } = req.body; // lấy từ body thay vì params
+      if (!maKH) {
+        return response.error(res, null, "Thiếu mã khách hàng");
+      }
+      const data = await GioHangService.getAllOrdersByCustomer(maKH);
+      return response.success(
+        res,
+        data,
+        "Lấy danh sách đơn đặt hàng thành công"
+      );
+    } catch (err) {
+      return response.error(
+        res,
+        err.message || "Lỗi lấy danh sách đơn đặt hàng"
+      );
+    }
+  },
+  getOrderById: async (req, res) => {
+    try {
+      const { maKH, maDDH } = req.body;
+      if (!maKH || !maDDH) {
+        return response.error(
+          res,
+          null,
+          "Thiếu mã khách hàng hoặc mã đơn đặt hàng"
+        );
+      }
+      const data = await GioHangService.getOrderById(maDDH, maKH);
+      if (!data) {
+        return response.error(res, null, "Không tìm thấy đơn đặt hàng");
+      }
+      return response.success(res, data, "Lấy đơn đặt hàng thành công");
+    } catch (err) {
+      return response.error(res, err.message || "Lỗi lấy đơn đặt hàng");
     }
   },
 };
