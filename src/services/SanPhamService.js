@@ -7,18 +7,16 @@ const {
   Mau,
   AnhSanPham,
   ThayDoiGia,
+  sequelize,
   CT_DotGiamGia,
-  DotGiamGia,
-
+  DotGiamGia
 } = require("../models");
 const { Op } = require("sequelize");
 
 const SanPhamService = {
   getAll: async () => {
     const today = new Date().toISOString().split("T")[0];
-
     return await SanPham.findAll({
-
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -59,6 +57,30 @@ const SanPhamService = {
             },
           ],
           attributes: ["PhanTramGiam"],
+        },
+      ],
+      // limit: pageSize,
+      // offset,
+      distinct: true,
+    });
+    return { rows, count };
+  },
+  getAllProducts: async ({ page = 1, pageSize = 8 } = {}) => {
+    const offset = (page - 1) * pageSize;
+    const { rows, count } = await SanPham.findAndCountAll({
+      include: [
+        { model: NhaCungCap },
+        { model: LoaiSP },
+        { model: AnhSanPham },
+        { model: ThayDoiGia },
+        {
+          model: ChiTietSanPham,
+          as: "ChiTietSanPhams",
+          include: [
+            { model: KichThuoc, attributes: ["TenKichThuoc"] },
+            { model: Mau, attributes: ["TenMau", "MaHex"] },
+          ],
+          attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
         },
       ],
       limit: pageSize,
@@ -384,11 +406,21 @@ const SanPhamService = {
       // 4. Thêm giá sản phẩm vào bảng ThayDoiGia
       if (Gia) {
         const today = new Date().toISOString().split('T')[0];
+        const ngayApDungMoi = NgayApDung || today;
+
+        // Validate ngày áp dụng không được trong quá khứ (trừ hôm nay)
+        const ngayApDungDate = new Date(ngayApDungMoi);
+        const todayDate = new Date(today);
+
+        if (ngayApDungDate < todayDate) {
+          throw new Error(`Ngày áp dụng giá (${ngayApDungMoi}) không được nhỏ hơn ngày hiện tại (${today})`);
+        }
+
         await ThayDoiGia.create({
           MaSP: product.MaSP,
           Gia: Gia,
           NgayThayDoi: today,
-          NgayApDung: NgayApDung || today
+          NgayApDung: ngayApDungMoi
         }, { transaction: t });
       }
 
@@ -424,25 +456,56 @@ const SanPhamService = {
       }
     }
 
-    // So sánh giá
+    // So sánh giá và validate ngày áp dụng
     if (Gia !== undefined) {
       // Lấy giá hiện tại (áp dụng mới nhất)
       const latestPrice = await ThayDoiGia.findOne({
         where: { MaSP: id },
         order: [['NgayApDung', 'DESC']]
       });
+
       if (!latestPrice || Number(latestPrice.Gia) !== Number(Gia)) {
         const today = new Date().toISOString().split('T')[0];
+        const ngayApDungMoi = NgayApDung || today;
+
+        // Validate ngày áp dụng: phải lớn hơn ngày áp dụng của giá hiện tại
+        if (latestPrice) {
+          const ngayApDungHienTai = new Date(latestPrice.NgayApDung);
+          const ngayApDungMoiDate = new Date(ngayApDungMoi);
+
+          if (ngayApDungMoiDate <= ngayApDungHienTai) {
+            throw new Error(`Ngày áp dụng giá mới (${ngayApDungMoi}) phải lớn hơn ngày áp dụng của giá hiện tại (${latestPrice.NgayApDung}). Không thể đặt ngày áp dụng trong quá khứ so với giá đang có hiệu lực.`);
+          }
+        } else {
+          // Nếu chưa có giá nào, validate ngày áp dụng không được nhỏ hơn ngày hiện tại
+          const todayDate = new Date(today);
+          const ngayApDungMoiDate = new Date(ngayApDungMoi);
+
+          if (ngayApDungMoiDate < todayDate) {
+            throw new Error(`Ngày áp dụng giá (${ngayApDungMoi}) không được nhỏ hơn ngày hiện tại (${today})`);
+          }
+        }
+
         await ThayDoiGia.create({
-          MaSP: id,
-          Gia: Gia,
-          NgayThayDoi: today,
-          NgayApDung: NgayApDung || today
-        });
+            MaSP: id,
+            Gia: Gia,
+            NgayThayDoi: today,
+            NgayApDung: ngayApDungMoi
+          }
+        );
       }
     }
     return product;
+  },
+  addProductDetail: async ({ MaSP, MaKichThuoc, MaMau, SoLuongTon }) => {
+    // Kiểm tra đã tồn tại chưa
+    const existed = await ChiTietSanPham.findOne({
+      where: { MaSP, MaKichThuoc, MaMau }
+    });
+    if (existed) throw new Error('Chi tiết sản phẩm đã tồn tại');
+    const detail = await ChiTietSanPham.create({ MaSP, MaKichThuoc, MaMau, SoLuongTon });
+    return detail;
   }
-};
+}
 
-module.exports = SanPhamService;
+module.exports = SanPhamService

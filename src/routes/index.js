@@ -14,6 +14,9 @@ const boPhanRoutes = require('./bophan');
 const authenticateJWT = require('../middlewares/jwt');
 const authorize = require('../middlewares/authorize');
 
+const donDatHangRoutes = require('./donDatHang');
+const trangThaiDHRoutes = require('./trangThaiDH');
+const hoaDonRoutes = require('./hoadon');
 
 const router = express.Router();
 
@@ -40,5 +43,14 @@ router.use("/gio-hang", gioHangRoutes);
 router.use("/category", loaiSPRoutes);
 router.use("/department", boPhanRoutes);
 router.use("/auth", authRoutes);
+
+// Routes cho đơn hàng khách hàng
+router.use("/don-dat-hang", donDatHangRoutes);
+router.use("/trang-thai-dh", trangThaiDHRoutes);
+
+// Routes cho API frontend (English naming)
+router.use("/orders", donDatHangRoutes);
+router.use("/order-statuses", trangThaiDHRoutes);
+router.use("/invoices", hoaDonRoutes);
 
 module.exports = router;

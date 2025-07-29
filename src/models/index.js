@@ -119,7 +119,9 @@ TrangThaiDH.hasMany(DonDatHang, { foreignKey: "MaTTDH" });
 
 // HoaDon
 HoaDon.belongsTo(DonDatHang, { foreignKey: "MaDDH" });
+HoaDon.belongsTo(NhanVien, { as: "NguoiLap", foreignKey: "MaNVLap" });
 DonDatHang.hasOne(HoaDon, { foreignKey: "MaDDH" });
+NhanVien.hasMany(HoaDon, { as: "HoaDonLap", foreignKey: "MaNVLap" });
 
 // PhieuTraHang
 PhieuTraHang.belongsTo(HoaDon, { foreignKey: "SoHD" });
