@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mauRoutes = require('./mau');
 const loaiSPRoutes = require('./loaiSP');
@@ -12,6 +11,9 @@ const kichThuocRoutes = require('./kichthuoc');
 const trangThaiDatHangRoutes = require('./trangthaidathang');
 const authRoutes = require('./auth');
 const boPhanRoutes = require('./bophan');
+const donDatHangRoutes = require('./donDatHang');
+const trangThaiDHRoutes = require('./trangThaiDH');
+const hoaDonRoutes = require('./hoadon');
 
 const router = express.Router();
 
@@ -39,4 +41,13 @@ router.use('/category', loaiSPRoutes);
 router.use('/department', boPhanRoutes);
 router.use('/auth', authRoutes);
 
-module.exports = router; 
+// Routes cho đơn hàng khách hàng
+router.use("/don-dat-hang", donDatHangRoutes);
+router.use("/trang-thai-dh", trangThaiDHRoutes);
+
+// Routes cho API frontend (English naming)
+router.use("/orders", donDatHangRoutes);
+router.use("/order-statuses", trangThaiDHRoutes);
+router.use("/invoices", hoaDonRoutes);
+
+module.exports = router;

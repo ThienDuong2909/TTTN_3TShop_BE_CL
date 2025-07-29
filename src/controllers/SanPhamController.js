@@ -4,9 +4,20 @@ const response = require("../utils/response");
 const SanPhamController = {
   getAll: async (req, res) => {
     try {
+      // const page = parseInt(req.query.page) || 1;
+      // const pageSize = parseInt(req.query.pageSize) || 8;
+      const data = await SanPhamService.getAll();
+      return response.success(res, data, "Lấy danh sách sản phẩm thành công");
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  getAllProducts: async (req, res) => {
+    try {
       const page = parseInt(req.query.page) || 1;
       const pageSize = parseInt(req.query.pageSize) || 8;
-      const { rows, count } = await SanPhamService.getAll({ page, pageSize });
+      const { rows, count } = await SanPhamService.getAllProducts({ page, pageSize });
       return response.success(res, {
         data: rows,
         total: count,
@@ -188,6 +199,18 @@ const SanPhamController = {
       }
       const result = await SanPhamService.updateMultipleStocks(items);
       return response.success(res, result, 'Cập nhật tồn kho nhiều chi tiết sản phẩm thành công');
+    } catch (err) {
+      return response.error(res, err.message);
+    }
+  },
+  addProductDetail: async (req, res) => {
+    try {
+      const { MaSP, MaKichThuoc, MaMau, SoLuongTon } = req.body;
+      if (!MaSP || !MaKichThuoc || !MaMau || SoLuongTon === undefined) {
+        return response.validationError(res, null, 'Thiếu thông tin để tạo chi tiết sản phẩm');
+      }
+      const result = await SanPhamService.addProductDetail({ MaSP, MaKichThuoc, MaMau, SoLuongTon });
+      return response.success(res, result, 'Thêm chi tiết sản phẩm thành công');
     } catch (err) {
       return response.error(res, err.message);
     }

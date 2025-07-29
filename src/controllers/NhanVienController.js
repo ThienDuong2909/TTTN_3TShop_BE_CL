@@ -95,6 +95,83 @@ const NhanVienController = {
       return response.error(res, err);
     }
   },
+
+  // Tìm nhân viên giao hàng tối ưu cho đơn hàng
+  findOptimalDeliveryStaff: async (req, res) => {
+    try {
+      const { diaChi } = req.body;
+      if (!diaChi) {
+        return response.error(res, null, 'Địa chỉ giao hàng là bắt buộc', 400);
+      }
+      
+      const data = await NhanVienService.findOptimalDeliveryStaff(diaChi);
+      return response.success(res, data, 'Tìm nhân viên giao hàng tối ưu thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Lấy danh sách nhân viên giao hàng khả dụng
+  getAvailableDeliveryStaff: async (req, res) => {
+    try {
+      const { diaChi } = req.body;
+      if (!diaChi) {
+        return response.error(res, null, 'Địa chỉ giao hàng là bắt buộc', 400);
+      }
+      
+      const data = await NhanVienService.getAvailableDeliveryStaff(diaChi);
+      return response.success(res, data, 'Lấy danh sách nhân viên giao hàng thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Lấy thống kê công việc nhân viên giao hàng
+  getDeliveryStaffWorkload: async (req, res) => {
+    try {
+      const MaNV = req.params.id || null;
+      const data = await NhanVienService.getDeliveryStaffWorkload(MaNV);
+      return response.success(res, data, 'Lấy thống kê công việc thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Phân công đơn hàng cho nhân viên giao hàng
+  assignOrderToDeliveryStaff: async (req, res) => {
+    try {
+      const { MaDDH, MaNV, GhiChu } = req.body;
+      
+      if (!MaDDH || !MaNV) {
+        return response.error(res, null, 'Mã đơn hàng và mã nhân viên là bắt buộc', 400);
+      }
+      
+      const data = await NhanVienService.assignOrderToDeliveryStaff(MaDDH, MaNV, GhiChu);
+      return response.success(res, data, 'Phân công đơn hàng thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  getByBoPhan: async (req, res) => {
+    try {
+      const maBoPhan = req.params.maBoPhan;
+      const data = await NhanVienService.getByBoPhan(maBoPhan);
+      return response.success(res, data, 'Lấy danh sách nhân viên theo bộ phận thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  getNhanVienGiaoHang: async (req, res) => {
+    try {
+      // Mã bộ phận Giao hàng là 11
+      const data = await NhanVienService.getByBoPhan(11);
+      return response.success(res, data, 'Lấy danh sách nhân viên giao hàng thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
 };
 
-module.exports = NhanVienController; 
+module.exports = NhanVienController;

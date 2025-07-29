@@ -7,6 +7,7 @@ const SanPhamController = require("../controllers/SanPhamController");
 const router = express.Router();
 
 router.get("/", SanPhamController.getAll);
+router.get("/get-all-products", SanPhamController.getAllProducts);
 // Lấy chi tiết sản phẩm
 router.get("/details", SanPhamController.getProductDetails);
 // Lấy chi tiết sản phẩm theo ID
@@ -39,4 +40,5 @@ router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 router.put('/detail/:maCTSP/stock', SanPhamController.updateProductDetailStock);
 router.put('/:id/update', SanPhamController.updateProduct);
 router.post('/update-stock', SanPhamController.updateMultipleProductDetailStocks);
+router.post('/add-detail', SanPhamController.addProductDetail);
 module.exports = router;
