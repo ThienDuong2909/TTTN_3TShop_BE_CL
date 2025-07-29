@@ -14,6 +14,12 @@ const PhieuNhapController = {
         chiTiet: req.body.details || req.body.chiTiet
       };
       const result = await PhieuNhapService.create(data);
+      
+      // Kiểm tra nếu có lỗi validation
+      if (result && result.success === false) {
+        return error(res, result.errors, result.message, 400);
+      }
+      
       return success(res, result, 'Tạo phiếu nhập thành công', 201);
     } catch (err) {
       return error(res, err);
