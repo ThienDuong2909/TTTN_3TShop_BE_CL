@@ -7,19 +7,16 @@ const {
   Mau,
   AnhSanPham,
   ThayDoiGia,
-  sequelize, CT_DotGiamGia, DotGiamGia,
+  sequelize,
   CT_DotGiamGia,
-  DotGiamGia,
-
+  DotGiamGia
 } = require("../models");
 const { Op } = require("sequelize");
 
 const SanPhamService = {
   getAll: async () => {
     const today = new Date().toISOString().split("T")[0];
-
     return await SanPham.findAll({
-
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -71,11 +68,6 @@ const SanPhamService = {
   getAllProducts: async ({ page = 1, pageSize = 8 } = {}) => {
     const offset = (page - 1) * pageSize;
     const { rows, count } = await SanPham.findAndCountAll({
-  getAll: async () => {
-    const today = new Date().toISOString().split("T")[0];
-
-    return await SanPham.findAll({
-
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -89,33 +81,6 @@ const SanPhamService = {
             { model: Mau, attributes: ["TenMau", "MaHex"] },
           ],
           attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
-        },
-        // Giá hiện tại
-        {
-          model: ThayDoiGia,
-          where: {
-            NgayApDung: { [Op.lte]: today },
-          },
-          separate: true,
-          limit: 1,
-          order: [["NgayApDung", "DESC"]],
-          attributes: ["Gia", "NgayApDung"],
-        },
-        // Giảm giá nếu có
-        {
-          model: CT_DotGiamGia,
-          include: [
-            {
-              model: DotGiamGia,
-              where: {
-                NgayBatDau: { [Op.lte]: today },
-                NgayKetThuc: { [Op.gte]: today },
-              },
-              required: true,
-              attributes: ["NgayBatDau", "NgayKetThuc", "MoTa"],
-            },
-          ],
-          attributes: ["PhanTramGiam"],
         },
       ],
       limit: pageSize,
@@ -522,11 +487,12 @@ const SanPhamService = {
         }
 
         await ThayDoiGia.create({
-          MaSP: id,
-          Gia: Gia,
-          NgayThayDoi: today,
-          NgayApDung: ngayApDungMoi
-        });
+            MaSP: id,
+            Gia: Gia,
+            NgayThayDoi: today,
+            NgayApDung: ngayApDungMoi
+          }
+        );
       }
     }
     return product;
@@ -537,10 +503,9 @@ const SanPhamService = {
       where: { MaSP, MaKichThuoc, MaMau }
     });
     if (existed) throw new Error('Chi tiết sản phẩm đã tồn tại');
-    // Tạo mới
     const detail = await ChiTietSanPham.create({ MaSP, MaKichThuoc, MaMau, SoLuongTon });
     return detail;
   }
-};
+}
 
-module.exports = SanPhamService;
+module.exports = SanPhamService
