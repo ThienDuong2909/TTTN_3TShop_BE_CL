@@ -12,14 +12,14 @@ const Mau = sequelize.define("Mau", {
     allowNull: false,
   },
   MaHex: DataTypes.STRING(7),
-  NgayTao: {
-    type: DataTypes.DATE,
-    allowNull: true,
-  },
-  TrangThai: {
-    type: DataTypes.BOOLEAN,
-    allowNull: true,
-  },
+  // NgayTao: {
+  //   type: DataTypes.DATE,
+  //   allowNull: true,
+  // },
+  // TrangThai: {
+  //   type: DataTypes.BOOLEAN,
+  //   allowNull: true,
+  // },
 });
 
 module.exports = Mau;

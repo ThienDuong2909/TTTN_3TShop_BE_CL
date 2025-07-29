@@ -21,6 +21,10 @@ const SanPham = sequelize.define("SanPham", {
   MoTa: DataTypes.TEXT,
   TrangThai: {
     type: DataTypes.BOOLEAN,
-  }
+  },
+  NgayTao: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 });
 module.exports = SanPham;

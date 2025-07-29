@@ -12,7 +12,7 @@ const kichThuocRoutes = require("./kichthuoc");
 const trangThaiDatHangRoutes = require("./trangthaidathang");
 const authRoutes = require("./auth");
 const boPhanRoutes = require("./bophan"); // Import BoPhan routes
-
+const tiGiaRoutes = require("./tigia"); // Import BoPhan routes
 
 const router = express.Router();
 
@@ -39,5 +39,7 @@ router.use("/gio-hang", gioHangRoutes);
 router.use("/category", loaiSPRoutes);
 router.use("/department", boPhanRoutes);
 router.use("/auth", authRoutes);
+
+router.use("/tigia", tiGiaRoutes);
 
 module.exports = router;

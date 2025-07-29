@@ -4,10 +4,10 @@ const CT_DonDatHang = require("../models/CT_DonDatHang");
 const ChiTietSanPham = require("../models/ChiTietSanPham");
 const KhachHang = require("../models/KhachHang");
 const Mau = require("../models/Mau");
+const TrangThaiDH = require("../models/TrangThaiDH");
 const KichThuoc = require("../models/KichThuoc");
 const SanPhamService = require("./SanPhamService");
-const MauService = require("./MauService");
-
+const NhanVien = require("../models/NhanVien");
 const GioHangService = {
   addToCart: async (maKH, maSP, maHex, tenKichThuoc, soLuongInput) => {
     const soLuong = Number(soLuongInput) || 1;
@@ -174,61 +174,14 @@ const GioHangService = {
 
     return updatedCart;
   },
-
-  // placeOrder: async (maKH, dsSanPham, diaChiGiao, nguoiNhan) => {
-  //   const donDatHang = await DonDatHang.findOne({
-  //     where: { MaKH: Number(maKH), MaTTDH: 6 },
-  //     include: [{ model: CT_DonDatHang }],
-  //   });
-
-  //   if (!donDatHang) throw new Error("Không tìm thấy đơn hàng đang chờ");
-
-  //   for (const sp of dsSanPham) {
-  //     const { maCTDDH, soLuong } = sp;
-
-  //     const ctDon = donDatHang.CT_DonDatHangs.find(
-  //       (item) => item.MaCTDDH === maCTDDH
-  //     );
-  //     if (!ctDon)
-  //       throw new Error(`Không tìm thấy chi tiết đơn hàng ${maCTDDH}`);
-
-  //     const chiTietSP = await ChiTietSanPham.findOne({
-  //       where: { MaCTSP: ctDon.MaCTSP },
-  //     });
-  //     if (!chiTietSP) throw new Error("Chi tiết sản phẩm không tồn tại");
-
-  //     if (soLuong > chiTietSP.SoLuongTon) {
-  //       throw new Error(`Sản phẩm ${ctDon.MaCTSP} không đủ tồn kho`);
-  //     }
-
-  //     // Cập nhật số lượng mới cho CT_DonDatHang
-  //     await CT_DonDatHang.update(
-  //       { SoLuong: soLuong },
-  //       { where: { MaCTDDH: maCTDDH } }
-  //     );
-
-  //     // Trừ tồn kho
-  //     await ChiTietSanPham.update(
-  //       { SoLuongTon: chiTietSP.SoLuongTon - soLuong },
-  //       { where: { MaCTSP: ctDon.MaCTSP } }
-  //     );
-  //   }
-
-  //   // Đổi trạng thái đơn hàng → Chờ xác nhận (MaTTDH = 1)
-  //   await DonDatHang.update(
-  //     { MaTTDH: 1 },
-  //     { where: { MaDDH: donDatHang.MaDDH } }
-  //   );
-
-  //   // Trả lại đơn đã cập nhật
-  //   const updatedOrder = await DonDatHang.findOne({
-  //     where: { MaDDH: donDatHang.MaDDH },
-  //     include: [{ model: CT_DonDatHang }],
-  //   });
-
-  //   return updatedOrder;
-  // },
-  placeOrder: async (maKH, dsSanPham, diaChiGiao, nguoiNhan) => {
+  placeOrder: async (
+    maKH,
+    dsSanPham,
+    diaChiGiao,
+    nguoiNhan,
+    SDT,
+    thoiGianGiao
+  ) => {
     const donDatHang = await DonDatHang.findOne({
       where: { MaKH: Number(maKH), MaTTDH: 6 },
       include: [{ model: CT_DonDatHang }],
@@ -239,18 +192,9 @@ const GioHangService = {
     for (const sp of dsSanPham) {
       const { maCTSP, soLuong } = sp;
 
-      // const mau = await Mau.findOne({ where: { MaHex } });
-      // const kichThuoc = await KichThuoc.findOne({ where: { TenKichThuoc } });
-
-      // if (!mau || !kichThuoc) {
-      //   throw new Error(`Không tìm thấy màu hoặc kích thước phù hợp`);
-      // }
-
       const chiTietSP = await ChiTietSanPham.findOne({
         where: {
           MaCTSP: Number(maCTSP),
-          // MaMau: mau.MaMau,
-          // MaKichThuoc: kichThuoc.MaKichThuoc,
         },
       });
 
@@ -263,13 +207,11 @@ const GioHangService = {
       );
 
       if (!ctDon) {
-        throw new Error(`Sản phẩm ${maSP} chưa có trong đơn hàng`);
+        throw new Error(`Sản phẩm ${maCTSP} chưa có trong đơn hàng`);
       }
 
       if (soLuong > chiTietSP.SoLuongTon) {
-        throw new Error(
-          `Sản phẩm ${maSP} - ${MaHex} - ${TenKichThuoc} không đủ tồn kho`
-        );
+        throw new Error(`Sản phẩm ${maCTSP} không đủ tồn kho`);
       }
 
       // Cập nhật lại số lượng đặt
@@ -285,12 +227,14 @@ const GioHangService = {
       );
     }
 
-    // Cập nhật trạng thái đơn hàng
+    // Cập nhật trạng thái đơn hàng và thêm SDT, ThoiGianGiao
     await DonDatHang.update(
       {
         MaTTDH: 1, // CHỜ XÁC NHẬN
         DiaChiGiao: diaChiGiao,
         NguoiNhan: nguoiNhan,
+        SDT: SDT,
+        ThoiGianGiao: thoiGianGiao,
       },
       { where: { MaDDH: donDatHang.MaDDH } }
     );
@@ -368,6 +312,75 @@ const GioHangService = {
       MaDDH: donDatHang.MaDDH,
       items: [],
     };
+  },
+  getAllOrdersByCustomer: async (maKH) => {
+    const orders = await DonDatHang.findAll({
+      where: { MaKH: Number(maKH), MaTTDH: { [Op.ne]: 6 } },
+      include: [
+        {
+          model: CT_DonDatHang,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                {
+                  model: require("../models/SanPham"),
+                  include: [
+                    { model: require("../models/AnhSanPham") }, // Thêm ở đây
+                  ],
+                },
+                { model: require("../models/Mau") },
+                { model: require("../models/KichThuoc") },
+              ],
+            },
+          ],
+        },
+        {
+          model: TrangThaiDH,
+          attributes: ["MaTTDH", "TrangThai", "Note", "ThoiGianCapNhat"],
+        },
+      ],
+      order: [["NgayTao", "DESC"]],
+    });
+
+    return orders;
+  },
+  getOrderById: async (maDDH, maKH) => {
+    const order = await DonDatHang.findOne({
+      where: { MaDDH: Number(maDDH), MaKH: Number(maKH) },
+      include: [
+        {
+          model: CT_DonDatHang,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                {
+                  model: require("../models/SanPham"),
+                  include: [{ model: require("../models/AnhSanPham") }],
+                },
+                { model: require("../models/Mau") },
+                { model: require("../models/KichThuoc") },
+              ],
+            },
+          ],
+        },
+        {
+          model: TrangThaiDH,
+          attributes: ["MaTTDH", "TrangThai", "Note", "ThoiGianCapNhat"],
+        },
+        {
+          model: NhanVien,
+          as: "NguoiDuyet",
+        },
+        {
+          model: NhanVien,
+          as: "NguoiGiao",
+        },
+      ],
+    });
+
+    return order;
   },
 };
 

@@ -1,5 +1,5 @@
 const express = require("express");
-const upload = require('../middlewares/upload');
+const upload = require("../middlewares/upload");
 const SanPhamController = require("../controllers/SanPhamController");
 // const authenticateJWT = require('../middlewares/jwt');
 // const authorize = require('../middlewares/authorize');
@@ -7,6 +7,11 @@ const SanPhamController = require("../controllers/SanPhamController");
 const router = express.Router();
 
 router.get("/", SanPhamController.getAll);
+// Lấy sản phẩm mới
+router.get("/new-product", SanPhamController.getNewProducts);
+router.get("/best-sellers", SanPhamController.getBestSellers);
+router.get("/discount", SanPhamController.getAllDiscountProducts);
+router.get("/search", SanPhamController.searchProducts);
 // Lấy chi tiết sản phẩm
 router.get("/details", SanPhamController.getProductDetails);
 // Lấy chi tiết sản phẩm theo ID
@@ -21,10 +26,7 @@ router.get(
 // Lấy sản phẩm theo id
 router.get("/:id", SanPhamController.getById);
 // Thêm sản phẩm
-router.post(
-  "/",
-  SanPhamController.createProduct
-);
+router.post("/", SanPhamController.createProduct);
 // Sửa sản phẩm
 router.put(
   "/:id",
@@ -36,7 +38,11 @@ router.delete(
   /*authenticateJWT, authorize('Admin'),*/ SanPhamController.delete
 );
 router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
-router.put('/detail/:maCTSP/stock', SanPhamController.updateProductDetailStock);
-router.put('/:id/update', SanPhamController.updateProduct);
-router.post('/update-stock', SanPhamController.updateMultipleProductDetailStocks);
+router.put("/detail/:maCTSP/stock", SanPhamController.updateProductDetailStock);
+router.put("/:id/update", SanPhamController.updateProduct);
+router.post(
+  "/update-stock",
+  SanPhamController.updateMultipleProductDetailStocks
+);
+
 module.exports = router;
