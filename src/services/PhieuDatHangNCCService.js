@@ -11,6 +11,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const sequelize = require('../models/sequelize');
+const EmailService = require('./EmailService');
 
 
 const PhieuDatHangNCCService = {
@@ -149,9 +150,58 @@ const PhieuDatHangNCCService = {
   },
   
   updateStatus: async (id, statusId) => {
-    const phieu = await PhieuDatHangNCC.findByPk(id);
+    const phieu = await PhieuDatHangNCC.findByPk(id, {
+      include: [
+        { 
+          model: CT_PhieuDatHangNCC,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                { model: SanPham },
+                { model: KichThuoc },
+                { model: Mau }
+              ]
+            }
+          ]
+        },
+        { model: NhanVien },
+        { model: NhaCungCap },
+        { model: TrangThaiDatHangNCC }
+      ]
+    });
+    
     if (!phieu) return null;
+    
+    // Lưu trạng thái cũ để kiểm tra
+    const oldStatus = phieu.MaTrangThai;
+    
+    // Cập nhật trạng thái mới
     await phieu.update({ MaTrangThai: statusId });
+    
+    // Nếu trạng thái thay đổi từ 1 (PENDING) sang 2 (APPROVED), gửi email
+    let emailResult = null;
+    if (oldStatus === 1 && statusId === 2) {
+      try {
+        // Lấy email nhà cung cấp từ database hoặc sử dụng email mặc định
+        const supplierEmail = 'lvthanh.work@gmail.com';
+        
+        // Gửi email với file Excel đính kèm
+        emailResult = await EmailService.sendPurchaseOrderEmail(phieu, supplierEmail);
+        
+        console.log(`Đã gửi email phiếu đặt hàng ${phieu.MaPDH} đến ${supplierEmail}`);
+      } catch (emailError) {
+        console.error('Lỗi gửi email:', emailError);
+        // Không throw error để không ảnh hưởng đến việc cập nhật trạng thái
+      }
+    }
+    
+    // Trả về kết quả bao gồm thông tin email và file Excel
+    return {
+      phieu: phieu,
+      emailResult: emailResult
+    };
+    
     return phieu;
   },
   
@@ -214,6 +264,60 @@ const PhieuDatHangNCCService = {
     }
     
     return phieu;
+  },
+  // Lấy trạng thái nhập hàng của từng sản phẩm trong phiếu đặt hàng NCC
+  getReceivedStatusByPDH: async (maPDH) => {
+    const { CT_PhieuDatHangNCC, ChiTietSanPham, SanPham, KichThuoc, Mau, PhieuNhap, CT_PhieuNhap } = require('../models');
+    // Lấy chi tiết đặt hàng
+    const chiTietDat = await CT_PhieuDatHangNCC.findAll({
+      where: { MaPDH: maPDH },
+      include: [
+        {
+          model: ChiTietSanPham,
+          include: [
+            { model: SanPham, attributes: ['MaSP', 'TenSP'] },
+            { model: KichThuoc, attributes: ['TenKichThuoc'] },
+            { model: Mau, attributes: ['TenMau', 'MaHex'] },
+          ]
+        }
+      ]
+    });
+    // Lấy tất cả phiếu nhập liên quan đến phiếu đặt này
+    const phieuNhapList = await PhieuNhap.findAll({
+      where: { MaPDH: maPDH },
+      attributes: ['SoPN']
+    });
+    const soPNs = phieuNhapList.map(pn => pn.SoPN);
+    // Lấy tổng số lượng đã nhập cho từng MaCTSP
+    let nhapMap = {};
+    if (soPNs.length > 0) {
+      const nhapList = await CT_PhieuNhap.findAll({
+        where: { SoPN: soPNs },
+        attributes: ['MaCTSP', [require('sequelize').fn('SUM', require('sequelize').col('SoLuong')), 'SoLuongNhap']],
+        group: ['MaCTSP']
+      });
+      nhapList.forEach(item => {
+        nhapMap[item.MaCTSP] = Number(item.get('SoLuongNhap')) || 0;
+      });
+    }
+    // Gộp kết quả
+    const result = chiTietDat.map(ct => {
+      const ctsp = ct.ChiTietSanPham;
+      return {
+        MaCTSP: ct.MaCTSP,
+        MaSP: ctsp?.SanPham?.MaSP,
+        TenSP: ctsp?.SanPham?.TenSP,
+        MaKichThuoc: ctsp?.MaKichThuoc,
+        TenKichThuoc: ctsp?.KichThuoc?.TenKichThuoc,
+        MaMau: ctsp?.MaMau,
+        TenMau: ctsp?.Mau?.TenMau,
+        MaHex: ctsp?.Mau?.MaHex,
+        SoLuongDat: ct.SoLuong,
+        SoLuongNhap: nhapMap[ct.MaCTSP] || 0,
+        SoLuongConLai: Math.max(0, ct.SoLuong - (nhapMap[ct.MaCTSP] || 0))
+      };
+    });
+    return result;
   },
 };
 

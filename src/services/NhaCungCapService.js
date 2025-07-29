@@ -1,8 +1,18 @@
 const { NhaCungCap } = require('../models');
 
 const NhaCungCapService = {
-  getAll: async () => {
-    return await NhaCungCap.findAll();
+  getAll: async (page = 1, pageSize = 8) => {
+    const offset = (page - 1) * pageSize;
+    const { count, rows } = await NhaCungCap.findAndCountAll({
+      limit: pageSize,
+      offset: offset,
+    });
+    return {
+      totalItems: count,
+      totalPages: Math.ceil(count / pageSize),
+      currentPage: page,
+      data: rows,
+    };
   },
   
   getById: async (id) => {

@@ -28,6 +28,10 @@ const DonDatHang = sequelize.define("DonDatHang", {
     type: DataTypes.INTEGER,
     references: { model: "TrangThaiDH", key: "MaTTDH" },
   },
+  SDT : {
+    type: DataTypes.STRING,
+    allowNull: false,
+  }
 });
 
 module.exports = DonDatHang;

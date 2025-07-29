@@ -15,6 +15,11 @@ const HoaDon = sequelize.define('HoaDon', {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
+  MaNVLap: {
+    type: DataTypes.INTEGER,
+    references: { model: 'NhanVien', key: 'MaNV' },
+    allowNull: true,
+  },
 });
 
 module.exports = HoaDon; 

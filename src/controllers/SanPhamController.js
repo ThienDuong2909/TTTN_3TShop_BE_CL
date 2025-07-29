@@ -4,12 +4,14 @@ const response = require("../utils/response");
 const SanPhamController = {
   getAll: async (req, res) => {
     try {
+
       const data = await SanPhamService.getAll();
       return response.success(res, data, "Lấy danh sách sản phẩm thành công");
     } catch (err) {
       return response.error(res, err);
     }
   },
+
   getNewProducts: async (req, res) => {
     console.log("Fetching new products...");
     try {
@@ -19,6 +21,20 @@ const SanPhamController = {
         data,
         "Lấy danh sách sản phẩm mới thành công"
       );
+
+
+  getAllProducts: async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 8;
+      const { rows, count } = await SanPhamService.getAllProducts({ page, pageSize });
+      return response.success(res, {
+        data: rows,
+        total: count,
+        page,
+        pageSize
+      }, "Lấy danh sách sản phẩm thành công");
+
     } catch (err) {
       return response.error(res, err);
     }
@@ -243,6 +259,25 @@ const SanPhamController = {
         data,
         "Lấy danh sách sản phẩm giảm giá thành công"
       );
+
+  addProductDetail: async (req, res) => {
+    try {
+      const { MaSP, MaKichThuoc, MaMau, SoLuongTon } = req.body;
+      if (!MaSP || !MaKichThuoc || !MaMau || SoLuongTon === undefined) {
+        return response.validationError(res, null, 'Thiếu thông tin để tạo chi tiết sản phẩm');
+      }
+      const result = await SanPhamService.addProductDetail({ MaSP, MaKichThuoc, MaMau, SoLuongTon });
+      return response.success(res, result, 'Thêm chi tiết sản phẩm thành công');
+    } catch (err) {
+      return response.error(res, err.message);
+    }
+  },
+  // API: Thống kê số lượng đã đặt và đã nhập cho từng sản phẩm (theo từng biến thể)
+  getOrderedVsReceived: async (req, res) => {
+    try {
+      const data = await SanPhamService.getOrderedVsReceived();
+      return response.success(res, data, 'Thống kê số lượng đã đặt và đã nhập cho từng sản phẩm');
+
     } catch (err) {
       return response.error(res, err);
     }

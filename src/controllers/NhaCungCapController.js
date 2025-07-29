@@ -4,7 +4,9 @@ const response = require('../utils/response');
 const NhaCungCapController = {
   getAll: async (req, res) => {
     try {
-      const data = await NhaCungCapService.getAll();
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = 8;
+      const data = await NhaCungCapService.getAll(page, pageSize);
       return response.success(res, data, 'Lấy danh sách nhà cung cấp thành công');
     } catch (err) {
       return response.error(res, err);

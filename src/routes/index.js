@@ -5,8 +5,15 @@ const phieuDatHangNCCRoutes = require("./phieuDatHangNCC");
 const phieuNhapRoutes = require("./phieuNhap");
 const nhanVienRoutes = require("./nhanvien");
 const nhaCungCapRoutes = require("./nhacungcap");
-const sanPhamRoutes = require("./sanPham");
+const sanPhamRoutes = require("./sanpham");
 const gioHangRoutes = require("./gioHang");
+const kichThuocRoutes = require('./kichthuoc');
+const trangThaiDatHangRoutes = require('./trangthaidathang');
+const authRoutes = require('./auth');
+const boPhanRoutes = require('./bophan');
+const authenticateJWT = require('../middlewares/jwt');
+const authorize = require('../middlewares/authorize');
+
 
 const kichThuocRoutes = require("./kichthuoc");
 const trangThaiDatHangRoutes = require("./trangthaidathang");
@@ -14,9 +21,14 @@ const authRoutes = require("./auth");
 const boPhanRoutes = require("./bophan"); // Import BoPhan routes
 const tiGiaRoutes = require("./tigia"); // Import BoPhan routes
 
+const donDatHangRoutes = require('./donDatHang');
+const trangThaiDHRoutes = require('./trangThaiDH');
+const hoaDonRoutes = require('./hoadon');
+
+
 const router = express.Router();
 
-// Existing routes
+
 router.use("/mau", mauRoutes);
 router.use("/phieu-dat-hang-ncc", phieuDatHangNCCRoutes);
 router.use("/phieu-nhap", phieuNhapRoutes);
@@ -40,6 +52,16 @@ router.use("/category", loaiSPRoutes);
 router.use("/department", boPhanRoutes);
 router.use("/auth", authRoutes);
 
+
 router.use("/tigia", tiGiaRoutes);
+
+// Routes cho đơn hàng khách hàng
+router.use("/don-dat-hang", donDatHangRoutes);
+router.use("/trang-thai-dh", trangThaiDHRoutes);
+
+// Routes cho API frontend (English naming)
+router.use("/orders", donDatHangRoutes);
+router.use("/order-statuses", trangThaiDHRoutes);
+router.use("/invoices", hoaDonRoutes);
 
 module.exports = router;
