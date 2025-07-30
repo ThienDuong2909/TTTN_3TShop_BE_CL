@@ -7,27 +7,24 @@ const nhanVienRoutes = require("./nhanvien");
 const nhaCungCapRoutes = require("./nhacungcap");
 const sanPhamRoutes = require("./sanpham");
 const gioHangRoutes = require("./gioHang");
-const kichThuocRoutes = require('./kichthuoc');
-const trangThaiDatHangRoutes = require('./trangthaidathang');
-const authRoutes = require('./auth');
-const boPhanRoutes = require('./bophan');
-const authenticateJWT = require('../middlewares/jwt');
-const authorize = require('../middlewares/authorize');
-
-
 const kichThuocRoutes = require("./kichthuoc");
 const trangThaiDatHangRoutes = require("./trangthaidathang");
 const authRoutes = require("./auth");
-const boPhanRoutes = require("./bophan"); // Import BoPhan routes
+const boPhanRoutes = require("./bophan");
+const authenticateJWT = require("../middlewares/jwt");
+const authorize = require("../middlewares/authorize");
+
+// const kichThuocRoutes = require("./kichthuoc");
+// const trangThaiDatHangRoutes = require("./trangthaidathang");
+// const authRoutes = require("./auth");
+// const boPhanRoutes = require("./bophan"); // Import BoPhan routes
 const tiGiaRoutes = require("./tigia"); // Import BoPhan routes
 
-const donDatHangRoutes = require('./donDatHang');
-const trangThaiDHRoutes = require('./trangThaiDH');
-const hoaDonRoutes = require('./hoadon');
-
+const donDatHangRoutes = require("./donDatHang");
+const trangThaiDHRoutes = require("./trangThaiDH");
+const hoaDonRoutes = require("./hoadon");
 
 const router = express.Router();
-
 
 router.use("/mau", mauRoutes);
 router.use("/phieu-dat-hang-ncc", phieuDatHangNCCRoutes);
@@ -51,7 +48,6 @@ router.use("/gio-hang", gioHangRoutes);
 router.use("/category", loaiSPRoutes);
 router.use("/department", boPhanRoutes);
 router.use("/auth", authRoutes);
-
 
 router.use("/tigia", tiGiaRoutes);
 
