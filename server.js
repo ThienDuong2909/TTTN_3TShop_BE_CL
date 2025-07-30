@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// API Logger Middleware - Log all API calls
+// API Logger Middleware - Log all API calls (sau khi đã parse body)
 app.use('/api', logger);
 
 // Routes
