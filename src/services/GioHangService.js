@@ -64,6 +64,7 @@ const GioHangService = {
         DiaChiGiao: khachHang.DiaChi,
         NguoiNhan: khachHang.TenKH,
         MaTTDH: 6,
+        SDT: "0123456789",
       });
       donDatHang.CT_DonDatHangs = [];
     }
