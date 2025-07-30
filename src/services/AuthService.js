@@ -44,7 +44,8 @@ const AuthService = {
     return {
       token,
       user: userInfo,
-      role: taiKhoan.VaiTro.TenVaiTro
+      role: taiKhoan.VaiTro.TenVaiTro,
+      id: userInfo.MaTK || userInfo.MaKH
     };
   },
 
