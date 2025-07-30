@@ -19,7 +19,7 @@ const AuthService = {
     }
     // Get user info based on role
     let userInfo = null;
-    if (taiKhoan.VaiTro.TenVaiTro === 'NhanVien' || taiKhoan.VaiTro.TenVaiTro === 'Admin') {
+    if (taiKhoan.VaiTro.TenVaiTro === 'Admin' || taiKhoan.VaiTro.TenVaiTro === 'NhanVienCuaHang' || taiKhoan.VaiTro.TenVaiTro === 'NhanVienGiaoHang') {
       userInfo = await NhanVien.findOne({
         where: { MaTK: taiKhoan.MaTK },
         include: [{ model: TaiKhoan, include: [{ model: VaiTro }] }]
@@ -51,7 +51,7 @@ const AuthService = {
 
   register: async (userData) => {
     // Không cho phép đăng ký nhân viên qua API này
-    if (userData.MaVaiTro === 2 || userData.TenNV || userData.NgaySinh || userData.Luong) {
+    if (userData.MaVaiTro === 2 || userData.MaVaiTro === 3 || userData.TenNV || userData.NgaySinh || userData.Luong) {
       throw new Error('Chỉ admin mới được phép tạo tài khoản nhân viên');
     }
     // Check if email already exists
@@ -67,7 +67,7 @@ const AuthService = {
     const taiKhoan = await TaiKhoan.create({
       Email: userData.Email,
       Password: hashedPassword,
-      MaVaiTro: 3 // Luôn là khách hàng
+      MaVaiTro: 4 // Luôn là khách hàng
     });
     // Create KhachHang
     const userRecord = await KhachHang.create({

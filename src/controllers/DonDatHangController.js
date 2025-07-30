@@ -267,6 +267,57 @@ const DonDatHangController = {
       console.error('Error in updateBatchStatus:', err);
       return response.error(res, err.message || 'Lỗi khi cập nhật trạng thái đơn hàng hàng loạt');
     }
+  },
+
+  // === METHODS CHO NHÂN VIÊN GIAO HÀNG ===
+  
+  // Lấy đơn hàng được phân công cho nhân viên giao hàng
+  getAssignedOrders: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, status } = req.query;
+      const maNVGiao = req.user.id || req.user.MaTK; // Lấy ID nhân viên từ JWT token
+      
+      if (!maNVGiao) {
+        return response.error(res, null, 'Không xác định được nhân viên giao hàng', 400);
+      }
+
+      const parsedPage = Math.max(1, parseInt(page) || 1);
+      const parsedLimit = Math.max(1, Math.min(100, parseInt(limit) || 10));
+      const parsedStatus = status ? parseInt(status) : null;
+
+      const data = await DonDatHangService.getAssignedOrders(maNVGiao, parsedPage, parsedLimit, parsedStatus);
+      return response.success(res, data, 'Lấy danh sách đơn hàng được phân công thành công');
+    } catch (err) {
+      console.error('Error in getAssignedOrders:', err);
+      return response.error(res, err.message || 'Lỗi khi lấy danh sách đơn hàng được phân công');
+    }
+  },
+
+  // Xác nhận đã giao hàng xong
+  confirmDelivery: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const maNVGiao = req.user.id || req.user.MaTK;
+      
+      if (!maNVGiao) {
+        return response.error(res, null, 'Không xác định được nhân viên giao hàng', 400);
+      }
+
+      if (!id || isNaN(id)) {
+        return response.error(res, null, 'Mã đơn hàng không hợp lệ', 400);
+      }
+
+      const data = await DonDatHangService.confirmDelivery(parseInt(id), maNVGiao);
+      
+      if (!data) {
+        return response.notFound(res, 'Không tìm thấy đơn hàng hoặc đơn hàng không được phân công cho bạn');
+      }
+      
+      return response.success(res, data, 'Xác nhận giao hàng thành công');
+    } catch (err) {
+      console.error('Error in confirmDelivery:', err);
+      return response.error(res, err.message || 'Lỗi khi xác nhận giao hàng');
+    }
   }
 };
 

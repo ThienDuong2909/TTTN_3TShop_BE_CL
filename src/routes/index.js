@@ -23,6 +23,7 @@ const tiGiaRoutes = require("./tigia"); // Import BoPhan routes
 const donDatHangRoutes = require("./donDatHang");
 const trangThaiDHRoutes = require("./trangThaiDH");
 const hoaDonRoutes = require("./hoadon");
+const binhLuanRoutes = require("./binhLuan");
 
 const router = express.Router();
 
@@ -59,5 +60,9 @@ router.use("/trang-thai-dh", trangThaiDHRoutes);
 router.use("/orders", donDatHangRoutes);
 router.use("/order-statuses", trangThaiDHRoutes);
 router.use("/invoices", hoaDonRoutes);
+
+// Routes cho bình luận sản phẩm
+router.use("/binh-luan", binhLuanRoutes);
+router.use("/comments", binhLuanRoutes); // English alias
 
 module.exports = router;

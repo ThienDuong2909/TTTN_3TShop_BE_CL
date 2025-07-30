@@ -62,10 +62,17 @@ const NhanVienService = {
       }
       // Tạo tài khoản
       const hashedPassword = await bcrypt.hash(Password, 10);
+      
+      // Xác định vai trò dựa trên KhuVuc
+      let maVaiTro = 2; // Mặc định là NhanVienCuaHang
+      if (KhuVuc) {
+        maVaiTro = 3; // NhanVienGiaoHang nếu có KhuVuc
+      }
+      
       const taiKhoan = await TaiKhoan.create({
         Email,
         Password: hashedPassword,
-        MaVaiTro: 2, // Staff
+        MaVaiTro: maVaiTro,
       }, { transaction: t });
       // Tạo nhân viên với KhuVuc nếu có
       const nhanVienData = {
