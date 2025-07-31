@@ -14,6 +14,7 @@ router.get('/:id', controller.getById);
 router.get('/:id/for-receipt', controller.getForReceipt);
 router.get('/:id/received-status', controller.getReceivedStatusByPDH);
 router.put('/:id/status', controller.updateStatus);
+router.put('/:id/ngay-kien-nghi-giao', controller.updateNgayKienNghiGiao);
 router.get('/:id/download-excel', controller.downloadExcel);
 router.get('/:id/excel-info', controller.getExcelInfo);
 
