@@ -704,6 +704,142 @@ const DonDatHangService = {
       await transaction.rollback();
       throw error;
     }
+  },
+
+  // === METHODS CHO NHÂN VIÊN GIAO HÀNG ===
+
+  // Lấy đơn hàng được phân công cho nhân viên giao hàng
+  getAssignedOrders: async (maNVGiao, page = 1, limit = 10, status = null) => {
+    const offset = (page - 1) * limit;
+    
+    const whereCondition = {
+      MaNV_Giao: maNVGiao
+    };
+    
+    // Thêm điều kiện trạng thái nếu có
+    if (status !== null) {
+      whereCondition.MaTTDH = status;
+    }
+
+    const { count, rows } = await DonDatHang.findAndCountAll({
+      where: whereCondition,
+      include: [
+        {
+          model: KhachHang,
+          attributes: ['MaKH', 'TenKH', 'SDT', 'DiaChi', 'CCCD']
+        },
+        {
+          model: NhanVien,
+          as: 'NguoiDuyet',
+          attributes: ['MaNV', 'TenNV'],
+          required: false
+        },
+        {
+          model: NhanVien,
+          as: 'NguoiGiao',
+          attributes: ['MaNV', 'TenNV'],
+          required: false
+        },
+        {
+          model: TrangThaiDH,
+          attributes: ['MaTTDH', 'TrangThai']
+        },
+        {
+          model: CT_DonDatHang,
+          include: [
+            {
+              model: ChiTietSanPham,
+              include: [
+                {
+                  model: SanPham,
+                  attributes: ['MaSP', 'TenSP']
+                },
+                {
+                  model: KichThuoc,
+                  attributes: ['MaKichThuoc', 'TenKichThuoc']
+                },
+                {
+                  model: Mau,
+                  attributes: ['MaMau', 'TenMau', 'MaHex']
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: [['NgayTao', 'DESC']],
+      limit: parseInt(limit),
+      offset: offset,
+      distinct: true
+    });
+
+    // Tính tổng tiền cho mỗi đơn hàng
+    const ordersWithTotal = rows.map(order => {
+      const orderData = order.toJSON();
+      let tongTien = 0;
+      
+      if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
+        tongTien = orderData.CT_DonDatHangs.reduce((sum, item) => {
+          const donGia = parseFloat(item.DonGia) || 0;
+          const soLuong = parseInt(item.SoLuong) || 0;
+          return sum + (donGia * soLuong);
+        }, 0);
+      }
+      
+      return {
+        ...orderData,
+        TongTien: Math.round(tongTien * 100) / 100
+      };
+    });
+
+    return {
+      orders: ordersWithTotal,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    };
+  },
+
+  // Xác nhận đã giao hàng xong
+  confirmDelivery: async (maDDH, maNVGiao) => {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // Kiểm tra đơn hàng tồn tại và được phân công cho nhân viên này
+      const order = await DonDatHang.findOne({
+        where: {
+          MaDDH: maDDH,
+          MaNV_Giao: maNVGiao
+        },
+        transaction
+      });
+      
+      if (!order) {
+        throw new Error('Không tìm thấy đơn hàng hoặc đơn hàng không được phân công cho bạn');
+      }
+
+      // Kiểm tra trạng thái đơn hàng (chỉ cho phép xác nhận khi đang giao hàng)
+      if (order.MaTTDH !== 3) {
+        throw new Error('Chỉ có thể xác nhận giao hàng cho đơn hàng đang trong quá trình giao');
+      }
+
+      // Cập nhật trạng thái sang "Đã giao hàng"
+      await order.update({
+        MaTTDH: 4, // Trạng thái "Đã giao hàng"
+        ThoiGianHoanThanh: new Date()
+      }, { transaction });
+
+      await transaction.commit();
+
+      // Trả về thông tin đơn hàng đã cập nhật
+      return await DonDatHangService.getById(maDDH);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 };
 

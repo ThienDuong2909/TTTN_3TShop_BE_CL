@@ -173,6 +173,17 @@ const PhieuDatHangNCCController = {
       return error(res, err);
     }
   },
+  
+  updateNgayKienNghiGiao: async (req, res) => {
+    try {
+      const { NgayKienNghiGiao } = req.body;
+      const result = await PhieuDatHangNCCService.updateNgayKienNghiGiao(req.params.id, NgayKienNghiGiao);
+      if (!result) return notFound(res, 'Không tìm thấy phiếu đặt hàng NCC');
+      return success(res, result, 'Cập nhật ngày kiến nghị giao thành công');
+    } catch (err) {
+      return error(res, err);
+    }
+  },
 };
 
 module.exports = PhieuDatHangNCCController; 

@@ -1,7 +1,7 @@
 const express = require('express');
 const DonDatHangController = require('../controllers/DonDatHangController');
 const authenticateJWT = require('../middlewares/jwt');
-const authorize = require('../middlewares/authorize');
+const { authorize, checkPermission, checkOwnership } = require('../middlewares/authorize');
 
 const router = express.Router();
 
@@ -27,27 +27,42 @@ router.get('/:id/detail', DonDatHangController.getDetailById);
 // Lấy chi tiết đơn hàng theo ID (basic)
 router.get('/:id', DonDatHangController.getById);
 
+// === ROUTES CHO NHÂN VIÊN GIAO HÀNG ===
+// Lấy đơn hàng được phân công cho nhân viên giao hàng
+router.get('/delivery/assigned', 
+  authenticateJWT, 
+  authorize('NhanVienGiaoHang'), 
+  DonDatHangController.getAssignedOrders
+);
+
+// Xác nhận đã giao hàng xong
+router.put('/delivery/:id/confirm', 
+  authenticateJWT, 
+  authorize('NhanVienGiaoHang'), 
+  DonDatHangController.confirmDelivery
+);
+
 // Cập nhật trạng thái nhiều đơn hàng cùng lúc
 // Body: { orders: [{ id: number, maTTDH: number, maNVDuyet?: number, maNVGiao?: number }] }
 router.put('/batch/status', 
-  // authenticateJWT, 
-  // authorize('Admin', 'NhanVien'), 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
   DonDatHangController.updateBatchStatus
 );
 
 // Cập nhật nhân viên giao hàng cho đơn hàng
 // Body: { maNVGiao: number }
 router.put('/:id/delivery-staff', 
-  // authenticateJWT, 
-  // authorize('Admin', 'NhanVien'), 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
   DonDatHangController.updateDeliveryStaff
 );
 
 // Cập nhật trạng thái đơn hàng
 // Body: { maTTDH: number, maNVDuyet?: number, maNVGiao?: number }
 router.put('/:id/status', 
-  // authenticateJWT, 
-  // authorize('Admin', 'NhanVien'), 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang', 'NhanVienGiaoHang'), 
   DonDatHangController.updateStatus
 );
 
