@@ -10,6 +10,11 @@ const PhieuDatHangNCC = sequelize.define('PhieuDatHangNCC', {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
+  NgayKienNghiGiao: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    comment: 'Ngày kiến nghị giao hàng từ nhà cung cấp'
+  },
   MaNV: {
     type: DataTypes.INTEGER,
     references: { model: 'NhanVien', key: 'MaNV' },

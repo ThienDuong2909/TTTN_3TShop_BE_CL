@@ -1,8 +1,8 @@
 const express = require("express");
 const upload = require("../middlewares/upload");
 const SanPhamController = require("../controllers/SanPhamController");
-// const authenticateJWT = require('../middlewares/jwt');
-// const authorize = require('../middlewares/authorize');
+const authenticateJWT = require('../middlewares/jwt');
+const { authorize, checkPermission } = require('../middlewares/authorize');
 
 const router = express.Router();
 
@@ -30,22 +30,22 @@ router.get(
 // Lấy sản phẩm theo id
 router.get("/:id", SanPhamController.getById);
 // Thêm sản phẩm
-router.post("/", SanPhamController.createProduct);
+router.post("/", authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.createProduct);
 // Sửa sản phẩm
 router.put(
   "/:id",
-  /*authenticateJWT, authorize('Admin'),*/ SanPhamController.update
+  authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.update
 );
 // Xóa sản phẩm
 router.delete(
   "/:id",
-  /*authenticateJWT, authorize('Admin'),*/ SanPhamController.delete
+  authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.delete
 );
 router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 
-router.put('/detail/:maCTSP/stock', SanPhamController.updateProductDetailStock);
-router.put('/:id/update', SanPhamController.updateProduct);
-router.post('/update-stock', SanPhamController.updateMultipleProductDetailStocks);
-router.post('/add-detail', SanPhamController.addProductDetail);
+router.put('/detail/:maCTSP/stock', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateProductDetailStock);
+router.put('/:id/update', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateProduct);
+router.post('/update-stock', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateMultipleProductDetailStocks);
+router.post('/add-detail', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.addProductDetail);
 
 module.exports = router;

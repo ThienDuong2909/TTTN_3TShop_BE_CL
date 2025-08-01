@@ -3,11 +3,11 @@ const controller = require('../controllers/PhieuNhapController');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const authenticateJWT = require('../middlewares/jwt');
-const authorize = require('../middlewares/authorize');
+const { authorize, checkPermission } = require('../middlewares/authorize');
 const router = express.Router();
 
-// Áp dụng cho tất cả endpoint
-router.use(authenticateJWT, authorize('Admin', 'NhanVien'));
+// Áp dụng cho tất cả endpoint - chỉ Admin và Nhân viên cửa hàng
+router.use(authenticateJWT, authorize('Admin', 'NhanVienCuaHang'));
 
 router.post('/', controller.create);
 router.get('/', controller.getAll);

@@ -4,8 +4,9 @@ async function seedRoles() {
   await sequelize.sync();
   const roles = [
     { MaVaiTro: 1, TenVaiTro: 'Admin' },
-    { MaVaiTro: 2, TenVaiTro: 'NhanVien' },
-    { MaVaiTro: 3, TenVaiTro: 'KhachHang' }
+    { MaVaiTro: 2, TenVaiTro: 'NhanVienCuaHang' },
+    { MaVaiTro: 3, TenVaiTro: 'NhanVienGiaoHang' },
+    { MaVaiTro: 4, TenVaiTro: 'KhachHang' }
   ];
   for (const role of roles) {
     await VaiTro.findOrCreate({ where: { MaVaiTro: role.MaVaiTro }, defaults: role });

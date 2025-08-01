@@ -24,6 +24,16 @@ const PhieuDatHangNCCService = {
     if (!data.NgayDat || !MaNV || !data.MaNCC || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
       throw new Error('Thiếu thông tin phiếu đặt hàng hoặc chi tiết phiếu');
     }
+    
+    // Validate NgayKienNghiGiao if provided
+    if (data.NgayKienNghiGiao) {
+      const ngayDat = new Date(data.NgayDat);
+      const ngayKienNghiGiao = new Date(data.NgayKienNghiGiao);
+      
+      if (ngayKienNghiGiao < ngayDat) {
+        throw new Error('Ngày kiến nghị giao không thể trước ngày đặt hàng');
+      }
+    }
 
     // Use transaction to ensure atomicity
     const transaction = await sequelize.transaction();
@@ -54,6 +64,7 @@ const PhieuDatHangNCCService = {
       const phieu = await PhieuDatHangNCC.create({
         MaPDH: MaPDH,
         NgayDat: data.NgayDat,
+        NgayKienNghiGiao: data.NgayKienNghiGiao,
         MaNV: MaNV,
         MaNCC: data.MaNCC,
         MaTrangThai: data.MaTrangThai,
@@ -318,6 +329,27 @@ const PhieuDatHangNCCService = {
       };
     });
     return result;
+  },
+  
+  updateNgayKienNghiGiao: async (id, ngayKienNghiGiao) => {
+    const phieu = await PhieuDatHangNCC.findByPk(id);
+    
+    if (!phieu) return null;
+    
+    // Validate ngày kiến nghị giao
+    if (ngayKienNghiGiao) {
+      const ngayDat = new Date(phieu.NgayDat);
+      const ngayKienNghiGiaoDate = new Date(ngayKienNghiGiao);
+      
+      if (ngayKienNghiGiaoDate < ngayDat) {
+        throw new Error('Ngày kiến nghị giao không thể trước ngày đặt hàng');
+      }
+    }
+    
+    // Cập nhật ngày kiến nghị giao
+    await phieu.update({ NgayKienNghiGiao: ngayKienNghiGiao });
+    
+    return phieu;
   },
 };
 
