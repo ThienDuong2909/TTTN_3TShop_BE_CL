@@ -5,27 +5,46 @@ const { authorize, checkPermission, checkOwnership } = require('../middlewares/a
 
 const router = express.Router();
 
-// Lấy thống kê đơn hàng theo trạng thái
-router.get('/statistics', DonDatHangController.getStatistics);
+// Lấy thống kê đơn hàng theo trạng thái (chỉ Admin và Nhân viên)
+router.get('/statistics', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  DonDatHangController.getStatistics
+);
 
 // Lấy danh sách đơn hàng theo trạng thái
 // Query params: status (required), page (optional), limit (optional)
 // Example: /don-dat-hang/by-status?status=1&page=1&limit=10
-router.get('/by-status', DonDatHangController.getByStatus);
+router.get('/by-status', 
+  authenticateJWT, 
+  DonDatHangController.getByStatus
+);
 
 // Lấy tất cả đơn hàng
 // Query params: page (optional), limit (optional)
-router.get('/', DonDatHangController.getAll);
+router.get('/', 
+  authenticateJWT, 
+  DonDatHangController.getAll
+);
 
 // Lấy đơn hàng theo khách hàng
 // Query params: page (optional), limit (optional)
-router.get('/customer/:customerId', DonDatHangController.getByCustomer);
+router.get('/customer/:customerId', 
+  authenticateJWT, 
+  DonDatHangController.getByCustomer
+);
 
 // Lấy thông tin chi tiết đầy đủ của đơn hàng theo ID
-router.get('/:id/detail', DonDatHangController.getDetailById);
+router.get('/:id/detail', 
+  authenticateJWT, 
+  DonDatHangController.getDetailById
+);
 
 // Lấy chi tiết đơn hàng theo ID (basic)
-router.get('/:id', DonDatHangController.getById);
+router.get('/:id', 
+  authenticateJWT, 
+  DonDatHangController.getById
+);
 
 // === ROUTES CHO NHÂN VIÊN GIAO HÀNG ===
 // Lấy đơn hàng được phân công cho nhân viên giao hàng
