@@ -7,10 +7,10 @@ const router = express.Router();
 
 // === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
 // Lấy tất cả màu - chỉ cần đăng nhập
-router.get('/', authenticateJWT, MauController.getAll);
+router.get('/', MauController.getAll);
 
 // Lấy màu theo id - chỉ cần đăng nhập
-router.get('/:id', authenticateJWT, MauController.getById);
+router.get('/:id', MauController.getById);
 
 // === ADMIN & NHÂN VIÊN CỬA HÀNG ROUTES ===
 // Thêm màu - chỉ Admin và Nhân viên cửa hàng
