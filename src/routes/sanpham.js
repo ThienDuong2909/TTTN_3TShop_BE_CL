@@ -21,7 +21,10 @@ router.get("/details", SanPhamController.getProductDetails);
 // Lấy chi tiết sản phẩm theo ID
 router.get("/details/:id", SanPhamController.getProductDetailById);
 // Lấy sản phẩm theo nhà cung cấp
-router.get("/supplier/:supplierId", SanPhamController.getBySupplier);
+router.get("/supplier/:supplierId", 
+  authenticateJWT,
+  authorize('Admin', 'NhanVienCuaHang'),
+SanPhamController.getBySupplier);
 // Lấy màu và size của sản phẩm
 router.get(
   "/:productId/colors-sizes",

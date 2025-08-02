@@ -6,46 +6,86 @@ const { authorize, checkPermission } = require('../middlewares/authorize');
 const router = express.Router();
 
 // === ROUTES CHO TÍNH NĂNG PHÂN CÔNG GIAO HÀNG (đặt trước các route động) ===
-// Tìm nhân viên giao hàng tối ưu
-router.post('/delivery/find-optimal', NhanVienController.findOptimalDeliveryStaff);
-// Lấy danh sách nhân viên giao hàng khả dụng
-router.post('/delivery/available', NhanVienController.getAvailableDeliveryStaff);
-// Lấy nhân viên giao hàng (bộ phận 11)
-router.get('/delivery/list', NhanVienController.getNhanVienGiaoHang);
-// Lấy thống kê công việc tất cả nhân viên giao hàng
-router.get('/delivery/workload', NhanVienController.getDeliveryStaffWorkload);
-// Phân công đơn hàng cho nhân viên giao hàng
-router.post('/delivery/assign-order', NhanVienController.assignOrderToDeliveryStaff);
+// Tìm nhân viên giao hàng tối ưu - chỉ Admin và Nhân viên cửa hàng
+router.post('/delivery/find-optimal', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  NhanVienController.findOptimalDeliveryStaff);
 
-// Lấy nhân viên theo bộ phận
-router.get('/department/:maBoPhan', NhanVienController.getByBoPhan);
+// Lấy danh sách nhân viên giao hàng khả dụng - chỉ Admin và Nhân viên cửa hàng
+router.post('/delivery/available', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  NhanVienController.getAvailableDeliveryStaff);
 
-// Chuyển bộ phận cho nhân viên
-router.post('/transfer', NhanVienController.chuyenBoPhan);
+// Lấy nhân viên giao hàng (bộ phận 11) - chỉ cần đăng nhập
+router.get('/delivery/list', 
+  authenticateJWT, 
+  NhanVienController.getNhanVienGiaoHang);
 
-// Lấy tất cả nhân viên
-router.get('/', NhanVienController.getAll);
+// Lấy thống kê công việc tất cả nhân viên giao hàng - chỉ Admin và Nhân viên cửa hàng
+router.get('/delivery/workload', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  NhanVienController.getDeliveryStaffWorkload);
 
-// Thêm nhân viên - chỉ admin
+// Phân công đơn hàng cho nhân viên giao hàng - chỉ Admin và Nhân viên cửa hàng
+router.post('/delivery/assign-order', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  NhanVienController.assignOrderToDeliveryStaff);
+
+// Lấy nhân viên theo bộ phận - chỉ cần đăng nhập
+router.get('/department/:maBoPhan', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'),
+  NhanVienController.getByBoPhan);
+
+// Chuyển bộ phận cho nhân viên - chỉ Admin
+router.post('/transfer', 
+  authenticateJWT, 
+  authorize('Admin'), 
+  NhanVienController.chuyenBoPhan);
+
+// Lấy tất cả nhân viên - chỉ cần đăng nhập
+router.get('/', 
+  authenticateJWT, 
+  authorize('Admin'),
+  NhanVienController.getAll);
+
+// Thêm nhân viên - chỉ Admin
 router.post('/', 
-    // authenticateJWT, authorize('Admin'), 
-NhanVienController.create);
+  authenticateJWT, 
+  authorize('Admin'), 
+  NhanVienController.create);
 
-// Lấy thống kê công việc của một nhân viên cụ thể (đặt trước route /:id)
-router.get('/delivery/workload/:id', NhanVienController.getDeliveryStaffWorkload);
+// Lấy thống kê công việc của một nhân viên cụ thể - chỉ Admin và Nhân viên cửa hàng
+router.get('/delivery/workload/:id', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  NhanVienController.getDeliveryStaffWorkload);
 
-// Lấy lịch sử làm việc tại các bộ phận của nhân viên
-router.get('/:id/department-history', NhanVienController.getLichSuBoPhan);
+// Lấy lịch sử làm việc tại các bộ phận của nhân viên - chỉ cần đăng nhập
+router.get('/:id/department-history', 
+  authenticateJWT,
+  authorize('Admin'),
+  NhanVienController.getLichSuBoPhan);
 
-// Lấy nhân viên theo id (đặt cuối cùng vì có path động)
-router.get('/:id', NhanVienController.getById);
+// Lấy nhân viên theo id - chỉ cần đăng nhập
+router.get('/:id', 
+  authenticateJWT, 
+  NhanVienController.getById);
 
-// Sửa nhân viên - chỉ admin
+// Sửa nhân viên - chỉ Admin
 router.put('/:id', 
-    // authenticateJWT, authorize('Admin'), 
-NhanVienController.update);
+  authenticateJWT, 
+  authorize('Admin'), 
+  NhanVienController.update);
 
-// Xóa nhân viên
-router.delete('/:id', /*authenticateJWT, authorize('Admin'),*/ NhanVienController.delete);
+// Xóa nhân viên - chỉ Admin
+router.delete('/:id', 
+  authenticateJWT, 
+  authorize('Admin'), 
+  NhanVienController.delete);
 
 module.exports = router;
