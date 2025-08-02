@@ -613,6 +613,7 @@ const SanPhamService = {
           [Op.gte]: before30Days,
           [Op.lte]: today,
         },
+        MaTTDH: 5, // Chỉ lấy đơn hàng đã hoàn thành
       },
       attributes: ["MaDDH"],
     });
