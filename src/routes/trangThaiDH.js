@@ -5,13 +5,15 @@ const { authorize, checkPermission } = require('../middlewares/authorize');
 
 const router = express.Router();
 
-// Lấy tất cả trạng thái đơn hàng
-router.get('/', TrangThaiDHController.getAll);
+// === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
+// Lấy tất cả trạng thái đơn hàng - chỉ cần đăng nhập
+router.get('/', authenticateJWT, TrangThaiDHController.getAll);
 
-// Lấy trạng thái đơn hàng theo ID
-router.get('/:id', TrangThaiDHController.getById);
+// Lấy trạng thái đơn hàng theo ID - chỉ cần đăng nhập
+router.get('/:id', authenticateJWT, TrangThaiDHController.getById);
 
-// Tạo trạng thái đơn hàng mới
+// === ADMIN ROUTES ===
+// Tạo trạng thái đơn hàng mới - chỉ Admin
 // Body: { TrangThai: string, Note?: string }
 router.post('/', 
   authenticateJWT, 
@@ -19,7 +21,7 @@ router.post('/',
   TrangThaiDHController.create
 );
 
-// Cập nhật trạng thái đơn hàng
+// Cập nhật trạng thái đơn hàng - chỉ Admin
 // Body: { TrangThai?: string, Note?: string }
 router.put('/:id', 
   authenticateJWT, 
@@ -27,7 +29,7 @@ router.put('/:id',
   TrangThaiDHController.update
 );
 
-// Xóa trạng thái đơn hàng
+// Xóa trạng thái đơn hàng - chỉ Admin
 router.delete('/:id', 
   authenticateJWT, 
   authorize('Admin'), 
