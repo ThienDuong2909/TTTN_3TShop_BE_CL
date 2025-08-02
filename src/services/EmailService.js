@@ -76,16 +76,17 @@ class EmailService {
     infoHeaderRow.getCell(1).font = { bold: true };
     infoHeaderRow.getCell(5).font = { bold: true };
 
-          // Thông tin chi tiết (dòng 6-9)
-      worksheet.addRow(['Địa chỉ:', '123 Đường Lê Lợi, Quận 1, TP.HCM', '', '', `Tên NCC: ${phieuDatHang.NhaCungCap?.TenNCC || ''}`]);
-      worksheet.addRow(['Mã số thuế:', '0301234567', '', '', `Địa chỉ: ${phieuDatHang.NhaCungCap?.DiaChi || ''}`]);
-      worksheet.addRow(['Người lập đơn:', phieuDatHang.NhanVien?.TenNV || '', '', '', `Ngày lập đơn: ${new Date(phieuDatHang.NgayDat).toLocaleDateString('vi-VN')}`]);
-      worksheet.addRow(['Email:', 'luuthanh@3tshop.com']);
+                    // Thông tin chi tiết (dòng 6-10)
+       worksheet.addRow(['Địa chỉ:', '123 Đường Lê Lợi, Quận 1, TP.HCM', '', '', `Tên NCC: ${phieuDatHang.NhaCungCap?.TenNCC || ''}`]);
+       worksheet.addRow(['Mã số thuế:', '0301234567', '', '', `Địa chỉ: ${phieuDatHang.NhaCungCap?.DiaChi || ''}`]);
+       worksheet.addRow(['Người lập đơn:', phieuDatHang.NhanVien?.TenNV || '', '', '', `Ngày lập đơn: ${new Date(phieuDatHang.NgayDat).toLocaleDateString('vi-VN')}`]);
+       worksheet.addRow(['Email:', phieuDatHang.NhanVien?.Email || '']);
+       worksheet.addRow(['Ngày kiến nghị giao:', '', '', '', phieuDatHang.NgayKienNghiGiao ? new Date(phieuDatHang.NgayKienNghiGiao).toLocaleDateString('vi-VN') : '']);
 
-    // Dòng trống (dòng 10)
+    // Dòng trống (dòng 11)
     worksheet.addRow(['']);
 
-    // Header bảng sản phẩm (dòng 11)
+    // Header bảng sản phẩm (dòng 12)
     const tableHeaderRow = worksheet.addRow(['STT', 'Tên sản phẩm', 'Màu sắc', 'Size', 'Đơn vị tính', 'Số lượng', 'Đơn giá (VNĐ)', 'Thành tiền (VNĐ)']);
     tableHeaderRow.height = 25;
     tableHeaderRow.font = { bold: true, color: { argb: 'FF000000' } };

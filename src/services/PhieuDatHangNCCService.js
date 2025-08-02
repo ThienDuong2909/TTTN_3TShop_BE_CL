@@ -195,7 +195,7 @@ const PhieuDatHangNCCService = {
     if (oldStatus === 1 && statusId === 2) {
       try {
         // Lấy email nhà cung cấp từ database hoặc sử dụng email mặc định
-        const supplierEmail = 'lvthanh.work@gmail.com';
+        const supplierEmail = phieu.NhaCungCap.Email;
         
         // Gửi email với file Excel đính kèm
         emailResult = await EmailService.sendPurchaseOrderEmail(phieu, supplierEmail);
