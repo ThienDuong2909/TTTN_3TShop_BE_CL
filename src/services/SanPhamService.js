@@ -93,6 +93,8 @@ const SanPhamService = {
       offset,
       distinct: true,
     });
+
+    return { rows, count };
   },
   getNewProducts: async () => {
     const today = new Date();

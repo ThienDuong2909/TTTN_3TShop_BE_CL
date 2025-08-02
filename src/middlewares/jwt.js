@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_SECRET = process.env.JWT_SECRET || '22055c1e848cfdb7f5b2660ef0c121fc58e917394379f17319e4f0369268083c';
 
 // Middleware xác thực JWT
 function authenticateJWT(req, res, next) {
