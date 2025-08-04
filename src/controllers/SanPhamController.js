@@ -29,15 +29,18 @@ const SanPhamController = {
     try {
       const page = parseInt(req.query.page) || 1;
       const pageSize = parseInt(req.query.pageSize) || 8;
-      const { rows, count } = await SanPhamService.getAllProducts({
+      const result = await SanPhamService.getAllProducts({
         page,
         pageSize,
       });
+      if (!result) {
+        return response.error(res, "No product was found");
+      }
       return response.success(
         res,
         {
-          data: rows,
-          total: count,
+          data: result.rows,
+          total: result.count,
           page,
           pageSize,
         },

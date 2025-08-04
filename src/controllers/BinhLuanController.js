@@ -6,9 +6,9 @@ const BinhLuanController = {
   create: async (req, res) => {
     try {
       const { maCTDonDatHang, moTa, soSao } = req.body;
-      const maKH = req.user.id || req.user.MaKH; // Lấy từ JWT token
+      const maTK = req.user.id || req.user.MaKH; // Lấy từ JWT token
       
-      if (!maKH) {
+      if (!maTK) {
         return response.error(res, null, 'Không xác định được khách hàng', 401);
       }
 
@@ -16,11 +16,11 @@ const BinhLuanController = {
         return response.error(res, null, 'Thiếu thông tin bình luận', 400);
       }
 
-      if (soSao < 1 || soSao > 5) {
-        return response.error(res, null, 'Số sao phải từ 1 đến 5', 400);
+      if (soSao < 0 || soSao > 5) {
+        return response.error(res, null, 'Số sao phải từ 0 đến 5', 400);
       }
 
-      const data = await BinhLuanService.create(maKH, maCTDonDatHang, moTa, soSao);
+      const data = await BinhLuanService.create(maTK, maCTDonDatHang, moTa, soSao);
       return response.success(res, data, 'Tạo bình luận thành công', 201);
     } catch (err) {
       console.error('Error in create comment:', err);

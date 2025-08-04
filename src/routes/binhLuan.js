@@ -33,7 +33,7 @@ router.get('/commentable',
 // GET /api/binh-luan/customer?page=1&limit=10
 router.get('/customer', 
   authenticateJWT, 
-  authorize('KhachHang'), 
+  authorize('KhachHang'),
   BinhLuanController.getByCustomer
 );
 
@@ -42,7 +42,7 @@ router.get('/customer',
 // Body: { maCTDonDatHang: number, moTa: string, soSao: number(1-5) }
 router.post('/', 
   authenticateJWT, 
-  authorize('KhachHang'), 
+  authorize('KhachHang'),
   BinhLuanController.create
 );
 

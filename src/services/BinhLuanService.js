@@ -17,17 +17,21 @@ const BinhLuanService = {
     
     try {
       // Kiểm tra khách hàng tồn tại
-      const khachHang = await KhachHang.findByPk(maKH, { transaction });
+      const khachHang = await KhachHang.findOne({
+        where: {MaTK: maKH}
+      }, { transaction });
       if (!khachHang) {
         throw new Error('Khách hàng không tồn tại');
       }
+
+      // const maKH = khachHang[0].get('MaTK');
 
       // Kiểm tra chi tiết đơn hàng tồn tại và thuộc về khách hàng này
       const chiTietDonHang = await CT_DonDatHang.findOne({
         where: { MaCTDDH: maCTDonDatHang },
         include: [{
           model: DonDatHang,
-          where: { MaKH: maKH }
+          where: { MaKH: khachHang[0].get('MaTK') }
         }],
         transaction
       });
