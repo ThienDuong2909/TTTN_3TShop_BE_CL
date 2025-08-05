@@ -10,7 +10,8 @@ const {
   KichThuoc,
   Mau,
   HoaDon,
-  NhanVien_BoPhan
+  NhanVien_BoPhan,
+  BinhLuan
 } = require('../models');
 const sequelize = require('../models/sequelize');
 
@@ -351,7 +352,7 @@ const DonDatHangService = {
     }
   },
 
-  // Method cũ để tương thích
+  // Method để lấy đơn hàng của khách hàng kèm bình luận
   getByCustomer: async (customerId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
     
@@ -381,6 +382,17 @@ const DonDatHangService = {
                   attributes: ['MaMau', 'TenMau', 'MaHex']
                 }
               ]
+            },
+            {
+              model: BinhLuan,
+              attributes: ['MaBL', 'MoTa', 'SoSao', 'NgayBinhLuan'],
+              required: false,
+              include: [
+                {
+                  model: KhachHang,
+                  attributes: ['MaKH', 'TenKH']
+                }
+              ]
             }
           ]
         },
@@ -396,20 +408,40 @@ const DonDatHangService = {
       distinct: true
     });
 
-    // Tính tổng tiền cho mỗi đơn hàng
+    // Tính tổng tiền và xử lý bình luận cho mỗi đơn hàng
     const ordersWithTotal = rows.map(order => {
       const orderData = order.toJSON();
       let tongTien = 0;
-      
+      let danhSachBinhLuan = [];
+
       if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
         tongTien = orderData.CT_DonDatHangs.reduce((sum, item) => {
           return sum + (parseFloat(item.DonGia) * item.SoLuong);
         }, 0);
+
+        // Thu thập tất cả bình luận từ các chi tiết đơn hàng
+        orderData.CT_DonDatHangs.forEach(item => {
+          if (item.BinhLuans && item.BinhLuans.length > 0) {
+            item.BinhLuans.forEach(binhLuan => {
+              danhSachBinhLuan.push({
+                MaBL: binhLuan.MaBL,
+                MaCTDDH: item.MaCTDDH,
+                MoTa: binhLuan.MoTa,
+                SoSao: binhLuan.SoSao,
+                NgayBinhLuan: binhLuan.NgayBinhLuan,
+                TenSanPham: item.ChiTietSanPham?.SanPham?.TenSP || '',
+                KichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
+                MauSac: item.ChiTietSanPham?.Mau?.TenMau || ''
+              });
+            });
+          }
+        });
       }
       
       return {
         ...orderData,
-        TongTien: tongTien
+        TongTien: tongTien,
+        DanhSachBinhLuan: danhSachBinhLuan
       };
     });
 
@@ -578,80 +610,6 @@ const DonDatHangService = {
     }
   },
 
-
-
-  // Method cũ để tương thích
-  getByCustomer: async (customerId, page = 1, limit = 10) => {
-    const offset = (page - 1) * limit;
-    
-    const { count, rows } = await DonDatHang.findAndCountAll({
-      where: { MaKH: customerId },
-      include: [
-        {
-          model: TrangThaiDH,
-          attributes: ['MaTTDH', 'TrangThai']
-        },
-        {
-          model: CT_DonDatHang,
-          include: [
-            {
-              model: ChiTietSanPham,
-              include: [
-                {
-                  model: SanPham,
-                  attributes: ['MaSP', 'TenSP', 'MoTa']
-                },
-                {
-                  model: KichThuoc,
-                  attributes: ['MaKichThuoc', 'TenKichThuoc']
-                },
-                {
-                  model: Mau,
-                  attributes: ['MaMau', 'TenMau', 'MaHex']
-                }
-              ]
-            }
-          ]
-        },
-        {
-          model: HoaDon,
-          attributes: ['SoHD', 'NgayLap'],
-          required: false
-        }
-      ],
-      order: [['NgayTao', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    // Tính tổng tiền cho mỗi đơn hàng
-    const ordersWithTotal = rows.map(order => {
-      const orderData = order.toJSON();
-      let tongTien = 0;
-      
-      if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
-        tongTien = orderData.CT_DonDatHangs.reduce((sum, item) => {
-          return sum + (parseFloat(item.DonGia) * item.SoLuong);
-        }, 0);
-      }
-      
-      return {
-        ...orderData,
-        TongTien: tongTien
-      };
-    });
-
-    return {
-      orders: ordersWithTotal,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
 
   // Cập nhật nhân viên giao hàng cho đơn hàng
   updateDeliveryStaff: async (maDDH, maNVGiao) => {
