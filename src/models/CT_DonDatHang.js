@@ -17,14 +17,11 @@ const CT_DonDatHang = sequelize.define('CT_DonDatHang', {
   },
   SoLuong: DataTypes.INTEGER,
   DonGia: DataTypes.DECIMAL(18,2),
-  MaPhieuTra: {
-    type: DataTypes.INTEGER,
-    references: { model: 'PhieuTraHang', key: 'MaPhieuTra' },
-  },
   SoLuongTra: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
-  },
+    allowNull: true,
+  }
 });
 
-module.exports = CT_DonDatHang; 
+module.exports = CT_DonDatHang;

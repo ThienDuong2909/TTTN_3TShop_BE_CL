@@ -476,9 +476,9 @@ const NhanVienService = {
             ) THEN 'PHUTRACH' 
             ELSE 'KHAC' 
           END as LoaiPhuTrach
-        FROM nhanvien nv
-        INNER JOIN nhanvien_bophan nvbp ON nv.MaNV = nvbp.MaNV 
-        LEFT JOIN dondathang dh ON nv.MaNV = dh.MaNV_Giao 
+        FROM NhanVien nv
+        INNER JOIN NhanVien_BoPhan nvbp ON nv.MaNV = nvbp.MaNV 
+        LEFT JOIN DonDatHang dh ON nv.MaNV = dh.MaNV_Giao 
         WHERE nvbp.MaBoPhan = 11 
           AND nvbp.TrangThai = 'DANGLAMVIEC'
         GROUP BY nv.MaNV, nv.TenNV, nv.KhuVuc, nv.DiaChi

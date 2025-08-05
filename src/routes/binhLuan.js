@@ -40,10 +40,20 @@ router.get('/customer',
 // Tạo bình luận mới (chỉ khách hàng)
 // POST /api/binh-luan
 // Body: { maCTDonDatHang: number, moTa: string, soSao: number(1-5) }
-router.post('/', 
+// Hoặc: { binhLuanList: [{ maCTDonDatHang: number, moTa: string, soSao: number(1-5) }] }
+router.post('/',
   authenticateJWT, 
   authorize('KhachHang'),
   BinhLuanController.create
+);
+
+// Tạo nhiều bình luận cùng lúc (chỉ khách hàng)
+// POST /api/binh-luan/multiple
+// Body: { binhLuanList: [{ maCTDonDatHang: number, moTa: string, soSao: number(1-5) }] }
+router.post('/multiple',
+  authenticateJWT,
+  authorize('KhachHang'),
+  BinhLuanController.createMultiple
 );
 
 // Cập nhật bình luận (chỉ khách hàng sở hữu)
@@ -73,4 +83,4 @@ router.get('/',
   BinhLuanController.getAll
 );
 
-module.exports = router; 
+module.exports = router;
