@@ -8,6 +8,7 @@ const TrangThaiDH = require("../models/TrangThaiDH");
 const KichThuoc = require("../models/KichThuoc");
 const SanPhamService = require("./SanPhamService");
 const NhanVien = require("../models/NhanVien");
+
 const GioHangService = {
   addToCart: async (maKH, maSP, maHex, tenKichThuoc, soLuongInput) => {
     const soLuong = Number(soLuongInput) || 1;
@@ -349,7 +350,7 @@ const GioHangService = {
         },
         {
           model: TrangThaiDH,
-          attributes: ["MaTTDH", "TrangThai", "Note", "ThoiGianCapNhat"],
+          attributes: ["MaTTDH", "TrangThai"],
         },
       ],
       order: [["NgayTao", "DESC"]],
@@ -420,6 +421,7 @@ const GioHangService = {
         });
       }
 
+      // Trả về đơn hàng với danh sách bình luận (hoặc mảng rỗng nếu không có)
       return {
         ...orderData,
         DanhSachBinhLuan: danhSachBinhLuan

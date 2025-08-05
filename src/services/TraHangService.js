@@ -154,27 +154,48 @@ const TraHangService = {
           {
             model: HoaDon,
             attributes: ['SoHD']
+          },
+          {
+            model: CT_DonDatHang,
+            include: [
+              {
+                model: ChiTietSanPham,
+                include: [
+                  {
+                    model: SanPham,
+                    attributes: ['TenSP']
+                  }
+                ]
+              }
+            ]
           }
         ],
         transaction
       });
 
       if (!donHang) {
-        throw new Error('Không tìm thấy đơn hàng hoặc đơn hàng chưa được yêu cầu trả hàng');
+        throw new Error('Không tìm thấy đơn hàng có yêu cầu trả hàng');
       }
 
       if (!donHang.HoaDon) {
         throw new Error('Đơn hàng chưa có hóa đơn');
       }
 
-      // Kiểm tra xem đã có phiếu trả hàng cho hóa đơn này chưa
-      const existingReturn = await PhieuTraHang.findOne({
-        where: { SoHD: donHang.HoaDon.SoHD },
-        transaction
-      });
+      // Validate danh sách sản phẩm trả
+      let tongTienTra = 0;
+      for (const item of danhSachSanPham) {
+        const { maCTDDH, soLuongTra } = item;
+        const chiTietDonHang = donHang.CT_DonDatHangs.find(ct => ct.MaCTDDH === maCTDDH);
 
-      if (existingReturn) {
-        throw new Error('Đã có phiếu trả hàng cho hóa đơn này');
+        if (!chiTietDonHang) {
+          throw new Error(`Không tìm thấy sản phẩm với mã chi tiết ${maCTDDH}`);
+        }
+
+        if (soLuongTra > chiTietDonHang.SoLuong || soLuongTra <= 0) {
+          throw new Error('Số lượng trả không hợp lệ');
+        }
+
+        tongTienTra += chiTietDonHang.DonGia * soLuongTra;
       }
 
       // Tạo phiếu trả hàng
@@ -185,65 +206,15 @@ const TraHangService = {
         LyDo: lyDo
       }, { transaction });
 
-      // Xử lý từng sản phẩm trả hàng
-      let tongTienTra = 0;
-      const chiTietTraHang = [];
-
-      for (const item of danhSachSanPham) {
-        const { maCTDDH, soLuongTra } = item;
-
-        // Kiểm tra chi tiết đơn hàng
-        const chiTietDonHang = await CT_DonDatHang.findOne({
-          where: {
-            MaCTDDH: maCTDDH,
-            MaDDH: maDDH
-          },
-          transaction
-        });
-
-        if (!chiTietDonHang) {
-          throw new Error(`Không tìm thấy chi tiết đơn hàng ${maCTDDH}`);
-        }
-
-        if (soLuongTra > chiTietDonHang.SoLuong) {
-          throw new Error(`Số lượng trả không được vượt quá số lượng đã mua`);
-        }
-
-        // Cập nhật số lượng trả trong chi tiết đơn hàng
-        await chiTietDonHang.update({
-          SoLuongTra: (chiTietDonHang.SoLuongTra || 0) + soLuongTra
-        }, { transaction });
-
-        // Cập nhật lại tồn kho
-        const chiTietSanPham = await ChiTietSanPham.findByPk(chiTietDonHang.MaCTSP, { transaction });
-        if (chiTietSanPham) {
-          await chiTietSanPham.update({
-            SoLuongTon: chiTietSanPham.SoLuongTon + soLuongTra
-          }, { transaction });
-        }
-
-        const thanhTienTra = parseFloat(chiTietDonHang.DonGia) * soLuongTra;
-        tongTienTra += thanhTienTra;
-
-        chiTietTraHang.push({
-          MaCTDDH: maCTDDH,
-          SoLuongTra: soLuongTra,
-          DonGia: chiTietDonHang.DonGia,
-          ThanhTien: thanhTienTra
-        });
-      }
-
       await transaction.commit();
 
-      // Trả về thông tin phiếu trả hàng
       return {
         MaPhieuTra: phieuTraHang.MaPhieuTra,
         SoHD: phieuTraHang.SoHD,
         NgayTra: phieuTraHang.NgayTra,
         LyDo: phieuTraHang.LyDo,
-        NVLap: phieuTraHang.NVLap,
         TongTienTra: tongTienTra,
-        ChiTietTraHang: chiTietTraHang
+        DanhSachSanPham: danhSachSanPham
       };
     } catch (error) {
       await transaction.rollback();
@@ -251,985 +222,164 @@ const TraHangService = {
     }
   },
 
-  // Lấy chi tiết phiếu trả hàng
-  getReturnSlipDetail: async (maPhieuTra) => {
-    const phieuTraHang = await PhieuTraHang.findByPk(maPhieuTra, {
-      include: [
-        {
-          model: NhanVien,
-          attributes: ['MaNV', 'TenNV']
-        },
-        {
-          model: HoaDon,
-          include: [
-            {
-              model: DonDatHang,
-              include: [
-                {
-                  model: KhachHang,
-                  attributes: ['MaKH', 'TenKH', 'SDT', 'DiaChi']
-                },
-                {
-                  model: CT_DonDatHang,
-                  include: [
-                    {
-                      model: ChiTietSanPham,
-                      include: [
-                        {
-                          model: SanPham,
-                          attributes: ['MaSP', 'TenSP'],
-                          include: [
-                            {
-                              model: AnhSanPham,
-                              attributes: ['TenFile', 'DuongDan'],
-                              where: { AnhChinh: true },
-                              required: false
-                            }
-                          ]
-                        },
-                        {
-                          model: KichThuoc,
-                          attributes: ['TenKichThuoc']
-                        },
-                        {
-                          model: Mau,
-                          attributes: ['TenMau', 'MaHex']
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    if (!phieuTraHang) return null;
-
-    const phieuData = phieuTraHang.toJSON();
-
-    // Tính tổng tiền trả
-    let tongTienTra = 0;
-    const danhSachSanPhamTra = [];
-
-    if (phieuData.HoaDon?.DonDatHang?.CT_DonDatHangs) {
-      phieuData.HoaDon.DonDatHang.CT_DonDatHangs.forEach(item => {
-        if (item.SoLuongTra && item.SoLuongTra > 0) {
-          const thanhTienTra = parseFloat(item.DonGia) * item.SoLuongTra;
-          tongTienTra += thanhTienTra;
-
-          danhSachSanPhamTra.push({
-            MaCTDDH: item.MaCTDDH,
-            TenSP: item.ChiTietSanPham?.SanPham?.TenSP || '',
-            KichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
-            MauSac: item.ChiTietSanPham?.Mau?.TenMau || '',
-            SoLuongMua: item.SoLuong,
-            SoLuongTra: item.SoLuongTra,
-            DonGia: parseFloat(item.DonGia),
-            ThanhTienTra: thanhTienTra,
-            HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]?.DuongDan || null
-          });
-        }
-      });
-    }
-
-    return {
-      MaPhieuTra: phieuData.MaPhieuTra,
-      SoHD: phieuData.SoHD,
-      NgayTra: phieuData.NgayTra,
-      LyDo: phieuData.LyDo,
-      NhanVien: phieuData.NhanVien,
-      KhachHang: phieuData.HoaDon?.DonDatHang?.KhachHang,
-      TongTienTra: tongTienTra,
-      DanhSachSanPhamTra: danhSachSanPhamTra
-    };
-  },
-
-  // Lấy danh sách phiếu trả hàng
-  getReturnSlips: async (page = 1, limit = 10, fromDate = null, toDate = null) => {
-    const offset = (page - 1) * limit;
-
-    const whereCondition = {};
-    if (fromDate && toDate) {
-      whereCondition.NgayTra = {
-        [Op.between]: [fromDate, toDate]
-      };
-    }
-
-    const { count, rows } = await PhieuTraHang.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: NhanVien,
-          attributes: ['MaNV', 'TenNV']
-        },
-        {
-          model: HoaDon,
-          include: [
-            {
-              model: DonDatHang,
-              include: [
-                {
-                  model: KhachHang,
-                  attributes: ['TenKH', 'SDT']
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayTra', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    // Tính tổng tiền trả cho mỗi phiếu
-    const returnSlipsWithTotal = await Promise.all(
-      rows.map(async (phieu) => {
-        const phieuData = phieu.toJSON();
-        let tongTienTra = 0;
-
-        if (phieuData.HoaDon?.DonDatHang?.CT_DonDatHangs) {
-          tongTienTra = phieuData.HoaDon.DonDatHang.CT_DonDatHangs.reduce((sum, item) => {
-            if (item.SoLuongTra && item.SoLuongTra > 0) {
-              return sum + (parseFloat(item.DonGia) * item.SoLuongTra);
-            }
-            return sum;
-          }, 0);
-        }
-
-        return {
-          ...phieuData,
-          TongTienTra: tongTienTra
-        };
-      })
-    );
-
-    return {
-      returnSlips: returnSlipsWithTotal,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
-
-  // Lấy lịch sử trả hàng của khách hàng
-  getCustomerReturnHistory: async (maKH, page = 1, limit = 10) => {
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await DonDatHang.findAndCountAll({
-      where: {
-        MaKH: maKH,
-        MaTTDH: 7 // Trạng thái trả hàng
-      },
-      include: [
-        {
-          model: TrangThaiDH,
-          attributes: ['TrangThai']
-        },
-        {
-          model: CT_DonDatHang,
-          include: [
-            {
-              model: ChiTietSanPham,
-              include: [
-                {
-                  model: SanPham,
-                  attributes: ['TenSP']
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayYeuCauTraHang', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    return {
-      orders: rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
-
-  // Helper method để lấy chi tiết đơn hàng
-  getOrderDetail: async (maDDH) => {
-    return await DonDatHang.findByPk(maDDH, {
-      include: [
-        {
-          model: KhachHang,
-          attributes: ['MaKH', 'TenKH', 'SDT']
-        },
-        {
-          model: TrangThaiDH,
-          attributes: ['MaTTDH', 'TrangThai']
-        }
-      ]
-    });
-  },
-
   // Tạo phiếu chi cho phiếu trả hàng
-  createPaymentSlip: async (maPhieuTra, soTien) => {
+  createReturnPayment: async (maPhieuTra, soTien, lyDo, nhanVienLap) => {
     const transaction = await sequelize.transaction();
 
     try {
       // Kiểm tra phiếu trả hàng tồn tại
-      const phieuTraHang = await PhieuTraHang.findByPk(maPhieuTra, {
+      const phieuTraHang = await PhieuTraHang.findByPk(maPhieuTra, { transaction });
+
+      if (!phieuTraHang) {
+        throw new Error('Không tìm thấy phiếu trả hàng');
+      }
+
+      // Tạo phiếu chi
+      const phieuChi = await PhieuChi.create({
+        MaPhieuTra: maPhieuTra,
+        SoTien: soTien,
+        LyDo: lyDo,
+        NgayLap: new Date(),
+        NVLap: nhanVienLap,
+        TrangThai: 'CHO_DUYET'
+      }, { transaction });
+
+      await transaction.commit();
+
+      return phieuChi;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+
+  // Lấy danh sách yêu cầu trả hàng
+  getReturnRequests: async (page = 1, limit = 10, trangThai = null) => {
+    try {
+      const offset = (page - 1) * limit;
+      const whereCondition = {};
+
+      if (trangThai) {
+        whereCondition.MaTTDH = trangThai;
+      } else {
+        whereCondition.MaTTDH = 7; // Mặc định lấy đơn hàng có yêu cầu trả hàng
+      }
+
+      const { count, rows } = await DonDatHang.findAndCountAll({
+        where: whereCondition,
         include: [
           {
-            model: HoaDon,
+            model: KhachHang,
+            attributes: ['MaKH', 'TenKH', 'SDT']
+          },
+          {
+            model: TrangThaiDH,
+            attributes: ['MaTTDH', 'TrangThai']
+          },
+          {
+            model: CT_DonDatHang,
             include: [
               {
-                model: DonDatHang,
+                model: ChiTietSanPham,
                 include: [
                   {
-                    model: KhachHang,
-                    attributes: ['MaKH', 'TenKH', 'SDT']
+                    model: SanPham,
+                    attributes: ['MaSP', 'TenSP'],
+                    include: [
+                      {
+                        model: AnhSanPham,
+                        where: { AnhChinh: true },
+                        required: false,
+                        attributes: ['DuongDan']
+                      }
+                    ]
+                  },
+                  {
+                    model: KichThuoc,
+                    attributes: ['TenKichThuoc']
+                  },
+                  {
+                    model: Mau,
+                    attributes: ['TenMau', 'MaHex']
                   }
                 ]
               }
             ]
           }
         ],
-        transaction
+        order: [['NgayTao', 'DESC']],
+        limit: parseInt(limit),
+        offset: offset
       });
-
-      if (!phieuTraHang) {
-        throw new Error('Không tìm thấy phiếu trả hàng');
-      }
-
-      // Kiểm tra xem đã có phiếu chi cho phiếu trả hàng này chưa
-      const existingPayment = await PhieuChi.findOne({
-        where: { MaPhieuTra: maPhieuTra },
-        transaction
-      });
-
-      if (existingPayment) {
-        throw new Error('Đã có phiếu chi cho phiếu trả hàng này');
-      }
-
-      // Validate số tiền
-      if (!soTien || soTien <= 0) {
-        throw new Error('Số tiền phải lớn hơn 0');
-      }
-
-      // Tạo phiếu chi trong database
-      const phieuChi = await PhieuChi.create({
-        NgayChi: new Date(),
-        SoTien: parseFloat(soTien),
-        MaPhieuTra: maPhieuTra
-      }, { transaction });
-
-      await transaction.commit();
 
       return {
-        MaPhieuChi: phieuChi.MaPhieuChi,
-        NgayChi: phieuChi.NgayChi,
-        SoTien: parseFloat(phieuChi.SoTien),
-        MaPhieuTra: phieuChi.MaPhieuTra,
-        PhieuTraHang: {
-          MaPhieuTra: phieuTraHang.MaPhieuTra,
-          SoHD: phieuTraHang.SoHD,
-          NgayTra: phieuTraHang.NgayTra,
-          LyDo: phieuTraHang.LyDo
-        },
-        KhachHang: phieuTraHang.HoaDon?.DonDatHang?.KhachHang || null
+        data: rows,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(count / limit),
+          totalItems: count,
+          itemsPerPage: parseInt(limit),
+          hasNextPage: parseInt(page) < Math.ceil(count / limit),
+          hasPrevPage: parseInt(page) > 1
+        }
       };
     } catch (error) {
-      await transaction.rollback();
       throw error;
     }
   },
 
-  // Lấy chi tiết phiếu chi theo mã phiếu trả hàng
-  getPaymentSlipByReturnSlip: async (maPhieuTra) => {
-    const phieuChi = await PhieuChi.findOne({
-      where: { MaPhieuTra: maPhieuTra },
-      include: [
-        {
-          model: PhieuTraHang,
-          include: [
-            {
-              model: HoaDon,
-              include: [
-                {
-                  model: DonDatHang,
-                  include: [
-                    {
-                      model: KhachHang,
-                      attributes: ['MaKH', 'TenKH', 'SDT', 'DiaChi']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    return phieuChi;
-  },
-
-  // Lấy danh sách phiếu chi
-  getPaymentSlips: async (page = 1, limit = 10, fromDate = null, toDate = null) => {
-    const offset = (page - 1) * limit;
-
-    const whereCondition = {};
-    if (fromDate && toDate) {
-      whereCondition.NgayChi = {
-        [Op.between]: [fromDate, toDate]
-      };
-    }
-
-    const { count, rows } = await PhieuChi.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: PhieuTraHang,
-          include: [
-            {
-              model: HoaDon,
-              include: [
-                {
-                  model: DonDatHang,
-                  include: [
-                    {
-                      model: KhachHang,
-                      attributes: ['TenKH', 'SDT']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayChi', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    return {
-      paymentSlips: rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
-
-  // Lấy danh sách đơn hàng yêu cầu trả hàng (cho nhân viên)
-  getReturnRequests: async (page = 1, limit = 10, status = null) => {
-    const offset = (page - 1) * limit;
-
-    const whereCondition = {
-      MaTTDH: 7 // Trạng thái yêu cầu trả hàng
-    };
-
-    // Nếu có filter theo status khác
-    if (status && status !== 'all') {
-      if (status === 'pending') {
-        whereCondition.MaTTDH = 7; // Chờ xử lý
-      } else if (status === 'processed') {
-        // Có thể thêm logic cho trạng thái đã xử lý
-      }
-    }
-
-    const { count, rows } = await DonDatHang.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: KhachHang,
-          attributes: ['MaKH', 'TenKH', 'SDT']
-        },
-        {
-          model: TrangThaiDH,
-          attributes: ['MaTTDH', 'TrangThai']
-        },
-        {
-          model: CT_DonDatHang,
-          include: [
-            {
-              model: ChiTietSanPham,
-              include: [
-                {
-                  model: SanPham,
-                  attributes: ['MaSP', 'TenSP'],
-                  include: [
-                    {
-                      model: AnhSanPham,
-                      attributes: ['TenFile', 'DuongDan'],
-                      where: { AnhChinh: true },
-                      required: false
-                    }
-                  ]
-                },
-                {
-                  model: KichThuoc,
-                  attributes: ['TenKichThuoc']
-                },
-                {
-                  model: Mau,
-                  attributes: ['TenMau', 'MaHex']
-                }
-              ]
-            }
-          ]
-        },
-        {
-          model: HoaDon,
-          attributes: ['SoHD'],
-          required: false
-        }
-      ],
-      order: [['NgayTao', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    // Tính tổng tiền cho mỗi đơn hàng yêu cầu trả
-    const ordersWithTotal = rows.map(order => {
-      const orderData = order.toJSON();
-      let tongTien = 0;
-
-      if (orderData.CT_DonDatHangs) {
-        tongTien = orderData.CT_DonDatHangs.reduce((sum, item) => {
-          return sum + (parseFloat(item.DonGia) * item.SoLuong);
-        }, 0);
-      }
-
-      return {
-        ...orderData,
-        TongTien: tongTien
-      };
-    });
-
-    return {
-      returnRequests: ordersWithTotal,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit),
-        hasNextPage: page < Math.ceil(count / limit),
-        hasPrevPage: page > 1
-      }
-    };
-  },
-
-  // Nhân viên tạo phiếu trả hàng chính thức
-  createReturnSlip: async (maNV, maDDH, danhSachSanPham, lyDo) => {
-    const transaction = await sequelize.transaction();
-
+  // Lấy chi tiết yêu cầu trả hàng
+  getReturnRequestDetail: async (maDDH) => {
     try {
-      // Kiểm tra đơn hàng có trạng thái trả hàng và có hóa đơn
       const donHang = await DonDatHang.findOne({
-        where: {
-          MaDDH: maDDH,
-          MaTTDH: 7 // Trạng thái yêu cầu trả hàng
-        },
+        where: { MaDDH: maDDH, MaTTDH: 7 },
         include: [
           {
-            model: HoaDon,
-            attributes: ['SoHD']
-          }
-        ],
-        transaction
-      });
-
-      if (!donHang) {
-        throw new Error('Không tìm thấy đơn hàng hoặc đơn hàng chưa được yêu cầu trả hàng');
-      }
-
-      if (!donHang.HoaDon) {
-        throw new Error('Đơn hàng chưa có hóa đơn');
-      }
-
-      // Kiểm tra xem đã có phiếu trả hàng cho hóa đơn này chưa
-      const existingReturn = await PhieuTraHang.findOne({
-        where: { SoHD: donHang.HoaDon.SoHD },
-        transaction
-      });
-
-      if (existingReturn) {
-        throw new Error('Đã có phiếu trả hàng cho hóa đơn này');
-      }
-
-      // Tạo phiếu trả hàng
-      const phieuTraHang = await PhieuTraHang.create({
-        SoHD: donHang.HoaDon.SoHD,
-        NVLap: maNV,
-        NgayTra: new Date(),
-        LyDo: lyDo
-      }, { transaction });
-
-      // Xử lý từng sản phẩm trả hàng
-      let tongTienTra = 0;
-      const chiTietTraHang = [];
-
-      for (const item of danhSachSanPham) {
-        const { maCTDDH, soLuongTra } = item;
-
-        // Kiểm tra chi tiết đơn hàng
-        const chiTietDonHang = await CT_DonDatHang.findOne({
-          where: {
-            MaCTDDH: maCTDDH,
-            MaDDH: maDDH
+            model: KhachHang,
+            attributes: ['MaKH', 'TenKH', 'SDT']
           },
-          transaction
-        });
-
-        if (!chiTietDonHang) {
-          throw new Error(`Không tìm thấy chi tiết đơn hàng ${maCTDDH}`);
-        }
-
-        if (soLuongTra > chiTietDonHang.SoLuong) {
-          throw new Error(`Số lượng trả không được vượt quá số lượng đã mua`);
-        }
-
-        // Cập nhật số lượng trả trong chi tiết đơn hàng
-        await chiTietDonHang.update({
-          SoLuongTra: (chiTietDonHang.SoLuongTra || 0) + soLuongTra
-        }, { transaction });
-
-        // Cập nhật lại tồn kho
-        const chiTietSanPham = await ChiTietSanPham.findByPk(chiTietDonHang.MaCTSP, { transaction });
-        if (chiTietSanPham) {
-          await chiTietSanPham.update({
-            SoLuongTon: chiTietSanPham.SoLuongTon + soLuongTra
-          }, { transaction });
-        }
-
-        const thanhTienTra = parseFloat(chiTietDonHang.DonGia) * soLuongTra;
-        tongTienTra += thanhTienTra;
-
-        chiTietTraHang.push({
-          MaCTDDH: maCTDDH,
-          SoLuongTra: soLuongTra,
-          DonGia: chiTietDonHang.DonGia,
-          ThanhTien: thanhTienTra
-        });
-      }
-
-      await transaction.commit();
-
-      // Trả về thông tin phiếu trả hàng
-      return {
-        MaPhieuTra: phieuTraHang.MaPhieuTra,
-        SoHD: phieuTraHang.SoHD,
-        NgayTra: phieuTraHang.NgayTra,
-        LyDo: phieuTraHang.LyDo,
-        NVLap: phieuTraHang.NVLap,
-        TongTienTra: tongTienTra,
-        ChiTietTraHang: chiTietTraHang
-      };
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
-  },
-
-  // Lấy chi tiết phiếu trả hàng
-  getReturnSlipDetail: async (maPhieuTra) => {
-    const phieuTraHang = await PhieuTraHang.findByPk(maPhieuTra, {
-      include: [
-        {
-          model: NhanVien,
-          attributes: ['MaNV', 'TenNV']
-        },
-        {
-          model: HoaDon,
-          include: [
-            {
-              model: DonDatHang,
-              include: [
-                {
-                  model: KhachHang,
-                  attributes: ['MaKH', 'TenKH', 'SDT', 'DiaChi']
-                },
-                {
-                  model: CT_DonDatHang,
-                  include: [
-                    {
-                      model: ChiTietSanPham,
-                      include: [
-                        {
-                          model: SanPham,
-                          attributes: ['MaSP', 'TenSP'],
-                          include: [
-                            {
-                              model: AnhSanPham,
-                              attributes: ['TenFile', 'DuongDan'],
-                              where: { AnhChinh: true },
-                              required: false
-                            }
-                          ]
-                        },
-                        {
-                          model: KichThuoc,
-                          attributes: ['TenKichThuoc']
-                        },
-                        {
-                          model: Mau,
-                          attributes: ['TenMau', 'MaHex']
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    if (!phieuTraHang) return null;
-
-    const phieuData = phieuTraHang.toJSON();
-
-    // Tính tổng tiền trả
-    let tongTienTra = 0;
-    const danhSachSanPhamTra = [];
-
-    if (phieuData.HoaDon?.DonDatHang?.CT_DonDatHangs) {
-      phieuData.HoaDon.DonDatHang.CT_DonDatHangs.forEach(item => {
-        if (item.SoLuongTra && item.SoLuongTra > 0) {
-          const thanhTienTra = parseFloat(item.DonGia) * item.SoLuongTra;
-          tongTienTra += thanhTienTra;
-
-          danhSachSanPhamTra.push({
-            MaCTDDH: item.MaCTDDH,
-            TenSP: item.ChiTietSanPham?.SanPham?.TenSP || '',
-            KichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
-            MauSac: item.ChiTietSanPham?.Mau?.TenMau || '',
-            SoLuongMua: item.SoLuong,
-            SoLuongTra: item.SoLuongTra,
-            DonGia: parseFloat(item.DonGia),
-            ThanhTienTra: thanhTienTra,
-            HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]?.DuongDan || null
-          });
-        }
-      });
-    }
-
-    return {
-      MaPhieuTra: phieuData.MaPhieuTra,
-      SoHD: phieuData.SoHD,
-      NgayTra: phieuData.NgayTra,
-      LyDo: phieuData.LyDo,
-      NhanVien: phieuData.NhanVien,
-      KhachHang: phieuData.HoaDon?.DonDatHang?.KhachHang,
-      TongTienTra: tongTienTra,
-      DanhSachSanPhamTra: danhSachSanPhamTra
-    };
-  },
-
-  // Lấy danh sách phiếu trả hàng
-  getReturnSlips: async (page = 1, limit = 10, fromDate = null, toDate = null) => {
-    const offset = (page - 1) * limit;
-
-    const whereCondition = {};
-    if (fromDate && toDate) {
-      whereCondition.NgayTra = {
-        [Op.between]: [fromDate, toDate]
-      };
-    }
-
-    const { count, rows } = await PhieuTraHang.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: NhanVien,
-          attributes: ['MaNV', 'TenNV']
-        },
-        {
-          model: HoaDon,
-          include: [
-            {
-              model: DonDatHang,
-              include: [
-                {
-                  model: KhachHang,
-                  attributes: ['TenKH', 'SDT']
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayTra', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    // Tính tổng tiền trả cho mỗi phiếu
-    const returnSlipsWithTotal = await Promise.all(
-      rows.map(async (phieu) => {
-        const phieuData = phieu.toJSON();
-        let tongTienTra = 0;
-
-        if (phieuData.HoaDon?.DonDatHang?.CT_DonDatHangs) {
-          tongTienTra = phieuData.HoaDon.DonDatHang.CT_DonDatHangs.reduce((sum, item) => {
-            if (item.SoLuongTra && item.SoLuongTra > 0) {
-              return sum + (parseFloat(item.DonGia) * item.SoLuongTra);
-            }
-            return sum;
-          }, 0);
-        }
-
-        return {
-          ...phieuData,
-          TongTienTra: tongTienTra
-        };
-      })
-    );
-
-    return {
-      returnSlips: returnSlipsWithTotal,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
-
-  // Lấy lịch sử trả hàng của khách hàng
-  getCustomerReturnHistory: async (maKH, page = 1, limit = 10) => {
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await DonDatHang.findAndCountAll({
-      where: {
-        MaKH: maKH,
-        MaTTDH: 7 // Trạng thái trả hàng
-      },
-      include: [
-        {
-          model: TrangThaiDH,
-          attributes: ['TrangThai']
-        },
-        {
-          model: CT_DonDatHang,
-          include: [
-            {
-              model: ChiTietSanPham,
-              include: [
-                {
-                  model: SanPham,
-                  attributes: ['TenSP']
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayYeuCauTraHang', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    return {
-      orders: rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
-
-  // Helper method để lấy chi tiết đơn hàng
-  getOrderDetail: async (maDDH) => {
-    return await DonDatHang.findByPk(maDDH, {
-      include: [
-        {
-          model: KhachHang,
-          attributes: ['MaKH', 'TenKH', 'SDT']
-        },
-        {
-          model: TrangThaiDH,
-          attributes: ['MaTTDH', 'TrangThai']
-        }
-      ]
-    });
-  },
-
-  // Tạo phiếu chi cho phiếu trả hàng
-  createPaymentSlip: async (maPhieuTra, soTien) => {
-    const transaction = await sequelize.transaction();
-
-    try {
-      // Kiểm tra phiếu trả hàng tồn tại
-      const phieuTraHang = await PhieuTraHang.findByPk(maPhieuTra, {
-        include: [
           {
-            model: HoaDon,
+            model: TrangThaiDH,
+            attributes: ['MaTTDH', 'TrangThai']
+          },
+          {
+            model: CT_DonDatHang,
             include: [
               {
-                model: DonDatHang,
+                model: ChiTietSanPham,
                 include: [
                   {
-                    model: KhachHang,
-                    attributes: ['MaKH', 'TenKH', 'SDT']
+                    model: SanPham,
+                    attributes: ['MaSP', 'TenSP', 'MoTa'],
+                    include: [
+                      {
+                        model: AnhSanPham,
+                        where: { AnhChinh: true },
+                        required: false,
+                        attributes: ['DuongDan']
+                      }
+                    ]
+                  },
+                  {
+                    model: KichThuoc,
+                    attributes: ['TenKichThuoc']
+                  },
+                  {
+                    model: Mau,
+                    attributes: ['TenMau', 'MaHex']
                   }
                 ]
               }
             ]
           }
-        ],
-        transaction
+        ]
       });
 
-      if (!phieuTraHang) {
-        throw new Error('Không tìm thấy phiếu trả hàng');
-      }
-
-      // Kiểm tra xem đã có phiếu chi cho phiếu trả hàng này chưa
-      const existingPayment = await PhieuChi.findOne({
-        where: { MaPhieuTra: maPhieuTra },
-        transaction
-      });
-
-      if (existingPayment) {
-        throw new Error('Đã có phiếu chi cho phiếu trả hàng này');
-      }
-
-      // Validate số tiền
-      if (!soTien || soTien <= 0) {
-        throw new Error('Số tiền phải lớn hơn 0');
-      }
-
-      // Tạo phiếu chi trong database
-      const phieuChi = await PhieuChi.create({
-        NgayChi: new Date(),
-        SoTien: parseFloat(soTien),
-        MaPhieuTra: maPhieuTra
-      }, { transaction });
-
-      await transaction.commit();
-
-      return {
-        MaPhieuChi: phieuChi.MaPhieuChi,
-        NgayChi: phieuChi.NgayChi,
-        SoTien: parseFloat(phieuChi.SoTien),
-        MaPhieuTra: phieuChi.MaPhieuTra,
-        PhieuTraHang: {
-          MaPhieuTra: phieuTraHang.MaPhieuTra,
-          SoHD: phieuTraHang.SoHD,
-          NgayTra: phieuTraHang.NgayTra,
-          LyDo: phieuTraHang.LyDo
-        },
-        KhachHang: phieuTraHang.HoaDon?.DonDatHang?.KhachHang || null
-      };
+      return donHang;
     } catch (error) {
-      await transaction.rollback();
       throw error;
     }
-  },
-
-  // Lấy chi tiết phiếu chi theo mã phiếu trả hàng
-  getPaymentSlipByReturnSlip: async (maPhieuTra) => {
-    const phieuChi = await PhieuChi.findOne({
-      where: { MaPhieuTra: maPhieuTra },
-      include: [
-        {
-          model: PhieuTraHang,
-          include: [
-            {
-              model: HoaDon,
-              include: [
-                {
-                  model: DonDatHang,
-                  include: [
-                    {
-                      model: KhachHang,
-                      attributes: ['MaKH', 'TenKH', 'SDT', 'DiaChi']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    return phieuChi;
-  },
-
-  // Lấy danh sách phiếu chi
-  getPaymentSlips: async (page = 1, limit = 10, fromDate = null, toDate = null) => {
-    const offset = (page - 1) * limit;
-
-    const whereCondition = {};
-    if (fromDate && toDate) {
-      whereCondition.NgayChi = {
-        [Op.between]: [fromDate, toDate]
-      };
-    }
-
-    const { count, rows } = await PhieuChi.findAndCountAll({
-      where: whereCondition,
-      include: [
-        {
-          model: PhieuTraHang,
-          include: [
-            {
-              model: HoaDon,
-              include: [
-                {
-                  model: DonDatHang,
-                  include: [
-                    {
-                      model: KhachHang,
-                      attributes: ['TenKH', 'SDT']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['NgayChi', 'DESC']],
-      limit: parseInt(limit),
-      offset: offset,
-      distinct: true
-    });
-
-    return {
-      paymentSlips: rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    };
-  },
+  }
 };
 
 module.exports = TraHangService;

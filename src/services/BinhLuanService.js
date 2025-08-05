@@ -389,7 +389,7 @@ const BinhLuanService = {
       summary: {
         totalComments: filteredCount,
         averageRating: filteredCount > 0 ? (commentsWithDetails.reduce((sum, comment) => sum + comment.SoSao, 0) / filteredCount).toFixed(1) : 0,
-        ratingDistribution: BinhLuanService.calculateRatingDistribution(commentsWithDetails)
+        ratingDistribution: this.calculateRatingDistribution(commentsWithDetails)
       }
     };
   },

@@ -11,9 +11,11 @@ const {
   Mau,
   HoaDon,
   NhanVien_BoPhan,
+  LoaiSP,
   BinhLuan
 } = require('../models');
-const sequelize = require('../models/sequelize');
+const sequelize = require("../models/sequelize");
+const { Op } = require("sequelize");
 
 const DonDatHangService = {
   // Lấy danh sách đơn hàng theo trạng thái
@@ -352,7 +354,7 @@ const DonDatHangService = {
     }
   },
 
-  // Method để lấy đơn hàng của khách hàng kèm bình luận
+  // Method cũ để tương thích - FIXED VERSION
   getByCustomer: async (customerId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
     
@@ -415,11 +417,12 @@ const DonDatHangService = {
       let danhSachBinhLuan = [];
 
       if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
+        // Tính tổng tiền
         tongTien = orderData.CT_DonDatHangs.reduce((sum, item) => {
           return sum + (parseFloat(item.DonGia) * item.SoLuong);
         }, 0);
 
-        // Thu thập tất cả bình luận từ các chi tiết đơn hàng
+        // Thu thập bình luận từ tất cả chi tiết đơn hàng
         orderData.CT_DonDatHangs.forEach(item => {
           if (item.BinhLuans && item.BinhLuans.length > 0) {
             item.BinhLuans.forEach(binhLuan => {
@@ -429,9 +432,19 @@ const DonDatHangService = {
                 MoTa: binhLuan.MoTa,
                 SoSao: binhLuan.SoSao,
                 NgayBinhLuan: binhLuan.NgayBinhLuan,
-                TenSanPham: item.ChiTietSanPham?.SanPham?.TenSP || '',
-                KichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
-                MauSac: item.ChiTietSanPham?.Mau?.TenMau || ''
+                KhachHang: {
+                  MaKH: binhLuan.KhachHang?.MaKH || customerId,
+                  TenKH: binhLuan.KhachHang?.TenKH || ''
+                },
+                SanPham: {
+                  MaSP: item.ChiTietSanPham?.SanPham?.MaSP || 0,
+                  TenSP: item.ChiTietSanPham?.SanPham?.TenSP || '',
+                  KichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || '',
+                  MauSac: {
+                    TenMau: item.ChiTietSanPham?.Mau?.TenMau || '',
+                    MaHex: item.ChiTietSanPham?.Mau?.MaHex || ''
+                  }
+                }
               });
             });
           }
@@ -610,7 +623,6 @@ const DonDatHangService = {
     }
   },
 
-
   // Cập nhật nhân viên giao hàng cho đơn hàng
   updateDeliveryStaff: async (maDDH, maNVGiao) => {
     const transaction = await sequelize.transaction();
@@ -756,49 +768,174 @@ const DonDatHangService = {
         currentPage: parseInt(page),
         totalPages: Math.ceil(count / limit),
         totalItems: count,
-        itemsPerPage: parseInt(limit)
+        itemsPerPage: parseInt(limit),
+        hasNextPage: page < Math.ceil(count / limit),
+        hasPrevPage: page > 1
       }
     };
   },
 
-  // Xác nhận đã giao hàng xong
+  // Nhân viên xác nhận hoàn thành giao hàng
   confirmDelivery: async (maDDH, maNVGiao) => {
     const transaction = await sequelize.transaction();
     
     try {
-      // Kiểm tra đơn hàng tồn tại và được phân công cho nhân viên này
+      // Kiểm tra đơn hàng và quyền của nhân viên
       const order = await DonDatHang.findOne({
         where: {
           MaDDH: maDDH,
-          MaNV_Giao: maNVGiao
+          MaNV_Giao: maNVGiao,
+          MaTTDH: 3 // Đang giao hàng
         },
         transaction
       });
-      
+
       if (!order) {
-        throw new Error('Không tìm thấy đơn hàng hoặc đơn hàng không được phân công cho bạn');
+        throw new Error('Không tìm thấy đơn hàng hoặc bạn không có quyền xác nhận đơn hàng này');
       }
 
-      // Kiểm tra trạng thái đơn hàng (chỉ cho phép xác nhận khi đang giao hàng)
-      if (order.MaTTDH !== 3) {
-        throw new Error('Chỉ có thể xác nhận giao hàng cho đơn hàng đang trong quá trình giao');
-      }
-
-      // Cập nhật trạng thái sang "Đã giao hàng"
+      // Cập nhật trạng thái thành hoàn tất
       await order.update({
-        MaTTDH: 4, // Trạng thái "Đã giao hàng"
-        ThoiGianHoanThanh: new Date()
+        MaTTDH: 4, // Hoàn tất
+        ThoiGianGiao: new Date()
       }, { transaction });
 
       await transaction.commit();
 
-      // Trả về thông tin đơn hàng đã cập nhật
       return await DonDatHangService.getById(maDDH);
     } catch (error) {
       await transaction.rollback();
       throw error;
     }
+  },
+
+  // Thống kê đơn hàng theo sản phẩm
+  getProductOrderStats: async (startDate = null, endDate = null) => {
+    try {
+      const whereCondition = {
+        MaTTDH: { [Op.ne]: 6 } // Loại bỏ giỏ hàng
+      };
+
+      if (startDate && endDate) {
+        whereCondition.NgayTao = {
+          [Op.between]: [startDate, endDate]
+        };
+      }
+
+      const orderDetails = await CT_DonDatHang.findAll({
+        include: [
+          {
+            model: DonDatHang,
+            where: whereCondition,
+            attributes: []
+          },
+          {
+            model: ChiTietSanPham,
+            include: [
+              {
+                model: SanPham,
+                attributes: ['MaSP', 'TenSP'],
+                include: [
+                  {
+                    model: LoaiSP,
+                    attributes: ['MaLoaiSP', 'TenLoaiSP']
+                  }
+                ]
+              },
+              {
+                model: KichThuoc,
+                attributes: ['TenKichThuoc']
+              },
+              {
+                model: Mau,
+                attributes: ['TenMau', 'MaHex']
+              }
+            ]
+          }
+        ],
+        attributes: ['SoLuong', 'DonGia']
+      });
+
+      // Xử lý thống kê
+      const stats = {};
+      orderDetails.forEach(detail => {
+        const sp = detail.ChiTietSanPham?.SanPham;
+        if (sp) {
+          const key = `${sp.MaSP}-${sp.TenSP}`;
+          if (!stats[key]) {
+            stats[key] = {
+              MaSP: sp.MaSP,
+              TenSP: sp.TenSP,
+              LoaiSP: sp.LoaiSP?.TenLoaiSP || '',
+              TongSoLuongBan: 0,
+              TongDoanhThu: 0,
+              SoBienThe: 0,
+              BienThe: []
+            };
+          }
+
+          stats[key].TongSoLuongBan += detail.SoLuong;
+          stats[key].TongDoanhThu += detail.SoLuong * parseFloat(detail.DonGia);
+
+          // Thêm biến thể
+          const bienThe = `${detail.ChiTietSanPham.KichThuoc?.TenKichThuoc || ''}-${detail.ChiTietSanPham.Mau?.TenMau || ''}`;
+          if (!stats[key].BienThe.includes(bienThe)) {
+            stats[key].BienThe.push(bienThe);
+            stats[key].SoBienThe++;
+          }
+        }
+      });
+
+      return Object.values(stats).sort((a, b) => b.TongSoLuongBan - a.TongSoLuongBan);
+    } catch (error) {
+      console.error('Error in getProductOrderStats:', error);
+      throw new Error('Không thể lấy thống kê đơn hàng theo sản phẩm');
+    }
+  },
+
+  // Nhóm đơn hàng theo đơn giá để xử lý tình trạng nhiều đơn giá khác nhau cho cùng sản phẩm
+  groupByDonGia: (donGiaList) => {
+    const grouped = {};
+    donGiaList.forEach(item => {
+      const key = item.DonGia.toString();
+      if (!grouped[key]) {
+        grouped[key] = {
+          DonGia: parseFloat(item.DonGia),
+          TongSoLuong: 0,
+          DonHangs: []
+        };
+      }
+      grouped[key].TongSoLuong += item.SoLuong;
+      grouped[key].DonHangs.push({
+        MaDDH: item.MaDDH,
+        NgayTao: item.NgayTao,
+        SoLuong: item.SoLuong
+      });
+    });
+    return Object.values(grouped);
   }
+};
+
+// Hàm helper để nhóm đơn giá (đặt bên ngoài object)
+const groupByDonGia = (donGiaList) => {
+  const grouped = {};
+  donGiaList.forEach(item => {
+    const key = item.DonGia.toString();
+    if (!grouped[key]) {
+      grouped[key] = {
+        DonGia: parseFloat(item.DonGia),
+        TongSoLuong: 0,
+        DonHangs: []
+      };
+    }
+    grouped[key].TongSoLuong += item.SoLuong;
+    grouped[key].DonHangs.push({
+      MaDDH: item.MaDDH,
+      NgayTao: item.NgayTao,
+      SoLuong: item.SoLuong
+    });
+  });
+  return Object.values(grouped);
 };
 
 module.exports = DonDatHangService;
