@@ -4,30 +4,22 @@ const TiGiaController = require("../controllers/TiGiaController");
 const authenticateJWT = require('../middlewares/jwt');
 const { authorize } = require('../middlewares/authorize');
 
-// === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
-// Lấy tất cả tỷ giá - chỉ cần đăng nhập
-router.get("/", authenticateJWT, TiGiaController.getAll);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
-// Lấy tỷ giá có hiệu lực - chỉ cần đăng nhập
-router.get("/co-hieu-luc", authenticateJWT, TiGiaController.getHieuLuc);
+// Lấy tất cả tỷ giá
+router.get("/", authorize('toanquyen'), TiGiaController.getAll);
 
-// === ADMIN ROUTES ===
-// Tạo tỷ giá mới - chỉ Admin
-router.post("/", 
-  authenticateJWT, 
-  authorize('Admin'), 
-  TiGiaController.create);
+// Lấy tỷ giá có hiệu lực
+router.get("/co-hieu-luc", authorize('toanquyen'), TiGiaController.getHieuLuc);
 
-// Cập nhật tỷ giá - chỉ Admin
-router.put("/:MaTiGia", 
-  authenticateJWT, 
-  authorize('Admin'), 
-  TiGiaController.update);
+// Tạo tỷ giá mới
+router.post("/", authorize('toanquyen'), TiGiaController.create);
 
-// Xóa tỷ giá - chỉ Admin
-router.delete("/:MaTiGia", 
-  authenticateJWT, 
-  authorize('Admin'), 
-  TiGiaController.delete);
+// Cập nhật tỷ giá
+router.put("/:MaTiGia", authorize('toanquyen'), TiGiaController.update);
+
+// Xóa tỷ giá
+router.delete("/:MaTiGia", authorize('toanquyen'), TiGiaController.delete);
 
 module.exports = router;

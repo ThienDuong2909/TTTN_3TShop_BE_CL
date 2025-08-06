@@ -17,6 +17,7 @@ const trangThaiDHRoutes = require("./trangThaiDH");
 const hoaDonRoutes = require("./hoadon");
 const binhLuanRoutes = require("./binhLuan");
 const traHangRoutes = require("./traHang"); // Thêm route TraHang
+const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -67,5 +68,9 @@ router.use("/comments", binhLuanRoutes); // English alias
 
 // Routes cho trả hàng
 router.use("/return", traHangRoutes); // Đăng ký route TraHang
+
+// Routes cho phân quyền
+router.use("/phan-quyen", phanQuyenRoutes);
+router.use("/permissions", phanQuyenRoutes); // English alias
 
 module.exports = router;
