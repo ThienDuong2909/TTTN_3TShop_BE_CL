@@ -1,5 +1,5 @@
 const PhanQuyenService = require('../services/PhanQuyenService');
-const { response } = require('../utils/response');
+const { error, notFound } = require('../utils/response');
 
 /**
  * Middleware kiểm tra quyền
@@ -12,11 +12,21 @@ function authorize(permissions, options = {}) {
     try {
       // Kiểm tra xem user đã được xác thực chưa
       if (!req.user || !req.user.MaTK) {
-        return res.status(401).json(response(false, 'Unauthorized - User not authenticated'));
+        return error(res, null, 'Unauthorized - User not authenticated', 401);
       }
 
+      console.log('=== AUTHORIZATION DEBUG ===');
+      console.log('User info:', req.user);
       const userId = req.user.MaTK;
       const context = options.context ? options.context(req) : {};
+
+      console.log('Required permissions:', permissions);
+      console.log('Context:', context);
+      console.log('User ID:', userId);
+
+      // Debug: Lấy quyền của user
+      const userPermissions = await PhanQuyenService.getUserPermissions(userId);
+      console.log('User permissions:', userPermissions);
 
       // Kiểm tra quyền
       const hasPermission = await PhanQuyenService.checkPermissionWithContext(
@@ -25,14 +35,17 @@ function authorize(permissions, options = {}) {
         context
       );
 
+      console.log('Has permission:', hasPermission);
+      console.log('=== END AUTHORIZATION DEBUG ===');
+
       if (!hasPermission) {
-        return res.status(403).json(response(false, 'Forbidden - Insufficient permissions'));
+        return error(res, null, 'Forbidden - Insufficient permissions', 403);
       }
 
       next();
     } catch (error) {
       console.error('Authorization error:', error);
-      return res.status(500).json(response(false, 'Internal server error during authorization'));
+      return error(res, error, 'Internal server error during authorization', 500);
     }
   };
 }
@@ -57,14 +70,14 @@ function authorizeOwnership(permission, resourceProvider) {
   return async (req, res, next) => {
     try {
       if (!req.user || !req.user.MaTK) {
-        return res.status(401).json(response(false, 'Unauthorized - User not authenticated'));
+        return error(res, null, 'Unauthorized - User not authenticated', 401);
       }
 
       const userId = req.user.MaTK;
       const resource = resourceProvider ? resourceProvider(req) : null;
 
       if (!resource) {
-        return res.status(404).json(response(false, 'Resource not found'));
+        return notFound(res, 'Resource not found');
       }
 
       // Kiểm tra quyền với context
@@ -81,13 +94,13 @@ function authorizeOwnership(permission, resourceProvider) {
       );
 
       if (!hasPermission) {
-        return res.status(403).json(response(false, 'Forbidden - Insufficient permissions'));
+        return error(res, null, 'Forbidden - Insufficient permissions', 403);
       }
 
       next();
     } catch (error) {
       console.error('Ownership authorization error:', error);
-      return res.status(500).json(response(false, 'Internal server error during authorization'));
+      return error(res, error, 'Internal server error during authorization', 500);
     }
   };
 }

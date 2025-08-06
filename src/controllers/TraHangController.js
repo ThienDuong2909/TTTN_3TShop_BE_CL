@@ -1,6 +1,7 @@
 const TraHangService = require('../services/TraHangService');
 const response = require('../utils/response');
 const {KhachHang} = require("../models");
+const { getMaNVFromMaTK } = require("../utils/auth");
 
 const TraHangController = {
   // Khách hàng yêu cầu trả hàng (chuyển trạng thái đơn hàng thành 7)
@@ -55,10 +56,17 @@ const TraHangController = {
   createReturnSlip: async (req, res) => {
     try {
       const { maDDH, danhSachSanPham, lyDo } = req.body;
-      const maNV = req.user.id || req.user.MaNV; // Lấy từ JWT token
+      const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
+
+      if (!maTK) {
+        return response.error(res, null, 'Không xác định được tài khoản', 401);
+      }
+
+      // Lấy MaNV từ MaTK
+      const maNV = await getMaNVFromMaTK(maTK);
 
       if (!maNV) {
-        return response.error(res, null, 'Không xác định được nhân viên', 401);
+        return response.error(res, null, 'Không tìm thấy thông tin nhân viên', 401);
       }
 
       if (!maDDH || !danhSachSanPham || !Array.isArray(danhSachSanPham) || danhSachSanPham.length === 0) {
