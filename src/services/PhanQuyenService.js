@@ -168,13 +168,15 @@ class PhanQuyenService {
         return false;
       }
 
-      // Xử lý các trường hợp đặc biệt
+      // Xử lý các trường hợp đặc biệt cần context
       switch (permission) {
         case 'donhang.xem_cua_minh':
           return context.userId === userId;
         
         case 'donhang.xem_duoc_giao':
-          return context.assignedTo === userId;
+          // Nếu có context.assignedTo, kiểm tra xem user có phải là người được phân công không
+          // Nếu không có context, chỉ cần có quyền là được (đã kiểm tra ở trên)
+          return context.assignedTo ? context.assignedTo === userId : true;
         
         case 'binhluan.sua_cua_minh':
         case 'binhluan.xoa_cua_minh':
