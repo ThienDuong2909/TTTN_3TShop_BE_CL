@@ -46,6 +46,8 @@ const BinhLuan = require("./BinhLuan");
 const DotGiamGia = require("./DotGiamGia");
 const CT_DotGiamGia = require("./CT_DotGiamGia");
 const AnhSanPham = require("./AnhSanPham");
+const PhanQuyen = require("./PhanQuyen");
+const PhanQuyen_VaiTro = require("./PhanQuyen_VaiTro");
 
 // Associations
 // SanPham
@@ -152,6 +154,18 @@ CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 // AnhSanPham
 AnhSanPham.belongsTo(SanPham, { foreignKey: "MaSP" });
 
+// Permission associations
+VaiTro.belongsToMany(PhanQuyen, { 
+  through: PhanQuyen_VaiTro, 
+  foreignKey: 'VaiTroId',
+  otherKey: 'PhanQuyenId'
+});
+PhanQuyen.belongsToMany(VaiTro, { 
+  through: PhanQuyen_VaiTro, 
+  foreignKey: 'PhanQuyenId',
+  otherKey: 'VaiTroId'
+});
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -182,4 +196,6 @@ module.exports = {
   DotGiamGia,
   CT_DotGiamGia,
   AnhSanPham,
+  PhanQuyen,
+  PhanQuyen_VaiTro,
 };

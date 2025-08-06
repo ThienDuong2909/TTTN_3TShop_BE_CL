@@ -5,10 +5,10 @@ const { taoTaiKhoan } = require('../controllers/TaiKhoanController');
 const authenticateJWT = require('../middlewares/jwt');
 const { authorize } = require('../middlewares/authorize');
 
-// Tạo tài khoản - chỉ Admin
-router.post('/', 
-  authenticateJWT, 
-  authorize('Admin'), 
-  taoTaiKhoan);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
+
+// Tạo tài khoản
+router.post('/', authorize('toanquyen'), taoTaiKhoan);
 
 module.exports = router;

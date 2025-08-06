@@ -5,30 +5,22 @@ const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
-// === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
-// Lấy tất cả bộ phận - chỉ cần đăng nhập
-router.get('/', authenticateJWT, BoPhanController.getAll);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
-// Lấy bộ phận theo id - chỉ cần đăng nhập
-router.get('/:id', authenticateJWT, BoPhanController.getById);
+// Lấy tất cả bộ phận
+router.get('/', authorize('bophan.xem'), BoPhanController.getAll);
 
-// === ADMIN ROUTES ===
-// Thêm bộ phận - chỉ Admin
-router.post('/', 
-  authenticateJWT, 
-  authorize('Admin'), 
-  BoPhanController.create);
+// Lấy bộ phận theo id
+router.get('/:id', authorize('bophan.xem'), BoPhanController.getById);
 
-// Sửa bộ phận - chỉ Admin
-router.put('/:id', 
-  authenticateJWT, 
-  authorize('Admin'), 
-  BoPhanController.update);
+// Thêm bộ phận
+router.post('/', authorize('toanquyen'), BoPhanController.create);
 
-// Xóa bộ phận - chỉ Admin
-router.delete('/:id', 
-  authenticateJWT, 
-  authorize('Admin'), 
-  BoPhanController.delete);
+// Sửa bộ phận
+router.put('/:id', authorize('toanquyen'), BoPhanController.update);
+
+// Xóa bộ phận
+router.delete('/:id', authorize('toanquyen'), BoPhanController.delete);
 
 module.exports = router;
