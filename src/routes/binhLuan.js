@@ -1,76 +1,43 @@
 const express = require('express');
 const BinhLuanController = require('../controllers/BinhLuanController');
 const authenticateJWT = require('../middlewares/jwt');
-const { authorize, checkPermission } = require('../middlewares/authorize');
+const { authorize, authorizeOwnership } = require('../middlewares/authorize');
 
 const router = express.Router();
 
 // === PUBLIC ROUTES (Không cần đăng nhập) ===
-
 // Lấy bình luận theo sản phẩm (public)
-// GET /api/binh-luan/product/:maSP?page=1&limit=10
 router.get('/product/:maSP', BinhLuanController.getByProduct);
 
 // Lấy thống kê bình luận theo sản phẩm (public)
-// GET /api/binh-luan/product/:maSP/stats
 router.get('/product/:maSP/stats', BinhLuanController.getProductStats);
 
 // Lấy bình luận theo ID (public)
-// GET /api/binh-luan/:id
 router.get('/:id', BinhLuanController.getById);
 
-// === CUSTOMER ROUTES (Chỉ khách hàng) ===
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
 // Lấy sản phẩm có thể bình luận (chỉ khách hàng)
-// GET /api/binh-luan/commentable?page=1&limit=10
-router.get('/commentable', 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  BinhLuanController.getCommentableProducts
-);
+router.get('/commentable', authorize('binhluan.tao'), BinhLuanController.getCommentableProducts);
 
 // Lấy bình luận của khách hàng (chỉ khách hàng đó)
-// GET /api/binh-luan/customer?page=1&limit=10
-router.get('/customer', 
-  authenticateJWT, 
-  authorize('KhachHang'),
-  BinhLuanController.getByCustomer
-);
+router.get('/customer', authorize('binhluan.tao'), BinhLuanController.getByCustomer);
 
 // Tạo bình luận mới (chỉ khách hàng)
-// POST /api/binh-luan
-// Body: { maCTDonDatHang: number, moTa: string, soSao: number(1-5) }
-router.post('/', 
-  authenticateJWT, 
-  authorize('KhachHang'),
-  BinhLuanController.create
-);
+router.post('/', authorize('binhluan.tao'), BinhLuanController.create);
+
+// Tạo nhiều bình luận cùng lúc (chỉ khách hàng)
+router.post('/multiple', authorize('binhluan.tao'), BinhLuanController.createMultiple);
 
 // Cập nhật bình luận (chỉ khách hàng sở hữu)
-// PUT /api/binh-luan/:id
-// Body: { moTa: string, soSao: number(1-5) }
-router.put('/:id', 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  BinhLuanController.update
-);
+router.put('/:id', authorize('binhluan.sua_cua_minh'), BinhLuanController.update);
 
 // Xóa bình luận (chỉ khách hàng sở hữu)
-// DELETE /api/binh-luan/:id
-router.delete('/:id', 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  BinhLuanController.delete
-);
+router.delete('/:id', authorize('binhluan.xoa_cua_minh'), BinhLuanController.delete);
 
-// === ADMIN ROUTES (Chỉ admin) ===
-
+// === ADMIN ROUTES ===
 // Lấy tất cả bình luận (chỉ admin)
-// GET /api/binh-luan?page=1&limit=10
-router.get('/', 
-  authenticateJWT, 
-  authorize('Admin'), 
-  BinhLuanController.getAll
-);
+router.get('/', authorize('binhluan.kiemduyet'), BinhLuanController.getAll);
 
-module.exports = router; 
+module.exports = router;

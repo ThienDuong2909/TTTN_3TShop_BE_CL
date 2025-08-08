@@ -10,17 +10,22 @@ const PhieuTraHang = sequelize.define('PhieuTraHang', {
   SoHD: {
     type: DataTypes.STRING(100),
     unique: true,
+    allowNull: false,
     references: { model: 'HoaDon', key: 'SoHD' },
   },
   NVLap: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     references: { model: 'NhanVien', key: 'MaNV' },
   },
   NgayTra: {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
-  LyDo: DataTypes.TEXT,
+  LyDo: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
 });
 
-module.exports = PhieuTraHang; 
+module.exports = PhieuTraHang;

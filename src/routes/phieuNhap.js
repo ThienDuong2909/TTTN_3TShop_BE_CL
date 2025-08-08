@@ -3,16 +3,26 @@ const controller = require('../controllers/PhieuNhapController');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const authenticateJWT = require('../middlewares/jwt');
-const { authorize, checkPermission } = require('../middlewares/authorize');
+const { authorize } = require('../middlewares/authorize');
+
 const router = express.Router();
 
-// Áp dụng cho tất cả endpoint - chỉ Admin và Nhân viên cửa hàng
-router.use(authenticateJWT, authorize('Admin', 'NhanVienCuaHang'));
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
-router.post('/', controller.create);
-router.get('/', controller.getAll);
-router.get('/:id', controller.getById);
-router.put('/:id/update-inventory', controller.updateInventory);
-router.post('/excel', upload.single('file'), controller.importExcel);
+// Tạo phiếu nhập
+router.post('/', authorize('nhaphang.tao'), controller.create);
+
+// Lấy tất cả phiếu nhập
+router.get('/', authorize('nhaphang.xem'), controller.getAll);
+
+// Lấy phiếu nhập theo ID
+router.get('/:id', authorize('nhaphang.xem'), controller.getById);
+
+// Cập nhật tồn kho
+router.put('/:id/update-inventory', authorize('nhaphang.sua'), controller.updateInventory);
+
+// Import Excel
+router.post('/excel', upload.single('file'), authorize('nhaphang.tao'), controller.importExcel);
 
 module.exports = router; 

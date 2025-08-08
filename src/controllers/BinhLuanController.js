@@ -2,29 +2,69 @@ const BinhLuanService = require('../services/BinhLuanService');
 const response = require('../utils/response');
 
 const BinhLuanController = {
-  // Tạo bình luận mới (chỉ khách hàng)
+  // Tạo bình luận mới (chỉ khách hàng) - hỗ trợ cả đơn lẻ và danh sách
   create: async (req, res) => {
     try {
-      const { maCTDonDatHang, moTa, soSao } = req.body;
+      const { maCTDonDatHang, moTa, soSao, binhLuanList } = req.body;
       const maTK = req.user.id || req.user.MaKH; // Lấy từ JWT token
       
       if (!maTK) {
         return response.error(res, null, 'Không xác định được khách hàng', 401);
       }
 
-      if (!maCTDonDatHang || !moTa || !soSao) {
-        return response.error(res, null, 'Thiếu thông tin bình luận', 400);
-      }
+      // Kiểm tra xem là tạo đơn lẻ hay nhiều bình luận
+      if (binhLuanList && Array.isArray(binhLuanList)) {
+        // Tạo nhiều bình luận
+        const result = await BinhLuanService.createMultiple(maTK, binhLuanList);
 
-      if (soSao < 0 || soSao > 5) {
-        return response.error(res, null, 'Số sao phải từ 0 đến 5', 400);
-      }
+        if (result.success) {
+          return response.success(res, result, result.message, 201);
+        } else {
+          return response.error(res, result, result.message, 400);
+        }
+      } else {
+        // Tạo bình luận đơn lẻ (logic cũ)
+        if (!maCTDonDatHang || !moTa || !soSao) {
+          return response.error(res, null, 'Thiếu thông tin bình luận', 400);
+        }
 
-      const data = await BinhLuanService.create(maTK, maCTDonDatHang, moTa, soSao);
-      return response.success(res, data, 'Tạo bình luận thành công', 201);
+        if (soSao < 0 || soSao > 5) {
+          return response.error(res, null, 'Số sao phải từ 0 đến 5', 400);
+        }
+
+        const data = await BinhLuanService.create(maTK, maCTDonDatHang, moTa, soSao);
+        return response.success(res, data, 'Tạo bình luận thành công', 201);
+      }
     } catch (err) {
       console.error('Error in create comment:', err);
       return response.error(res, err.message || 'Lỗi khi tạo bình luận', 400);
+    }
+  },
+
+  // Tạo nhiều bình luận cùng lúc (endpoint riêng)
+  createMultiple: async (req, res) => {
+    try {
+      const { binhLuanList } = req.body;
+      const maTK = req.user.id || req.user.MaKH; // Lấy từ JWT token
+
+      if (!maTK) {
+        return response.error(res, null, 'Không xác định được khách hàng', 401);
+      }
+
+      if (!binhLuanList || !Array.isArray(binhLuanList) || binhLuanList.length === 0) {
+        return response.error(res, null, 'Danh sách bình luận không hợp lệ', 400);
+      }
+
+      const result = await BinhLuanService.createMultiple(maTK, binhLuanList);
+
+      if (result.success) {
+        return response.success(res, result, result.message, 201);
+      } else {
+        return response.error(res, result, result.message, 400);
+      }
+    } catch (err) {
+      console.error('Error in create multiple comments:', err);
+      return response.error(res, err.message || 'Lỗi khi tạo nhiều bình luận', 400);
     }
   },
 
@@ -267,4 +307,4 @@ const BinhLuanController = {
   }
 };
 
-module.exports = BinhLuanController; 
+module.exports = BinhLuanController;

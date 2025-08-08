@@ -11,6 +11,13 @@ const kichThuocRoutes = require("./kichthuoc");
 const trangThaiDatHangRoutes = require("./trangthaidathang");
 const authRoutes = require("./auth");
 const boPhanRoutes = require("./bophan");
+const tiGiaRoutes = require("./tigia");
+const donDatHangRoutes = require("./donDatHang");
+const trangThaiDHRoutes = require("./trangThaiDH");
+const hoaDonRoutes = require("./hoadon");
+const binhLuanRoutes = require("./binhLuan");
+const traHangRoutes = require("./traHang"); // Thêm route TraHang
+const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -18,12 +25,6 @@ const authorize = require("../middlewares/authorize");
 // const trangThaiDatHangRoutes = require("./trangthaidathang");
 // const authRoutes = require("./auth");
 // const boPhanRoutes = require("./bophan"); // Import BoPhan routes
-const tiGiaRoutes = require("./tigia"); // Import BoPhan routes
-
-const donDatHangRoutes = require("./donDatHang");
-const trangThaiDHRoutes = require("./trangThaiDH");
-const hoaDonRoutes = require("./hoadon");
-const binhLuanRoutes = require("./binhLuan");
 
 const router = express.Router();
 
@@ -64,5 +65,12 @@ router.use("/invoices", hoaDonRoutes);
 // Routes cho bình luận sản phẩm
 router.use("/binh-luan", binhLuanRoutes);
 router.use("/comments", binhLuanRoutes); // English alias
+
+// Routes cho trả hàng
+router.use("/return", traHangRoutes); // Đăng ký route TraHang
+
+// Routes cho phân quyền
+router.use("/phan-quyen", phanQuyenRoutes);
+router.use("/permissions", phanQuyenRoutes); // English alias
 
 module.exports = router;

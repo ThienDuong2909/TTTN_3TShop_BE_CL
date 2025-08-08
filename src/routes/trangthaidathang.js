@@ -5,30 +5,22 @@ const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
-// === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
-// Lấy tất cả trạng thái đơn đặt hàng - chỉ cần đăng nhập
-router.get('/', authenticateJWT, TrangThaiDatHangNCCController.getAll);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
-// Lấy trạng thái đơn đặt hàng theo id - chỉ cần đăng nhập
-router.get('/:id', authenticateJWT, TrangThaiDatHangNCCController.getById);
+// Lấy tất cả trạng thái đơn đặt hàng
+router.get('/', authorize('dathang.xem'), TrangThaiDatHangNCCController.getAll);
 
-// === ADMIN & NHÂN VIÊN CỬA HÀNG ROUTES ===
-// Thêm trạng thái đơn đặt hàng - chỉ Admin và Nhân viên cửa hàng
-router.post('/', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  TrangThaiDatHangNCCController.create);
+// Lấy trạng thái đơn đặt hàng theo id
+router.get('/:id', authorize('dathang.xem'), TrangThaiDatHangNCCController.getById);
 
-// Sửa trạng thái đơn đặt hàng - chỉ Admin và Nhân viên cửa hàng
-router.put('/:id', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  TrangThaiDatHangNCCController.update);
+// Thêm trạng thái đơn đặt hàng
+router.post('/', authorize('dathang.tao'), TrangThaiDatHangNCCController.create);
 
-// Xóa trạng thái đơn đặt hàng - chỉ Admin và Nhân viên cửa hàng
-router.delete('/:id', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  TrangThaiDatHangNCCController.delete);
+// Sửa trạng thái đơn đặt hàng
+router.put('/:id', authorize('dathang.sua'), TrangThaiDatHangNCCController.update);
+
+// Xóa trạng thái đơn đặt hàng
+router.delete('/:id', authorize('dathang.xoa'), TrangThaiDatHangNCCController.delete);
 
 module.exports = router; 
