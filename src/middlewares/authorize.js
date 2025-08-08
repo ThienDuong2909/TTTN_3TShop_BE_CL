@@ -18,6 +18,7 @@ function authorize(permissions, options = {}) {
       console.log('=== AUTHORIZATION DEBUG ===');
       console.log('User info:', req.user);
       const userId = req.user.MaTK;
+      const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
       const context = options.context ? options.context(req) : {};
 
       console.log('Required permissions:', permissions);
@@ -28,10 +29,19 @@ function authorize(permissions, options = {}) {
       const userPermissions = await PhanQuyenService.getUserPermissions(userId);
       console.log('User permissions:', userPermissions);
 
+      // Điền ngữ cảnh mặc định cho các quyền "của_mình" nếu thiếu
+      if (requiredPermissions.includes('donhang.xem_cua_minh') && context.userId == null) {
+        context.userId = userId;
+      }
+
+      if ((requiredPermissions.includes('binhluan.sua_cua_minh') || requiredPermissions.includes('binhluan.xoa_cua_minh')) && context.authorId == null) {
+        context.authorId = userId;
+      }
+
       // Kiểm tra quyền
       const hasPermission = await PhanQuyenService.checkPermissionWithContext(
-        userId, 
-        permissions, 
+        userId,
+        permissions,
         context
       );
 

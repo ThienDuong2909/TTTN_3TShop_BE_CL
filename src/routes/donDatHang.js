@@ -1,7 +1,7 @@
 const express = require("express");
 const DonDatHangController = require("../controllers/DonDatHangController");
 const authenticateJWT = require("../middlewares/jwt");
-const { authorize, authorizeWithContext } = require("../middlewares/authorize");
+const { authorize } = require("../middlewares/authorize");
 
 const router = express.Router();
 
