@@ -809,6 +809,57 @@ const DonDatHangService = {
     }
   },
 
+  getRevenueReport: async (ngayBatDau, ngayKetThuc) => {
+    try {
+      const { QueryTypes } = require("sequelize");
+      // Gọi Stored Procedure
+      const results = await sequelize.query(
+        "CALL SP_GetRevenueReport(:ngayBatDau, :ngayKetThuc)",
+        {
+          replacements: {
+            ngayBatDau: ngayBatDau,
+            ngayKetThuc: ngayKetThuc,
+          },
+          type: QueryTypes.SELECT,
+        }
+      );
+
+      // Stored Procedure trả về array với một phần tử là kết quả
+      const data = results[0] || [];
+      console.log("data", data);
+
+      // Chuyển đổi dữ liệu để đảm bảo kiểu dữ liệu đúng
+      const dataArray = Object.values(data);
+
+      // Chuyển đổi dữ liệu để đảm bảo kiểu dữ liệu đúng
+      return dataArray.map((item) => ({
+        thang: Number(item.thang),
+        nam: Number(item.nam),
+        doanhThu: Number(item.doanhThu) || 0,
+      }));
+    } catch (error) {
+      console.error("Error calling SP_GetRevenueReport:", error);
+      throw new Error("Không thể lấy báo cáo doanh thu: " + error.message);
+    }
+  },
+  cancelOrder: async (maKH, maDDH) => {
+    // Tìm đơn hàng theo MaDDH và MaKH
+    const order = await DonDatHang.findOne({
+      where: {
+        MaDDH: maDDH,
+        MaKH: maKH,
+      },
+    });
+    if (!order) return null;
+
+    // Chuyển trạng thái về 5 (đã hủy)
+    order.MaTTDH = 5;
+    await order.save();
+
+    return order;
+  },
+
+
   // Thống kê đơn hàng theo sản phẩm
   getProductOrderStats: async (startDate = null, endDate = null) => {
     try {
@@ -933,6 +984,7 @@ const groupByDonGia = (donGiaList) => {
       MaDDH: item.MaDDH,
       NgayTao: item.NgayTao,
       SoLuong: item.SoLuong
+
     });
   });
   return Object.values(grouped);
