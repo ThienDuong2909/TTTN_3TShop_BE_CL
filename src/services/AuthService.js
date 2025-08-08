@@ -10,12 +10,18 @@ const AuthService = {
       include: [{ model: VaiTro }]
     });
     if (!taiKhoan) {
-      throw new Error('Email không tồn tại');
+      const error = new Error('Email không tồn tại');
+      error.code = 'EMAIL_NOT_FOUND';
+      error.status = 401;
+      throw error;
     }
     // Check password
     const isValidPassword = await bcrypt.compare(password, taiKhoan.Password);
     if (!isValidPassword) {
-      throw new Error('Mật khẩu không chính xác');
+      const error = new Error('Mật khẩu không chính xác');
+      error.code = 'INVALID_PASSWORD';
+      error.status = 401;
+      throw error;
     }
     // Get user info based on role
     let userInfo = null;

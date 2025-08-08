@@ -12,7 +12,14 @@ const AuthController = {
       const result = await AuthService.login(email, password);
       return response.success(res, result, 'Đăng nhập thành công');
     } catch (err) {
-      return response.error(res, err.message, 'Đăng nhập thất bại', 401);
+      console.log(err.status);
+      const status = err.status || 401;
+      return response.error(
+        res,
+        { code: err.code || 'AUTH_ERROR', detail: err.message },
+        'Đăng nhập thất bại',
+        status
+      );
     }
   },
   register: async (req, res) => {
