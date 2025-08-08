@@ -882,153 +882,37 @@ const DonDatHangService = {
     }
   },
   getRevenueReport: async (ngayBatDau, ngayKetThuc) => {
-    // 1. Lấy các đơn đặt hàng đã hoàn thành (MaTTDH = 4) trong khoảng thời gian
-    const donDatHangs = await DonDatHang.findAll({
-      where: {
-        MaTTDH: 4,
-        NgayTao: {
-          [Op.gte]: ngayBatDau,
-          [Op.lte]: ngayKetThuc,
-        },
-      },
-      attributes: ["MaDDH"],
-      raw: true,
-    });
-    const maDDHs = donDatHangs.map((d) => d.MaDDH);
-    if (maDDHs.length === 0) return [];
-
-    // 2. Lấy tất cả chi tiết đơn đặt hàng tương ứng
-    const chiTietDonHangs = await CT_DonDatHang.findAll({
-      where: { MaDDH: { [Op.in]: maDDHs } },
-      attributes: [
-        "MaCTSP",
-        "DonGia",
-        [
-          require("sequelize").fn("SUM", require("sequelize").col("SoLuong")),
-          "TongSoLuong",
-        ],
-      ],
-      group: ["MaCTSP", "DonGia"],
-      raw: true,
-    });
-
-    if (chiTietDonHangs.length === 0) return [];
-
-    // 3. Lấy thông tin sản phẩm và loại sản phẩm cho các MaCTSP
-    const maCTSPs = chiTietDonHangs.map((c) => c.MaCTSP);
-    const chiTietSPs = await ChiTietSanPham.findAll({
-      where: { MaCTSP: { [Op.in]: maCTSPs } },
-      include: [
+    try {
+      const { QueryTypes } = require("sequelize");
+      // Gọi Stored Procedure
+      const results = await sequelize.query(
+        "CALL SP_GetRevenueReport(:ngayBatDau, :ngayKetThuc)",
         {
-          model: SanPham,
-          include: [{ model: LoaiSP }],
-        },
-      ],
-      raw: true,
-      nest: true,
-    });
-
-    // 4. Map MaCTSP -> ChiTietSanPham, SanPham, LoaiSP
-    const mapCTSP = {};
-    chiTietSPs.forEach((ct) => {
-      mapCTSP[ct.MaCTSP] = ct;
-    });
-
-    // 5. Gom nhóm dữ liệu theo LoaiSP -> SanPham -> DonGia
-    // const result = {};
-    // chiTietDonHangs.forEach((item) => {
-    //   const ctsp = mapCTSP[item.MaCTSP];
-    //   if (!ctsp) return;
-    //   const sanPham = ctsp.SanPham;
-    //   const loaiSP = sanPham.LoaiSP;
-
-    //   if (!result[loaiSP.MaLoaiSP]) {
-    //     result[loaiSP.MaLoaiSP] = {
-    //       MaLoaiSP: loaiSP.MaLoaiSP,
-    //       TenLoai: loaiSP.TenLoai,
-    //       SanPhams: {},
-    //     };
-    //   }
-
-    //   if (!result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP]) {
-    //     result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP] = {
-    //       MaSP: sanPham.MaSP,
-    //       TenSP: sanPham.TenSP,
-    //       DonGiaList: [],
-    //     };
-    //   }
-
-    //   result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP].DonGiaList.push({
-    //     MaCTSP: item.MaCTSP,
-    //     DonGia: Number(item.DonGia),
-    //     SoLuong: Number(item.TongSoLuong),
-    //   });
-    // });
-
-    // // 6. Chuyển object sang array, format dữ liệu trả về
-    // return Object.values(result).map((loai) => ({
-    //   MaLoaiSP: loai.MaLoaiSP,
-    //   TenLoai: loai.TenLoai,
-    //   SanPhams: Object.values(loai.SanPhams).map((sp) => ({
-    //     MaSP: sp.MaSP,
-    //     TenSP: sp.TenSP,
-    //     DonGiaList: sp.DonGiaList,
-    //   })),
-    // }));
-    const result = {};
-    chiTietDonHangs.forEach((item) => {
-      const ctsp = mapCTSP[item.MaCTSP];
-      if (!ctsp) return;
-      const sanPham = ctsp.SanPham;
-      const loaiSP = sanPham.LoaiSP;
-
-      if (!result[loaiSP.MaLoaiSP]) {
-        result[loaiSP.MaLoaiSP] = {
-          MaLoaiSP: loaiSP.MaLoaiSP,
-          TenLoai: loaiSP.TenLoai,
-          SanPhams: {},
-        };
-      }
-
-      if (!result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP]) {
-        result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP] = {
-          MaSP: sanPham.MaSP,
-          TenSP: sanPham.TenSP,
-          DonGiaList: [],
-        };
-      }
-
-      result[loaiSP.MaLoaiSP].SanPhams[sanPham.MaSP].DonGiaList.push({
-        DonGia: Number(item.DonGia),
-        SoLuong: Number(item.TongSoLuong),
-      });
-    });
-
-    // 6. Gom nhóm DonGiaList theo DonGia (cộng dồn SoLuong), bỏ MaCTSP
-    function groupByDonGia(donGiaList) {
-      const map = {};
-      donGiaList.forEach((item) => {
-        if (!map[item.DonGia]) {
-          map[item.DonGia] = 0;
+          replacements: {
+            ngayBatDau: ngayBatDau,
+            ngayKetThuc: ngayKetThuc,
+          },
+          type: QueryTypes.SELECT,
         }
-        map[item.DonGia] += item.SoLuong;
-      });
-      return Object.entries(map).map(([DonGia, SoLuong]) => ({
-        DonGia: Number(DonGia),
-        SoLuong: Number(SoLuong),
-      }));
-    }
+      );
 
-    // 7. Chuyển object sang array, format dữ liệu trả về
-    return Object.values(result).map((loai) => ({
-      MaLoaiSP: loai.MaLoaiSP,
-      TenLoai: loai.TenLoai,
-      SanPhams: Object.values(loai.SanPhams).map((sp) => ({
-        MaSP: sp.MaSP,
-        TenSP: sp.TenSP,
-        DonGiaList: groupByDonGia(sp.DonGiaList),
-      })),
-    }));
+      // Stored Procedure trả về array với một phần tử là kết quả
+      const data = results[0] || [];
+      console.log("data", data);
+
+      // Chuyển đổi dữ liệu để đảm bảo kiểu dữ liệu đúng
+      const dataArray = Object.values(data);
+
+      // Chuyển đổi dữ liệu để đảm bảo kiểu dữ liệu đúng
+      return dataArray.map((item) => ({
+        thang: Number(item.thang),
+        nam: Number(item.nam),
+        doanhThu: Number(item.doanhThu) || 0,
+      }));
+    } catch (error) {
+      console.error("Error calling SP_GetRevenueReport:", error);
+      throw new Error("Không thể lấy báo cáo doanh thu: " + error.message);
+    }
   },
   cancelOrder: async (maKH, maDDH) => {
     // Tìm đơn hàng theo MaDDH và MaKH
