@@ -22,4 +22,10 @@ router.get('/my-permissions', PhanQuyenController.getCurrentUserPermissions);
 // Kiểm tra quyền của user
 router.post('/check', PhanQuyenController.checkUserPermission);
 
+// Gán quyền cho một nhân viên (chỉ admin)
+router.put('/employee/:nhanVienId', authorize('toanquyen'), PhanQuyenController.assignPermissionsToEmployee);
+
+// Lấy quyền theo nhân viên (chỉ admin)
+router.get('/employee/:nhanVienId', authorize('toanquyen'), PhanQuyenController.getPermissionsByEmployee);
+
 module.exports = router; 
