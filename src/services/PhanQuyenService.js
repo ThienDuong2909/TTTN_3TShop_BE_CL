@@ -1,4 +1,4 @@
-const { PhanQuyen, VaiTro, PhanQuyen_VaiTro, TaiKhoan } = require('../models');
+const { PhanQuyen, VaiTro, PhanQuyen_VaiTro, TaiKhoan, NhanVien } = require('../models');
 const { Op } = require('sequelize');
 
 class PhanQuyenService {
@@ -118,6 +118,32 @@ class PhanQuyenService {
   }
 
   /**
+   * Lấy quyền theo nhân viên (dựa trên vai trò của tài khoản nhân viên)
+   * @param {number} employeeId
+   * @returns {Promise<Array>}
+   */
+  static async getPermissionsByEmployee(employeeId) {
+    try {
+      const nhanVien = await NhanVien.findByPk(employeeId, {
+        include: [{ model: TaiKhoan, include: [{ model: VaiTro, include: [PhanQuyen] }] }]
+      });
+
+      if (!nhanVien) {
+        throw new Error('Nhân viên không tồn tại');
+      }
+
+      if (!nhanVien.TaiKhoan || !nhanVien.TaiKhoan.VaiTro) {
+        return [];
+      }
+
+      return nhanVien.TaiKhoan.VaiTro.PhanQuyens || [];
+    } catch (error) {
+      console.error('Error getting permissions by employee:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Cập nhật quyền cho vai trò
    * @param {number} vaiTroId - ID của vai trò
    * @param {Array} permissionIds - Array các ID quyền
@@ -143,6 +169,56 @@ class PhanQuyenService {
       return true;
     } catch (error) {
       console.error('Error updating role permissions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gán quyền (theo danh sách permissionIds) cho tài khoản (user) thông qua vai trò hiện tại của tài khoản
+   * Lưu ý: chỉnh sửa quyền của vai trò sẽ ảnh hưởng tới tất cả tài khoản thuộc vai trò đó
+   * @param {number} userId - MaTK của tài khoản
+   * @param {Array<number>} permissionIds - Danh sách id quyền
+   * @returns {Promise<boolean>}
+   */
+  static async assignPermissionsToUser(userId, permissionIds) {
+    try {
+      const taiKhoan = await TaiKhoan.findByPk(userId);
+      if (!taiKhoan) {
+        throw new Error('Tài khoản không tồn tại');
+      }
+
+      if (!taiKhoan.MaVaiTro) {
+        throw new Error('Tài khoản chưa được gán vai trò');
+      }
+
+      await this.updateRolePermissions(taiKhoan.MaVaiTro, permissionIds);
+      return true;
+    } catch (error) {
+      console.error('Error assigning permissions to user:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gán quyền cho nhân viên (thông qua tài khoản và vai trò của nhân viên)
+   * @param {number} employeeId - MaNV của nhân viên
+   * @param {Array<number>} permissionIds - Danh sách id quyền
+   * @returns {Promise<boolean>}
+   */
+  static async assignPermissionsToEmployee(employeeId, permissionIds) {
+    try {
+      const nhanVien = await NhanVien.findByPk(employeeId);
+      if (!nhanVien) {
+        throw new Error('Nhân viên không tồn tại');
+      }
+
+      if (!nhanVien.MaTK) {
+        throw new Error('Nhân viên chưa liên kết tài khoản');
+      }
+
+      return await this.assignPermissionsToUser(nhanVien.MaTK, permissionIds);
+    } catch (error) {
+      console.error('Error assigning permissions to employee:', error);
       throw error;
     }
   }
