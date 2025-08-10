@@ -26,6 +26,9 @@ router.get('/:id/for-receipt', authorize('dathang.xem'), controller.getForReceip
 // Lấy trạng thái đã nhập
 router.get('/:id/received-status', authorize('dathang.xem'), controller.getReceivedStatusByPDH);
 
+// Cập nhật phiếu đặt hàng
+router.put('/:id', authorize('dathang.sua'), controller.update);
+
 // Cập nhật trạng thái
 router.put('/:id/status', authorize('dathang.sua'), controller.updateStatus);
 

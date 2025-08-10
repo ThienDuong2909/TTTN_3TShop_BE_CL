@@ -16,6 +16,19 @@ class PhanQuyenController {
   }
 
   /**
+   * Lấy tất cả vai trò
+   */
+  static async getAllRoles(req, res) {
+    try {
+      const roles = await PhanQuyenService.getAllRoles();
+      return response.success(res, roles, 'Lấy danh sách vai trò thành công');
+    } catch (error) {
+      console.error('Error getting all roles:', error);
+      return response.error(res, error, 'Lỗi server khi lấy danh sách vai trò', 500);
+    }
+  }
+
+  /**
    * Lấy quyền theo vai trò
    */
   static async getPermissionsByRole(req, res) {
@@ -34,22 +47,94 @@ class PhanQuyenController {
    */
   static async updateRolePermissions(req, res) {
     try {
-      const { vaiTroId } = req.params;
-      const { permissionIds } = req.body;
+      const { roleId } = req.params;
+      const { permissions, permissionIds } = req.body;
 
-      if (!Array.isArray(permissionIds)) {
+      // Hỗ trợ cả permissions (strings) và permissionIds (numbers)
+      let finalPermissionIds = permissionIds;
+      
+      if (permissions) {
+        if (!Array.isArray(permissions)) {
+          return response.validationError(
+            res,
+            { permissions: 'phải là một mảng' },
+            'permissions phải là một mảng',
+            400
+          );
+        }
+        
+        if (permissions.length === 0) {
+          return response.validationError(
+            res,
+            { permissions: 'không được rỗng' },
+            'permissions không được rỗng',
+            400
+          );
+        }
+
+        // Chuyển đổi permissions (strings) thành permissionIds (numbers)
+        try {
+          finalPermissionIds = await PhanQuyenService.convertPermissionsToIds(permissions);
+        } catch (error) {
+          if (error.message === 'INVALID_PERMISSIONS') {
+            return response.validationError(
+              res,
+              { permissions: 'chứa quyền không hợp lệ' },
+              'Một số quyền không tồn tại trong hệ thống',
+              400
+            );
+          }
+          throw error;
+        }
+      } else if (permissionIds) {
+        if (!Array.isArray(permissionIds)) {
+          return response.validationError(
+            res,
+            { permissionIds: 'phải là một mảng' },
+            'permissionIds phải là một mảng',
+            400
+          );
+        }
+        
+        if (permissionIds.length === 0) {
+          return response.validationError(
+            res,
+            { permissionIds: 'không được rỗng' },
+            'permissionIds không được rỗng',
+            400
+          );
+        }
+      } else {
         return response.validationError(
           res,
-          { permissionIds: 'phải là một mảng' },
-          'permissionIds phải là một mảng',
+          { permissions: 'hoặc permissionIds là bắt buộc' },
+          'Phải cung cấp permissions hoặc permissionIds',
           400
         );
       }
 
-      await PhanQuyenService.updateRolePermissions(vaiTroId, permissionIds);
-      return response.success(res, null, 'Cập nhật quyền cho vai trò thành công');
+      const result = await PhanQuyenService.updateRolePermissions(roleId, finalPermissionIds);
+      
+      // Lấy thông tin vai trò và quyền đã cập nhật để trả về
+      const roleInfo = await PhanQuyenService.getRoleWithPermissions(roleId);
+      
+      return response.success(res, {
+        roleId: parseInt(roleId),
+        roleName: roleInfo.roleName,
+        permissions: roleInfo.permissions,
+        updatedAt: new Date().toISOString()
+      }, 'Cập nhật quyền cho vai trò thành công');
     } catch (error) {
       console.error('Error updating role permissions:', error);
+      
+      if (error.message === 'ROLE_NOT_FOUND') {
+        return response.notFound(res, `Không tìm thấy vai trò với ID: ${req.params.roleId}`);
+      }
+      
+      if (error.message === 'INSUFFICIENT_PERMISSIONS') {
+        return response.error(res, null, 'Bạn không có quyền cập nhật vai trò này', 403);
+      }
+      
       return response.error(res, error, 'Lỗi server khi cập nhật quyền cho vai trò', 500);
     }
   }

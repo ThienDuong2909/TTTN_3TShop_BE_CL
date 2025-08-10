@@ -172,6 +172,49 @@ const NhanVienController = {
       return response.error(res, err);
     }
   },
+
+  // Lấy vai trò của nhân viên
+  getRole: async (req, res) => {
+    try {
+      const { maNV } = req.params;
+      const data = await NhanVienService.getRole(maNV);
+      if (!data) {
+        return response.notFound(res, 'Không tìm thấy vai trò cho nhân viên này');
+      }
+      return response.success(res, data, 'Lấy vai trò nhân viên thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Gán vai trò cho nhân viên
+  updateRole: async (req, res) => {
+    try {
+      const { maNV } = req.params;
+      const { roleId } = req.body;
+      
+      if (!roleId) {
+        return response.error(res, null, 'Vai trò là bắt buộc', 400);
+      }
+
+      // Validate roleId là số
+      if (isNaN(roleId) || roleId < 1 || roleId > 4) {
+        return response.error(res, null, 'Vai trò không hợp lệ. Vai trò phải là số từ 1-4', 400);
+      }
+      
+      const data = await NhanVienService.updateRole(maNV, roleId);
+      if (!data) {
+        return response.notFound(res, 'Không tìm thấy nhân viên');
+      }
+      return response.success(res, data, 'Gán vai trò cho nhân viên thành công');
+    } catch (err) {
+      console.error('Lỗi trong updateRole controller:', err);
+      if (err.message === 'Vai trò không hợp lệ') {
+        return response.error(res, null, err.message, 400);
+      }
+      return response.error(res, err);
+    }
+  },
 };
 
 module.exports = NhanVienController;
