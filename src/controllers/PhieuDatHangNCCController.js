@@ -174,6 +174,29 @@ const PhieuDatHangNCCController = {
     }
   },
   
+  // Cập nhật phiếu đặt hàng NCC
+  update: async (req, res) => {
+    try {
+      const MaTK = req.user?.MaTK || req.user?.id;
+      if (!MaTK) return error(res, null, 'Không xác định được tài khoản đăng nhập', 401);
+      
+      // Map frontend "details" to backend "chiTiet"
+      const data = {
+        ...req.body,
+        MaTK,
+        chiTiet: req.body.details || req.body.chiTiet
+      };
+      
+      const result = await PhieuDatHangNCCService.update(req.params.id, data);
+      if (!result) return notFound(res, 'Không tìm thấy phiếu đặt hàng NCC');
+      
+      return success(res, result, 'Cập nhật phiếu đặt hàng NCC thành công');
+    } catch (err) {
+      console.log(err);
+      return error(res, err);
+    }
+  },
+  
   updateNgayKienNghiGiao: async (req, res) => {
     try {
       const { NgayKienNghiGiao } = req.body;

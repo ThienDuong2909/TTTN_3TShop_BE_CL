@@ -10,6 +10,9 @@ router.use(authenticateJWT);
 // Lấy tất cả quyền (chỉ admin)
 router.get('/all', authorize('toanquyen'), PhanQuyenController.getAllPermissions);
 
+// Lấy tất cả quyền (alias cho /all)
+router.get('/', authorize('toanquyen'), PhanQuyenController.getAllPermissions);
+
 // Lấy quyền theo vai trò (chỉ admin)
 router.get('/role/:vaiTroId', authorize('toanquyen'), PhanQuyenController.getPermissionsByRole);
 
@@ -26,6 +29,6 @@ router.post('/check', PhanQuyenController.checkUserPermission);
 router.put('/employee/:nhanVienId', authorize('toanquyen'), PhanQuyenController.assignPermissionsToEmployee);
 
 // Lấy quyền theo nhân viên (chỉ admin)
-router.get('/employee/:nhanVienId', authorize('toanquyen'), PhanQuyenController.getPermissionsByEmployee);
+router.get('/employee/:nhanVienId', PhanQuyenController.getPermissionsByEmployee);
 
 module.exports = router; 

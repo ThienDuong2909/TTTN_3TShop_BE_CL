@@ -45,6 +45,12 @@ router.get('/:id/department-history', authorize('nhanvien.xem'), NhanVienControl
 // Lấy nhân viên theo id
 router.get('/:id', authorize('nhanvien.xem'), NhanVienController.getById);
 
+// Lấy vai trò của nhân viên
+router.get('/:maNV/role', authorize('toanquyen'), NhanVienController.getRole);
+
+// Gán vai trò cho nhân viên
+router.put('/:maNV/role', authorize('toanquyen'), NhanVienController.updateRole);
+
 // Sửa nhân viên
 router.put('/:id', authorize('nhanvien.phancong'), NhanVienController.update);
 

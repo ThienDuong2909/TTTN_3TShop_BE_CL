@@ -331,6 +331,103 @@ const PhieuDatHangNCCService = {
     return result;
   },
   
+  // Cập nhật phiếu đặt hàng NCC
+  update: async (id, data) => {
+    // Validate input data
+    if (!data.NgayDat || !data.MaNCC || !Array.isArray(data.chiTiet) || data.chiTiet.length === 0) {
+      throw new Error('Thiếu thông tin phiếu đặt hàng hoặc chi tiết phiếu');
+    }
+    
+    // Validate NgayKienNghiGiao if provided
+    if (data.NgayKienNghiGiao) {
+      const ngayDat = new Date(data.NgayDat);
+      const ngayKienNghiGiao = new Date(data.NgayKienNghiGiao);
+      
+      if (ngayKienNghiGiao < ngayDat) {
+        throw new Error('Ngày kiến nghị giao không thể trước ngày đặt hàng');
+      }
+    }
+
+    // Use transaction to ensure atomicity
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // Find existing purchase order
+      const phieu = await PhieuDatHangNCC.findByPk(id, { transaction });
+      if (!phieu) {
+        await transaction.rollback();
+        return null;
+      }
+
+      // Check if purchase order can be updated (not in certain statuses)
+      if (phieu.MaTrangThai === 3 || phieu.MaTrangThai === 4) {
+        await transaction.rollback();
+        throw new Error('Không thể cập nhật phiếu đặt hàng đã được duyệt');
+      }
+
+      // Update main purchase order
+      await phieu.update({
+        NgayDat: data.NgayDat,
+        NgayKienNghiGiao: data.NgayKienNghiGiao,
+        MaNCC: data.MaNCC,
+        MaTrangThai: data.MaTrangThai || phieu.MaTrangThai,
+        GhiChu: data.GhiChu || phieu.GhiChu
+      }, { transaction });
+
+      // Delete existing details
+      await CT_PhieuDatHangNCC.destroy({
+        where: { MaPDH: id },
+        transaction
+      });
+
+      // Create new details
+      for (const ct of data.chiTiet) {
+        let MaCTSP = ct.MaCTSP;
+        
+        // Nếu không có MaCTSP, tìm dựa trên MaSP, MaMau, MaKichThuoc
+        if (!MaCTSP && ct.MaSP && ct.MaMau && ct.MaKichThuoc) {
+          const chiTietSanPham = await ChiTietSanPham.findOne({
+            where: {
+              MaSP: ct.MaSP,
+              MaMau: ct.MaMau,
+              MaKichThuoc: ct.MaKichThuoc
+            },
+            transaction
+          });
+          
+          if (!chiTietSanPham) {
+            throw new Error(`Không tìm thấy chi tiết sản phẩm với MaSP: ${ct.MaSP}, MaMau: ${ct.MaMau}, MaKichThuoc: ${ct.MaKichThuoc}`);
+          }
+          
+          MaCTSP = chiTietSanPham.MaCTSP;
+        }
+        
+        if (!MaCTSP || !ct.SoLuong || !ct.DonGia) {
+          throw new Error('Chi tiết phiếu đặt hàng thiếu trường bắt buộc');
+        }
+        if (ct.SoLuong <= 0) throw new Error('Số lượng phải lớn hơn 0');
+        if (ct.DonGia <= 0) throw new Error('Đơn giá phải lớn hơn 0');
+        
+        await CT_PhieuDatHangNCC.create({
+          MaPDH: id,
+          MaCTSP: MaCTSP,
+          SoLuong: ct.SoLuong,
+          DonGia: ct.DonGia,
+          ThanhTien: ct.SoLuong * ct.DonGia
+        }, { transaction });
+      }
+
+      await transaction.commit();
+
+      // Return updated purchase order with details
+      return await PhieuDatHangNCCService.getById(id);
+      
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+  
   updateNgayKienNghiGiao: async (id, ngayKienNghiGiao) => {
     const phieu = await PhieuDatHangNCC.findByPk(id);
     
