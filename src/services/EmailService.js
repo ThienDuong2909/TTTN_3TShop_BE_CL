@@ -80,8 +80,8 @@ class EmailService {
        worksheet.addRow(['Địa chỉ:', '123 Đường Lê Lợi, Quận 1, TP.HCM', '', '', `Tên NCC: ${phieuDatHang.NhaCungCap?.TenNCC || ''}`]);
        worksheet.addRow(['Mã số thuế:', '0301234567', '', '', `Địa chỉ: ${phieuDatHang.NhaCungCap?.DiaChi || ''}`]);
        worksheet.addRow(['Người lập đơn:', phieuDatHang.NhanVien?.TenNV || '', '', '', `Ngày lập đơn: ${new Date(phieuDatHang.NgayDat).toLocaleDateString('vi-VN')}`]);
-       worksheet.addRow(['Email:', phieuDatHang.NhanVien?.Email || '']);
-       worksheet.addRow(['Ngày kiến nghị giao:', '', '', '', phieuDatHang.NgayKienNghiGiao ? new Date(phieuDatHang.NgayKienNghiGiao).toLocaleDateString('vi-VN') : '']);
+       worksheet.addRow(['Mã nhân viên:', phieuDatHang.NhanVien?.MaNV || '']);
+       worksheet.addRow(['Ngày kiến nghị giao:', phieuDatHang.NgayKienNghiGiao ? new Date(phieuDatHang.NgayKienNghiGiao).toLocaleDateString('vi-VN') : '']);
 
     // Dòng trống (dòng 11)
     worksheet.addRow(['']);

@@ -98,8 +98,10 @@ const PhieuNhapService = {
         if (soLuongNhapThem > soLuongConLai) {
           errors.push({
             record: recordIndex,
-            data: { MaCTSP: ct.MaCTSP, SoLuongNhap: soLuongNhapThem, SoLuongConLai: soLuongConLai, SoLuongDat: soLuongDat, SoLuongDaNhap: soLuongDaNhap },
-            error: `Số lượng nhập cho MaCTSP ${ct.MaCTSP} (${soLuongNhapThem}) vượt quá số lượng còn lại cần nhập (${soLuongConLai}). Đã đặt: ${soLuongDat}, đã nhập: ${soLuongDaNhap}`
+            data: { MaCTSP: ct.MaCTSP, SoLuongNhap: soLuongNhapThem, 
+              SoLuongConLai: soLuongConLai, SoLuongDat: soLuongDat, SoLuongDaNhap: soLuongDaNhap },
+            error: `Số lượng nhập cho MaCTSP ${ct.MaCTSP} (${soLuongNhapThem}) 
+            vượt quá số lượng còn lại cần nhập (${soLuongConLai}). Đã đặt: ${soLuongDat}, đã nhập: ${soLuongDaNhap}`
           });
         }
       }
@@ -141,8 +143,6 @@ const PhieuNhapService = {
         { where: { MaPDH: data.MaPDH }, transaction }
       );
       
-      console.log(`Cập nhật trạng thái phiếu đặt hàng ${data.MaPDH} thành ${nhapDu ? 5 : 4}`);
-
       // Sau khi kiểm tra hợp lệ, mới tạo phiếu nhập và chi tiết phiếu nhập
       const phieu = await PhieuNhap.create({
         SoPN,
