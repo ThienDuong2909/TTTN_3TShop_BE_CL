@@ -15,9 +15,7 @@ const {
 const { Op } = require("sequelize");
 
 const removeVietnameseTones = (str) => {
-  // Loại bỏ dấu tiếng Việt
   str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  // Loại bỏ các ký tự đặc biệt, chuyển về chữ thường, bỏ khoảng trắng
   str = str.replace(/đ/g, "d").replace(/Đ/g, "D");
   str = str.replace(/\s+/g, "");
   return str.toLowerCase();
@@ -149,7 +147,7 @@ const SanPhamService = {
             },
           ],
           attributes: ["PhanTramGiam"],
-        }, // Thêm trường isNew để đánh dấu sản phẩm mới
+        },
       ],
     });
   },
@@ -608,14 +606,13 @@ const SanPhamService = {
     const today = new Date();
     const before30Days = new Date(today);
     before30Days.setDate(today.getDate() - 30);
-
     const donDatHangs = await require("../models/DonDatHang").findAll({
       where: {
         NgayTao: {
           [Op.gte]: before30Days,
           [Op.lte]: today,
         },
-        MaTTDH: 5, // Chỉ lấy đơn hàng đã hoàn thành
+        MaTTDH: 4, // Chỉ lấy đơn hàng đã hoàn thành
       },
       attributes: ["MaDDH"],
     });
@@ -667,7 +664,6 @@ const SanPhamService = {
       .map(([maSP]) => Number(maSP));
 
     if (sortedMaSPs.length === 0) return [];
-
     const todayStr = today.toISOString().split("T")[0];
     const products = await SanPham.findAll({
       where: { MaSP: { [Op.in]: sortedMaSPs } },

@@ -4,6 +4,7 @@ const loaiSPRoutes = require("./loaiSP");
 const phieuDatHangNCCRoutes = require("./phieuDatHangNCC");
 const phieuNhapRoutes = require("./phieuNhap");
 const nhanVienRoutes = require("./nhanvien");
+const khachHangRoutes = require("./khachhang");
 const nhaCungCapRoutes = require("./nhacungcap");
 const sanPhamRoutes = require("./sanpham");
 const gioHangRoutes = require("./gioHang");
@@ -43,6 +44,8 @@ router.use("/sizes", kichThuocRoutes);
 router.use("/purchase-order-statuses", trangThaiDatHangRoutes);
 router.use("/purchase-orders", phieuDatHangNCCRoutes);
 router.use("/goods-receipts", phieuNhapRoutes);
+
+router.use("/customers", khachHangRoutes);
 
 router.use("/san-pham", sanPhamRoutes);
 router.use("/gio-hang", gioHangRoutes);
