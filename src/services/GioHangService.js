@@ -262,7 +262,21 @@ const GioHangService = {
           include: [
             {
               model: ChiTietSanPham,
-              include: ["SanPham", "Mau", "KichThuoc"],
+              include: [
+                {
+                  model: require("../models/SanPham"),
+                  include: [
+                    {
+                      model: require("../models/AnhSanPham"),
+                      where: { AnhChinh: true }, // Chỉ lấy ảnh chính
+                      attributes: ["DuongDan"],
+                      required: false, // LEFT JOIN để không bỏ sót sản phẩm không có ảnh
+                    },
+                  ],
+                },
+                { model: require("../models/Mau") },
+                { model: require("../models/KichThuoc") },
+              ],
             },
           ],
         },
@@ -273,46 +287,32 @@ const GioHangService = {
       return { items: [], MaDDH: null };
     }
 
-    const cartItems = donDatHang.CT_DonDatHangs.map((ct) => ({
-      maCTDDH: ct.MaCTDDH,
-      soLuong: ct.SoLuong,
-      donGia: ct.DonGia,
-      maCTSP: ct.MaCTSP,
-      sanPham: {
-        maSP: ct.ChiTietSanPham?.SanPham?.MaSP,
-        tenSP: ct.ChiTietSanPham?.SanPham?.TenSP,
-      },
-      kichThuoc: {
-        ten: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc,
-      },
-      mau: {
-        ten: ct.ChiTietSanPham?.Mau?.TenMau,
-        hex: ct.ChiTietSanPham?.Mau?.MaHex,
-      },
-    }));
+    const cartItems = donDatHang.CT_DonDatHangs.map((ct) => {
+      const anhChinh = ct.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0];
+
+      return {
+        maCTDDH: ct.MaCTDDH,
+        soLuong: ct.SoLuong,
+        donGia: ct.DonGia,
+        maCTSP: ct.MaCTSP,
+        sanPham: {
+          maSP: ct.ChiTietSanPham?.SanPham?.MaSP,
+          tenSP: ct.ChiTietSanPham?.SanPham?.TenSP,
+        },
+        kichThuoc: {
+          ten: ct.ChiTietSanPham?.KichThuoc?.TenKichThuoc,
+        },
+        mau: {
+          ten: ct.ChiTietSanPham?.Mau?.TenMau,
+          hex: ct.ChiTietSanPham?.Mau?.MaHex,
+        },
+        anhSanPham: anhChinh ? anhChinh.DuongDan : null,
+      };
+    });
 
     return {
       MaDDH: donDatHang.MaDDH,
       items: cartItems,
-    };
-  },
-  clearCart: async (maKH) => {
-    const donDatHang = await DonDatHang.findOne({
-      where: { MaKH: Number(maKH), MaTTDH: 6 },
-      include: [{ model: CT_DonDatHang }],
-    });
-
-    if (!donDatHang) throw new Error("Không tìm thấy giỏ hàng của khách hàng");
-
-    // Xoá tất cả CT_DonDatHang thuộc đơn đó
-    await CT_DonDatHang.destroy({
-      where: { MaDDH: donDatHang.MaDDH },
-    });
-
-    // Trả lại đơn hàng rỗng
-    return {
-      MaDDH: donDatHang.MaDDH,
-      items: [],
     };
   },
   getAllOrdersByCustomer: async (maKH) => {
@@ -337,15 +337,15 @@ const GioHangService = {
             },
             {
               model: require("../models/BinhLuan"),
-              attributes: ['MaBL', 'MoTa', 'SoSao', 'NgayBinhLuan'],
+              attributes: ["MaBL", "MoTa", "SoSao", "NgayBinhLuan"],
               required: false,
               include: [
                 {
                   model: KhachHang,
-                  attributes: ['MaKH', 'TenKH']
-                }
-              ]
-            }
+                  attributes: ["MaKH", "TenKH"],
+                },
+              ],
+            },
           ],
         },
         {
@@ -357,15 +357,15 @@ const GioHangService = {
     });
 
     // Xử lý dữ liệu để thêm danh sách bình luận cho mỗi đơn hàng
-    const ordersWithComments = orders.map(order => {
+    const ordersWithComments = orders.map((order) => {
       const orderData = order.toJSON();
       let danhSachBinhLuan = [];
 
       // Thu thập tất cả bình luận từ các chi tiết đơn hàng
       if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
-        orderData.CT_DonDatHangs.forEach(item => {
+        orderData.CT_DonDatHangs.forEach((item) => {
           if (item.BinhLuans && item.BinhLuans.length > 0) {
-            item.BinhLuans.forEach(binhLuan => {
+            item.BinhLuans.forEach((binhLuan) => {
               danhSachBinhLuan.push({
                 // Thông tin bình luận cơ bản
                 MaBL: binhLuan.MaBL,
@@ -377,44 +377,52 @@ const GioHangService = {
                 // Thông tin khách hàng bình luận
                 KhachHang: {
                   MaKH: binhLuan.KhachHang?.MaKH || maKH,
-                  TenKH: binhLuan.KhachHang?.TenKH || ''
+                  TenKH: binhLuan.KhachHang?.TenKH || "",
                 },
 
                 // Thông tin chi tiết sản phẩm được bình luận
                 SanPham: {
                   MaSP: item.ChiTietSanPham?.SanPham?.MaSP || 0,
-                  TenSP: item.ChiTietSanPham?.SanPham?.TenSP || '',
+                  TenSP: item.ChiTietSanPham?.SanPham?.TenSP || "",
 
                   // Thông tin biến thể sản phẩm
                   ChiTiet: {
                     MaCTSP: item.MaCTSP,
                     KichThuoc: {
-                      MaKichThuoc: item.ChiTietSanPham?.KichThuoc?.MaKichThuoc || 0,
-                      TenKichThuoc: item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || ''
+                      MaKichThuoc:
+                        item.ChiTietSanPham?.KichThuoc?.MaKichThuoc || 0,
+                      TenKichThuoc:
+                        item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
                     },
                     MauSac: {
                       MaMau: item.ChiTietSanPham?.Mau?.MaMau || 0,
-                      TenMau: item.ChiTietSanPham?.Mau?.TenMau || '',
-                      MaHex: item.ChiTietSanPham?.Mau?.MaHex || ''
-                    }
+                      TenMau: item.ChiTietSanPham?.Mau?.TenMau || "",
+                      MaHex: item.ChiTietSanPham?.Mau?.MaHex || "",
+                    },
                   },
 
                   // Hình ảnh sản phẩm (lấy ảnh đầu tiên)
-                  HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0] ? {
-                    MaAnh: item.ChiTietSanPham.SanPham.AnhSanPhams[0].MaAnh,
-                    TenFile: item.ChiTietSanPham.SanPham.AnhSanPhams[0].TenFile,
-                    DuongDan: item.ChiTietSanPham.SanPham.AnhSanPhams[0].DuongDan,
-                    AnhChinh: item.ChiTietSanPham.SanPham.AnhSanPhams[0].AnhChinh,
-                    ThuTu: item.ChiTietSanPham.SanPham.AnhSanPhams[0].ThuTu
-                  } : null
+                  HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]
+                    ? {
+                        MaAnh: item.ChiTietSanPham.SanPham.AnhSanPhams[0].MaAnh,
+                        TenFile:
+                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].TenFile,
+                        DuongDan:
+                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].DuongDan,
+                        AnhChinh:
+                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].AnhChinh,
+                        ThuTu: item.ChiTietSanPham.SanPham.AnhSanPhams[0].ThuTu,
+                      }
+                    : null,
                 },
 
                 // Thông tin đơn hàng liên quan
                 ThongTinDonHang: {
                   SoLuong: item.SoLuong,
                   DonGia: parseFloat(item.DonGia) || 0,
-                  ThanhTien: (parseFloat(item.DonGia) || 0) * (item.SoLuong || 0)
-                }
+                  ThanhTien:
+                    (parseFloat(item.DonGia) || 0) * (item.SoLuong || 0),
+                },
               });
             });
           }
@@ -424,7 +432,7 @@ const GioHangService = {
       // Trả về đơn hàng với danh sách bình luận (hoặc mảng rỗng nếu không có)
       return {
         ...orderData,
-        DanhSachBinhLuan: danhSachBinhLuan
+        DanhSachBinhLuan: danhSachBinhLuan,
       };
     });
 

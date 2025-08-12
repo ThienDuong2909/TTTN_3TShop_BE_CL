@@ -19,6 +19,18 @@ const KhachHang = sequelize.define("KhachHang", {
     unique: true,
     references: { model: "TaiKhoan", key: "MaTK" },
   },
+  NgaySinh: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  GioiTinh: {
+    type: DataTypes.TINYINT,
+    allowNull: true,
+  },
+  AnhDaiDien: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
 });
 
 module.exports = KhachHang;

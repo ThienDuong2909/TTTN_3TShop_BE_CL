@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./sequelize');
+const { DataTypes } = require("sequelize");
+const sequelize = require("./sequelize");
 
-const NhanVien = sequelize.define('NhanVien', {
+const NhanVien = sequelize.define("NhanVien", {
   MaNV: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -12,17 +12,17 @@ const NhanVien = sequelize.define('NhanVien', {
     allowNull: false,
   },
   NgaySinh: DataTypes.DATEONLY,
-  
-  Luong: DataTypes.DECIMAL(18,2),
+
+  Luong: DataTypes.DECIMAL(18, 2),
   MaTK: {
     type: DataTypes.INTEGER,
     unique: true,
-    references: { model: 'TaiKhoan', key: 'MaTK' },
+    references: { model: "TaiKhoan", key: "MaTK" },
   },
-  KhuVuc: {
-    type: DataTypes.STRING(65),
-    allowNull: true,
-  },
+  // KhuVuc: {
+  //   type: DataTypes.STRING(65),
+  //   allowNull: true,
+  // },
 });
 
-module.exports = NhanVien; 
+module.exports = NhanVien;
