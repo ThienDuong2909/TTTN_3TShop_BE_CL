@@ -17,12 +17,9 @@ const NhanVien = sequelize.define("NhanVien", {
   MaTK: {
     type: DataTypes.INTEGER,
     unique: true,
-    references: { model: "TaiKhoan", key: "MaTK" },
-  },
-  // KhuVuc: {
-  //   type: DataTypes.STRING(65),
-  //   allowNull: true,
-  // },
+    references: { model: 'TaiKhoan', key: 'MaTK' },
+  }
+
 });
 
 module.exports = NhanVien;

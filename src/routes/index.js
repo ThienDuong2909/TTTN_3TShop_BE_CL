@@ -19,6 +19,7 @@ const hoaDonRoutes = require("./hoadon");
 const binhLuanRoutes = require("./binhLuan");
 const traHangRoutes = require("./traHang"); // Thêm route TraHang
 const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
+const rolesRoutes = require("./roles"); // Thêm route Roles
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -75,5 +76,8 @@ router.use("/return", traHangRoutes); // Đăng ký route TraHang
 // Routes cho phân quyền
 router.use("/phan-quyen", phanQuyenRoutes);
 router.use("/permissions", phanQuyenRoutes); // English alias
+
+// Routes cho vai trò
+router.use("/roles", rolesRoutes);
 
 module.exports = router;
