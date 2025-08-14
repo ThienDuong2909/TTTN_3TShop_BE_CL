@@ -9,7 +9,8 @@ const {
   ThayDoiGia,
   sequelize,
   CT_DotGiamGia,
-
+  BinhLuan,
+  CT_DonDatHang,
   DotGiamGia,
 } = require("../models");
 const { Op } = require("sequelize");
@@ -20,10 +21,80 @@ const removeVietnameseTones = (str) => {
   str = str.replace(/\s+/g, "");
   return str.toLowerCase();
 };
+// Hàm chung tính avgRate cho danh sách sản phẩm
+const calculateAvgRateForProducts = async (products) => {
+  for (const product of products) {
+    try {
+      // Lấy tất cả MaCTSP của sản phẩm này
+      const maCTSPs = product.ChiTietSanPhams?.map((ctsp) => ctsp.MaCTSP) || [];
+
+      if (maCTSPs.length === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+        continue;
+      }
+
+      // Lấy tất cả MaCTDDH từ các MaCTSP
+      const ctDonDatHangs = await CT_DonDatHang.findAll({
+        where: { MaCTSP: { [Op.in]: maCTSPs } },
+        attributes: ["MaCTDDH"],
+        raw: true,
+      });
+
+      const maCTDDHs = ctDonDatHangs.map((ct) => ct.MaCTDDH);
+
+      if (maCTDDHs.length === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+        continue;
+      }
+
+      // Lấy tất cả bình luận cho sản phẩm này
+      const binhLuans = await BinhLuan.findAll({
+        where: { MaCTDonDatHang: { [Op.in]: maCTDDHs } },
+        attributes: ["SoSao"],
+        raw: true,
+      });
+
+      const luotBinhLuan = binhLuans.length;
+
+      if (luotBinhLuan === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+      } else {
+        // Tính số sao trung bình
+        const totalStars = binhLuans.reduce((sum, bl) => sum + bl.SoSao, 0);
+        const avgRate = Math.round((totalStars / luotBinhLuan) * 10) / 10;
+
+        product.dataValues.BinhLuan = {
+          avgRate: avgRate,
+          luotBinhLuan: luotBinhLuan,
+        };
+      }
+    } catch (error) {
+      console.error(
+        `Error calculating BinhLuan for product ${product.MaSP}:`,
+        error
+      );
+      product.dataValues.BinhLuan = {
+        avgRate: 0,
+        luotBinhLuan: 0,
+      };
+    }
+  }
+
+  return products;
+};
 const SanPhamService = {
   getAll: async () => {
     const today = new Date().toISOString().split("T")[0];
-    return await SanPham.findAll({
+    const allProducts = await SanPham.findAll({
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -67,6 +138,7 @@ const SanPhamService = {
         },
       ],
     });
+    return await calculateAvgRateForProducts(allProducts);
   },
 
   getAllProducts: async ({ page = 1, pageSize = 8 } = {}) => {
@@ -94,6 +166,7 @@ const SanPhamService = {
 
     return { rows, count };
   },
+
   getNewProducts: async () => {
     const today = new Date();
     const before30Days = new Date(today);
@@ -102,7 +175,7 @@ const SanPhamService = {
     const todayStr = today.toISOString().split("T")[0];
     const before30DaysStr = before30Days.toISOString().split("T")[0];
 
-    return await SanPham.findAll({
+    const products = await SanPham.findAll({
       where: {
         NgayTao: {
           [Op.gte]: before30DaysStr,
@@ -150,10 +223,13 @@ const SanPhamService = {
         },
       ],
     });
+
+    // Tính avgRate cho sản phẩm mới
+    return await calculateAvgRateForProducts(products);
   },
   getById: async (id) => {
     const today = new Date().toISOString().split("T")[0];
-    return await SanPham.findByPk(id, {
+    const product = await SanPham.findByPk(id, {
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -191,6 +267,10 @@ const SanPhamService = {
         },
       ],
     });
+    const productsWithBinhLuan = await calculateAvgRateForProducts([product]);
+
+    // Trả về sản phẩm đầu tiên (vì chỉ có 1 sản phẩm)
+    return productsWithBinhLuan[0];
   },
 
   getBySupplier: async (supplierId) => {
@@ -707,9 +787,11 @@ const SanPhamService = {
       ],
     });
 
+    const productsWithAvgRate = await calculateAvgRateForProducts(products);
+
     // Sắp xếp lại theo thứ tự bán chạy và thêm trường totalSold
     const productMap = {};
-    products.forEach((p) => {
+    productsWithAvgRate.forEach((p) => {
       productMap[p.MaSP] = p;
     });
     return sortedMaSPs
@@ -781,12 +863,12 @@ const SanPhamService = {
       return name.includes(processedKeyword);
     });
 
-    return filtered;
+    return await calculateAvgRateForProducts(filtered);
   },
   getAllDiscountProducts: async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    return await SanPham.findAll({
+    const products = await SanPham.findAll({
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -829,6 +911,7 @@ const SanPhamService = {
         },
       ],
     });
+    return await calculateAvgRateForProducts(products);
   },
 
   addProductDetail: async ({ MaSP, MaKichThuoc, MaMau, SoLuongTon }) => {
