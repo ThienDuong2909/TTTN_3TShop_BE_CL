@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./sequelize');
+const { DataTypes } = require("sequelize");
+const sequelize = require("./sequelize");
 
-const NhanVien = sequelize.define('NhanVien', {
+const NhanVien = sequelize.define("NhanVien", {
   MaNV: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -24,4 +24,4 @@ const NhanVien = sequelize.define('NhanVien', {
   }
 });
 
-module.exports = NhanVien; 
+module.exports = NhanVien;

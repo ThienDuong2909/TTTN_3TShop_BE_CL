@@ -1,5 +1,6 @@
 const DonDatHangService = require("../services/DonDatHangService");
 const response = require("../utils/response");
+const { getMaNVFromMaTK } = require("../utils/auth");
 
 const DonDatHangController = {
   // Lấy danh sách đơn hàng theo trạng thái
@@ -415,13 +416,25 @@ const DonDatHangController = {
   getAssignedOrders: async (req, res) => {
     try {
       const { page = 1, limit = 10, status } = req.query;
-      const maNVGiao = req.user.id || req.user.MaTK; // Lấy ID nhân viên từ JWT token
+      const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
+
+      if (!maTK) {
+        return response.error(
+          res,
+          null,
+          "Không xác định được tài khoản",
+          400
+        );
+      }
+
+      // Lấy MaNV từ MaTK
+      const maNVGiao = await getMaNVFromMaTK(maTK);
 
       if (!maNVGiao) {
         return response.error(
           res,
           null,
-          "Không xác định được nhân viên giao hàng",
+          "Không tìm thấy thông tin nhân viên",
           400
         );
       }
@@ -454,13 +467,25 @@ const DonDatHangController = {
   confirmDelivery: async (req, res) => {
     try {
       const { id } = req.params;
-      const maNVGiao = req.user.id || req.user.MaTK;
+      const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
+
+      if (!maTK) {
+        return response.error(
+          res,
+          null,
+          "Không xác định được tài khoản",
+          400
+        );
+      }
+
+      // Lấy MaNV từ MaTK
+      const maNVGiao = await getMaNVFromMaTK(maTK);
 
       if (!maNVGiao) {
         return response.error(
           res,
           null,
-          "Không xác định được nhân viên giao hàng",
+          "Không tìm thấy thông tin nhân viên",
           400
         );
       }

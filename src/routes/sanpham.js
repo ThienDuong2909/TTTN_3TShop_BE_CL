@@ -2,53 +2,43 @@ const express = require("express");
 const upload = require("../middlewares/upload");
 const SanPhamController = require("../controllers/SanPhamController");
 const authenticateJWT = require('../middlewares/jwt');
-const { authorize, checkPermission } = require('../middlewares/authorize');
+const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
+// === PUBLIC ROUTES (Không cần đăng nhập) ===
 router.get("/", SanPhamController.getAll);
-
-// Lấy sản phẩm mới
 router.get("/new-product", SanPhamController.getNewProducts);
 router.get("/best-sellers", SanPhamController.getBestSellers);
 router.get("/discount", SanPhamController.getAllDiscountProducts);
 router.get("/search", SanPhamController.searchProducts);
-
 router.get("/get-all-products", SanPhamController.getAllProducts);
-
-// Lấy chi tiết sản phẩm
 router.get("/details", SanPhamController.getProductDetails);
-// Lấy chi tiết sản phẩm theo ID
 router.get("/details/:id", SanPhamController.getProductDetailById);
-// Lấy sản phẩm theo nhà cung cấp
-router.get("/supplier/:supplierId", 
-  authenticateJWT,
-  authorize('Admin', 'NhanVienCuaHang'),
-SanPhamController.getBySupplier);
-// Lấy màu và size của sản phẩm
-router.get(
-  "/:productId/colors-sizes",
-  SanPhamController.getColorsSizesByProductId
-);
-// Lấy sản phẩm theo id
+router.get("/:productId/colors-sizes", SanPhamController.getColorsSizesByProductId);
 router.get("/:id", SanPhamController.getById);
-// Thêm sản phẩm
-router.post("/", authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.createProduct);
-// Sửa sản phẩm
-router.put(
-  "/:id",
-  authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.update
-);
-// Xóa sản phẩm
-router.delete(
-  "/:id",
-  authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.delete
-);
 router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 
-router.put('/detail/:maCTSP/stock', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateProductDetailStock);
-router.put('/:id/update', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateProduct);
-router.post('/update-stock', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.updateMultipleProductDetailStocks);
-router.post('/add-detail', authenticateJWT, authorize('Admin', 'NhanVienCuaHang'), SanPhamController.addProductDetail);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
+
+// Lấy sản phẩm theo nhà cung cấp
+router.get("/supplier/:supplierId", authorize('sanpham.xem'), SanPhamController.getBySupplier);
+
+// === AUTHORIZED ROUTES ===
+// Thêm sản phẩm
+router.post("/", authorize('sanpham.tao'), SanPhamController.createProduct);
+
+// Sửa sản phẩm
+router.put("/:id", authorize('sanpham.sua'), SanPhamController.update);
+
+// Xóa sản phẩm
+router.delete("/:id", authorize('sanpham.xoa'), SanPhamController.delete);
+
+// Cập nhật chi tiết sản phẩm
+router.put('/detail/:maCTSP/stock', authorize('sanpham.sua'), SanPhamController.updateProductDetailStock);
+router.put('/:id/update', authorize('sanpham.sua'), SanPhamController.updateProduct);
+router.post('/update-stock', authorize('sanpham.sua'), SanPhamController.updateMultipleProductDetailStocks);
+router.post('/add-detail', authorize('sanpham.tao'), SanPhamController.addProductDetail);
 
 module.exports = router;

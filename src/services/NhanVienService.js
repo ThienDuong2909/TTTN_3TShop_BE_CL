@@ -847,8 +847,111 @@ const NhanVienService = {
         NhanVien: nhanVien
       };
     } catch (error) {
-      await t.rollback();
+      // Kiểm tra trạng thái transaction trước khi rollback
+      if (t && !t.finished) {
+        await t.rollback();
+      }
       console.error('Lỗi khi phân công đơn hàng:', error);
+      throw error;
+    }
+  },
+
+  // Lấy vai trò của nhân viên
+  getRole: async (maNV) => {
+    try {
+      const nhanVien = await NhanVien.findByPk(maNV, {
+        include: [
+          {
+            model: TaiKhoan,
+            include: [{ model: VaiTro }]
+          }
+        ]
+      });
+
+      if (!nhanVien || !nhanVien.TaiKhoan || !nhanVien.TaiKhoan.VaiTro) {
+        return null;
+      }
+
+      return {
+        roleId: nhanVien.TaiKhoan.VaiTro.MaVaiTro,
+        roleName: nhanVien.TaiKhoan.VaiTro.TenVaiTro
+      };
+    } catch (error) {
+      console.error('Lỗi khi lấy vai trò nhân viên:', error);
+      throw error;
+    }
+  },
+
+  // Gán vai trò cho nhân viên
+  updateRole: async (maNV, roleId) => {
+    console.log(`🔄 Bắt đầu gán vai trò ${roleId} cho nhân viên ${maNV}`);
+    const t = await sequelize.transaction();
+    try {
+      // Kiểm tra nhân viên có tồn tại không
+      const nhanVien = await NhanVien.findByPk(maNV, {
+        include: [{ model: TaiKhoan }],
+        transaction: t
+      });
+
+      if (!nhanVien) {
+        console.log(`❌ Không tìm thấy nhân viên với MaNV: ${maNV}`);
+        await t.rollback();
+        return null;
+      }
+
+      console.log(`✅ Tìm thấy nhân viên: ${nhanVien.TenNV}`);
+
+      // Kiểm tra vai trò có hợp lệ không
+      const vaiTro = await VaiTro.findByPk(roleId, { transaction: t });
+      if (!vaiTro) {
+        console.log(`❌ Không tìm thấy vai trò với MaVaiTro: ${roleId}`);
+        await t.rollback();
+        throw new Error('Vai trò không hợp lệ');
+      }
+
+      console.log(`✅ Tìm thấy vai trò: ${vaiTro.TenVaiTro}`);
+
+      // Cập nhật vai trò trong tài khoản
+      if (nhanVien.TaiKhoan) {
+        console.log(`🔄 Cập nhật vai trò cho tài khoản hiện tại`);
+        // Cập nhật vai trò hiện tại
+        await nhanVien.TaiKhoan.update({
+          MaVaiTro: roleId
+        }, { transaction: t });
+      } else {
+        console.log(`🔄 Tạo tài khoản mới cho nhân viên`);
+        // Nếu chưa có tài khoản, tạo mới và liên kết với nhân viên
+        const newTaiKhoan = await TaiKhoan.create({
+          MaVaiTro: roleId,
+          Email: `nv${maNV}@company.com`, // Email mặc định
+          Password: await bcrypt.hash('123456', 10) // Mật khẩu mặc định
+        }, { transaction: t });
+        
+        console.log(`✅ Đã tạo tài khoản mới với MaTK: ${newTaiKhoan.MaTK}`);
+        
+        // Cập nhật MaTK trong bảng NhanVien
+        await nhanVien.update({
+          MaTK: newTaiKhoan.MaTK
+        }, { transaction: t });
+        
+        console.log(`✅ Đã liên kết tài khoản với nhân viên`);
+      }
+
+      await t.commit();
+      console.log(`✅ Gán vai trò thành công!`);
+
+      // Trả về thông tin vai trò đã cập nhật
+      return {
+        roleId: roleId,
+        roleName: vaiTro.TenVaiTro
+      };
+    } catch (error) {
+      console.error(`❌ Lỗi khi gán vai trò:`, error);
+      // Kiểm tra trạng thái transaction trước khi rollback
+      if (t && !t.finished) {
+        await t.rollback();
+        console.log(`🔄 Đã rollback transaction`);
+      }
       throw error;
     }
   },

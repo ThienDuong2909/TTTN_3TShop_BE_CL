@@ -5,92 +5,45 @@ const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
-// === CUSTOMER ROUTES (Chỉ khách hàng) ===
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
+// === CUSTOMER ROUTES ===
 // Khách hàng yêu cầu trả hàng
-// POST /api/tra-hang/request
-// Body: { maDDH: number, lyDo: string }
-router.post('/request',
-  authenticateJWT,
-  authorize('KhachHang'),
-  TraHangController.requestReturn
-);
+router.post('/request', authorize('thongtin.xem'), TraHangController.requestReturn);
 
 // Lấy lịch sử trả hàng của khách hàng
-// GET /api/tra-hang/history?page=1&limit=10
-router.get('/history',
-  authenticateJWT,
-  authorize('KhachHang'),
-  TraHangController.getCustomerReturnHistory
-);
+router.get('/history', authorize('thongtin.xem'), TraHangController.getCustomerReturnHistory);
 
-// === EMPLOYEE ROUTES (Chỉ nhân viên) ===
-
+// === EMPLOYEE ROUTES ===
 // Lấy danh sách yêu cầu trả hàng
-// GET /api/tra-hang/requests?page=1&limit=10&status=pending
-router.get('/requests',
-  authenticateJWT,
-  authorize('NhanVienBanHang', 'Admin'),
-  TraHangController.getReturnRequests
-);
+router.get('/requests', authorize('toanquyen'), TraHangController.getReturnRequests);
 
 // Tạo phiếu trả hàng
-// POST /api/tra-hang/slip
-// Body: { maDDH: number, danhSachSanPham: [{ maCTDDH: number, soLuongTra: number }], lyDo: string, trangThaiPhieu?: number }
-router.post('/slip',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin', 'KhachHang'),
-  TraHangController.createReturnSlip
-);
+router.post('/slip', authorize('toanquyen'), TraHangController.createReturnSlip);
 
 // Tạo phiếu chi cho phiếu trả hàng
-// POST /api/return/payment
-// Body: { maPhieuTra: number, soTien: number }
-router.post('/payment',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
-  TraHangController.createPaymentSlip
-);
+router.post('/payment', authorize('toanquyen'), TraHangController.createPaymentSlip);
 
 // Duyệt phiếu trả hàng
 // PUT /api/tra-hang/slip/:maPhieuTra/approve
 // Body: { trangThaiPhieu: number, lyDoDuyet?: string }
 router.put('/slip/:maPhieuTra/approve',
   authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
+  authorize('toanquyen'),
   TraHangController.approveReturnSlip
 );
 
 // Lấy chi tiết phiếu trả hàng
-// GET /api/tra-hang/slip/:id
-router.get('/slip/:id',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
-  TraHangController.getReturnSlipDetail
-);
+router.get('/slip/:id', authorize('toanquyen'), TraHangController.getReturnSlipDetail);
 
 // Lấy danh sách phiếu trả hàng
-// GET /api/tra-hang/slips?page=1&limit=10&fromDate=2025-01-01&toDate=2025-12-31
-router.get('/slips',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
-  TraHangController.getReturnSlips
-);
+router.get('/slips', authorize('toanquyen'), TraHangController.getReturnSlips);
 
 // Lấy chi tiết phiếu chi theo mã phiếu trả hàng
-// GET /api/tra-hang/payment/:maPhieuTra
-router.get('/payment/:maPhieuTra',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
-  TraHangController.getPaymentSlipByReturnSlip
-);
+router.get('/payment/:maPhieuTra', authorize('toanquyen'), TraHangController.getPaymentSlipByReturnSlip);
 
 // Lấy danh sách phiếu chi
-// GET /api/tra-hang/payments?page=1&limit=10&fromDate=2025-01-01&toDate=2025-12-31
-router.get('/payments',
-  authenticateJWT,
-  authorize('NhanVienCuaHang', 'Admin'),
-  TraHangController.getPaymentSlips
-);
+router.get('/payments', authorize('toanquyen'), TraHangController.getPaymentSlips);
 
 module.exports = router;

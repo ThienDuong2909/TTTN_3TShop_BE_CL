@@ -8,8 +8,80 @@ const {
   DotGiamGia,
   Mau,
   KichThuoc,
+  BinhLuan,
+  CT_DonDatHang,
 } = require("../models");
 const { Sequelize, Op } = require("sequelize");
+
+const calculateAvgRateForProducts = async (products) => {
+  for (const product of products) {
+    try {
+      // Lấy tất cả MaCTSP của sản phẩm này
+      const maCTSPs = product.ChiTietSanPhams?.map((ctsp) => ctsp.MaCTSP) || [];
+
+      if (maCTSPs.length === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+        continue;
+      }
+
+      // Lấy tất cả MaCTDDH từ các MaCTSP
+      const ctDonDatHangs = await CT_DonDatHang.findAll({
+        where: { MaCTSP: { [Op.in]: maCTSPs } },
+        attributes: ["MaCTDDH"],
+        raw: true,
+      });
+
+      const maCTDDHs = ctDonDatHangs.map((ct) => ct.MaCTDDH);
+
+      if (maCTDDHs.length === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+        continue;
+      }
+
+      // Lấy tất cả bình luận cho sản phẩm này
+      const binhLuans = await BinhLuan.findAll({
+        where: { MaCTDonDatHang: { [Op.in]: maCTDDHs } },
+        attributes: ["SoSao"],
+        raw: true,
+      });
+
+      const luotBinhLuan = binhLuans.length;
+
+      if (luotBinhLuan === 0) {
+        product.dataValues.BinhLuan = {
+          avgRate: 0,
+          luotBinhLuan: 0,
+        };
+      } else {
+        // Tính số sao trung bình
+        const totalStars = binhLuans.reduce((sum, bl) => sum + bl.SoSao, 0);
+        const avgRate = Math.round((totalStars / luotBinhLuan) * 10) / 10;
+
+        product.dataValues.BinhLuan = {
+          avgRate: avgRate,
+          luotBinhLuan: luotBinhLuan,
+        };
+      }
+    } catch (error) {
+      console.error(
+        `Error calculating BinhLuan for product ${product.MaSP}:`,
+        error
+      );
+      product.dataValues.BinhLuan = {
+        avgRate: 0,
+        luotBinhLuan: 0,
+      };
+    }
+  }
+
+  return products;
+};
 
 const LoaiSPService = {
   // Lấy tất cả loại sản phẩm
@@ -73,7 +145,7 @@ const LoaiSPService = {
     console.log("Lấy sản phẩm theo mã loại:", id);
     const today = new Date().toISOString().split("T")[0];
 
-    return await SanPham.findAll({
+    const products = await SanPham.findAll({
       where: { MaLoaiSP: id },
       include: [
         { model: LoaiSP },
@@ -114,6 +186,9 @@ const LoaiSPService = {
         },
       ],
     });
+
+    // Tính avgRate và luotBinhLuan cho sản phẩm theo loại
+    return await calculateAvgRateForProducts(products);
   },
 };
 

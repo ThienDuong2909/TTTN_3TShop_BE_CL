@@ -5,47 +5,28 @@ const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
-// === KHÁCH HÀNG ROUTES ===
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
+
 // Thêm sản phẩm vào giỏ hàng - chỉ khách hàng
-router.post("/them", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.addToCart);
+router.post("/them", authorize('giohang.them'), GioHangController.addToCart);
 
 // Xóa sản phẩm khỏi giỏ hàng - chỉ khách hàng
-router.delete("/xoa", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.removeFromCart);
+router.delete("/xoa", authorize('giohang.xoa'), GioHangController.removeFromCart);
 
 // Đặt hàng - chỉ khách hàng
-router.post("/dat-hang", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.placeOrder);
+router.post("/dat-hang", authorize('donhang.tao'), GioHangController.placeOrder);
 
 // Lấy giỏ hàng theo khách hàng - chỉ khách hàng
-router.get("/:maKH", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.getCartByCustomer);
+router.get("/:maKH", authorize('giohang.xem'), GioHangController.getCartByCustomer);
 
 // Xóa tất cả sản phẩm trong giỏ hàng - chỉ khách hàng
-router.post("/xoa-tat-ca", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.clearCart);
+router.post("/xoa-tat-ca", authorize('giohang.xoa'), GioHangController.clearCart);
 
 // Lấy chi tiết đơn hàng - chỉ khách hàng
-router.post("/don-hang/chi-tiet", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.getOrderById);
+router.post("/don-hang/chi-tiet", authorize('donhang.xem_cua_minh'), GioHangController.getOrderById);
 
 // Lấy tất cả đơn hàng của khách hàng - chỉ khách hàng
-router.post("/don-hang", 
-  authenticateJWT, 
-  authorize('KhachHang'), 
-  GioHangController.getAllOrdersByCustomer);
+router.post("/don-hang", authorize('donhang.xem_cua_minh'), GioHangController.getAllOrdersByCustomer);
 
 module.exports = router;

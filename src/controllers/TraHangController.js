@@ -1,6 +1,7 @@
 const TraHangService = require('../services/TraHangService');
 const response = require('../utils/response');
 const {KhachHang} = require("../models");
+const { getMaNVFromMaTK } = require("../utils/auth");
 
 const TraHangController = {
   // Khách hàng yêu cầu trả hàng (chuyển trạng thái đơn hàng thành 7)
@@ -56,6 +57,18 @@ const TraHangController = {
   createReturnSlip: async (req, res) => {
     try {
       const { maDDH, danhSachSanPham, lyDo, trangThaiPhieu = 1 } = req.body;
+      const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
+
+      if (!maTK) {
+        return response.error(res, null, 'Không xác định được tài khoản', 401);
+      }
+
+      // Lấy MaNV từ MaTK
+      const maNV = await getMaNVFromMaTK(maTK);
+
+      if (!maNV) {
+        return response.error(res, null, 'Không tìm thấy thông tin nhân viên', 401);
+      }
 
       if (!maDDH || !danhSachSanPham || !Array.isArray(danhSachSanPham) || danhSachSanPham.length === 0) {
         return response.error(res, null, 'Thiếu thông tin đơn hàng hoặc danh sách sản phẩm trả', 400);
@@ -94,8 +107,8 @@ const TraHangController = {
       }
 
       const result = await TraHangService.createReturnPayment(
-        parseInt(maPhieuTra), 
-        parseFloat(soTien), 
+        parseInt(maPhieuTra),
+        parseFloat(soTien),
         maNVLap
       );
       return response.success(res, result, 'Tạo phiếu chi thành công', 201);

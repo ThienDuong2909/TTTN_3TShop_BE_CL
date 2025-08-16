@@ -49,6 +49,8 @@ const AnhSanPham = require("./AnhSanPham");
 const PhieuChi = require("./PhieuChi");
 const KhuVuc = require("./KhuVuc");
 const NhanVien_KhuVuc = require("./NhanVien_KhuVuc");
+const PhanQuyen = require("./PhanQuyen");
+const PhanQuyen_VaiTro = require("./PhanQuyen_VaiTro");
 
 // Associations
 // SanPham
@@ -161,6 +163,18 @@ CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 // AnhSanPham
 AnhSanPham.belongsTo(SanPham, { foreignKey: "MaSP" });
 
+// Permission associations
+VaiTro.belongsToMany(PhanQuyen, {
+  through: PhanQuyen_VaiTro,
+  foreignKey: 'VaiTroId',
+  otherKey: 'PhanQuyenId'
+});
+PhanQuyen.belongsToMany(VaiTro, {
+  through: PhanQuyen_VaiTro,
+  foreignKey: 'PhanQuyenId',
+  otherKey: 'VaiTroId'
+});
+
 // NhanVien - KhuVuc relationships (Many-to-Many through NhanVien_KhuVuc)
 NhanVien.belongsToMany(KhuVuc, {
   through: NhanVien_KhuVuc,
@@ -212,6 +226,8 @@ module.exports = {
   DotGiamGia,
   CT_DotGiamGia,
   AnhSanPham,
+  PhanQuyen,
+  PhanQuyen_VaiTro,
   PhieuChi,
   KhuVuc,
   NhanVien_KhuVuc,

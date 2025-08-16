@@ -9,27 +9,22 @@ const router = express.Router();
 // Lấy tất cả nhà cung cấp - chỉ cần đăng nhập
 router.get('/', authenticateJWT, NhaCungCapController.getAll);
 router.get('/get-all', authenticateJWT, NhaCungCapController.getAll);
+// === AUTHENTICATED ROUTES ===
+router.use(authenticateJWT);
 
-// Lấy nhà cung cấp theo id - chỉ cần đăng nhập
-router.get('/:id', authenticateJWT, NhaCungCapController.getById);
+// Lấy tất cả nhà cung cấp
+router.get('/', authorize('nhacungcap.xem'), NhaCungCapController.getAll);
 
-// === ADMIN & NHÂN VIÊN CỬA HÀNG ROUTES ===
-// Thêm nhà cung cấp - chỉ Admin và Nhân viên cửa hàng
-router.post('/', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  NhaCungCapController.create);
+// Lấy nhà cung cấp theo id
+router.get('/:id', authorize('nhacungcap.xem'), NhaCungCapController.getById);
 
-// Sửa nhà cung cấp - chỉ Admin và Nhân viên cửa hàng
-router.put('/:id', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  NhaCungCapController.update);
+// Thêm nhà cung cấp
+router.post('/', authorize('nhacungcap.tao'), NhaCungCapController.create);
 
-// Xóa nhà cung cấp - chỉ Admin và Nhân viên cửa hàng
-router.delete('/:id', 
-  authenticateJWT, 
-  authorize('Admin', 'NhanVienCuaHang'), 
-  NhaCungCapController.delete);
+// Sửa nhà cung cấp
+router.put('/:id', authorize('nhacungcap.sua'), NhaCungCapController.update);
+
+// Xóa nhà cung cấp
+router.delete('/:id', authorize('nhacungcap.xoa'), NhaCungCapController.delete);
 
 module.exports = router; 

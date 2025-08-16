@@ -4,6 +4,7 @@ const loaiSPRoutes = require("./loaiSP");
 const phieuDatHangNCCRoutes = require("./phieuDatHangNCC");
 const phieuNhapRoutes = require("./phieuNhap");
 const nhanVienRoutes = require("./nhanvien");
+const khachHangRoutes = require("./khachhang");
 const nhaCungCapRoutes = require("./nhacungcap");
 const sanPhamRoutes = require("./sanpham");
 const gioHangRoutes = require("./gioHang");
@@ -19,6 +20,8 @@ const binhLuanRoutes = require("./binhLuan");
 const traHangRoutes = require("./traHang"); // Thêm route TraHang
 const dotGiamGiaRoutes = require("./dotGiamGia"); // Thêm route DotGiamGia
 const khuVucRoutes = require("./khuVuc"); // Thêm route KhuVuc
+const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
+const rolesRoutes = require("./roles"); // Thêm route Roles
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -43,6 +46,8 @@ router.use("/sizes", kichThuocRoutes);
 router.use("/purchase-order-statuses", trangThaiDatHangRoutes);
 router.use("/purchase-orders", phieuDatHangNCCRoutes);
 router.use("/goods-receipts", phieuNhapRoutes);
+
+router.use("/customers", khachHangRoutes);
 
 router.use("/san-pham", sanPhamRoutes);
 router.use("/gio-hang", gioHangRoutes);
@@ -74,6 +79,13 @@ router.use("/return", traHangRoutes);
 router.use("/promotions", dotGiamGiaRoutes);
 
 // Routes cho khu vực
-router.use("/areas", khuVucRoutes); 
+router.use("/areas", khuVucRoutes);
+
+// Routes cho phân quyền
+router.use("/phan-quyen", phanQuyenRoutes);
+router.use("/permissions", phanQuyenRoutes); // English alias
+
+// Routes cho vai trò
+router.use("/roles", rolesRoutes);
 
 module.exports = router;
