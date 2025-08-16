@@ -9,9 +9,10 @@ const {
   ThayDoiGia,
   sequelize,
   CT_DotGiamGia,
+  DotGiamGia,
   BinhLuan,
   CT_DonDatHang,
-  DotGiamGia,
+  KhachHang,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -144,6 +145,28 @@ const SanPhamService = {
   getAllProducts: async ({ page = 1, pageSize = 8 } = {}) => {
     const offset = (page - 1) * pageSize;
     const { rows, count } = await SanPham.findAndCountAll({
+      attributes: {
+        include: [
+          [
+            sequelize.literal(`(
+              SELECT COUNT(*) FROM BinhLuan bl
+              JOIN CT_DonDatHang ctd ON bl.MaCTDonDatHang = ctd.MaCTDDH
+              JOIN ChiTietSanPham ctsp2 ON ctd.MaCTSP = ctsp2.MaCTSP
+              WHERE ctsp2.MaSP = SanPham.MaSP
+            )`),
+            "SoLuongBinhLuan",
+          ],
+          [
+            sequelize.literal(`(
+              SELECT ROUND(AVG(bl2.SoSao),2) FROM BinhLuan bl2
+              JOIN CT_DonDatHang ctd2 ON bl2.MaCTDonDatHang = ctd2.MaCTDDH
+              JOIN ChiTietSanPham ctsp3 ON ctd2.MaCTSP = ctsp3.MaCTSP
+              WHERE ctsp3.MaSP = SanPham.MaSP
+            )`),
+            "SoSaoTrungBinh",
+          ],
+        ],
+      },
       include: [
         { model: NhaCungCap },
         { model: LoaiSP },
@@ -247,7 +270,7 @@ const SanPhamService = {
           separate: true,
           limit: 1,
           order: [["NgayApDung", "DESC"]],
-          attributes: ["Gia", "NgayApDung"],
+          attributes: ["Gia", "NgayThayDoi", "NgayApDung"],
         },
         // Giảm giá nếu có
         {
@@ -268,6 +291,34 @@ const SanPhamService = {
       ],
     });
     const productsWithBinhLuan = await calculateAvgRateForProducts([product]);
+
+    const comments = await sequelize.query(`
+      SELECT 
+        bl.MaBL,
+        bl.MoTa,
+        bl.SoSao,
+        bl.NgayBinhLuan,
+        kh.MaKH,
+        kh.TenKH,
+        ctsp.MaKichThuoc,
+        ctsp.MaMau,
+        kt.TenKichThuoc,
+        m.TenMau,
+        m.MaHex
+      FROM BinhLuan bl
+      JOIN CT_DonDatHang ctddh ON bl.MaCTDonDatHang = ctddh.MaCTDDH
+      JOIN ChiTietSanPham ctsp ON ctddh.MaCTSP = ctsp.MaCTSP
+      JOIN KhachHang kh ON bl.MaKH = kh.MaKH
+      LEFT JOIN KichThuoc kt ON ctsp.MaKichThuoc = kt.MaKichThuoc
+      LEFT JOIN Mau m ON ctsp.MaMau = m.MaMau
+      WHERE ctsp.MaSP = :productId
+      ORDER BY bl.NgayBinhLuan DESC
+    `, {
+      replacements: { productId: id },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    product.dataValues.BinhLuan.DanhSachBinhLuan = comments;
 
     // Trả về sản phẩm đầu tiên (vì chỉ có 1 sản phẩm)
     return productsWithBinhLuan[0];

@@ -12,14 +12,16 @@ const NhanVien = sequelize.define("NhanVien", {
     allowNull: false,
   },
   NgaySinh: DataTypes.DATEONLY,
-
-  Luong: DataTypes.DECIMAL(18, 2),
+  DiaChi: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  Luong: DataTypes.DECIMAL(18,2),
   MaTK: {
     type: DataTypes.INTEGER,
     unique: true,
     references: { model: 'TaiKhoan', key: 'MaTK' },
   }
-
 });
 
 module.exports = NhanVien;

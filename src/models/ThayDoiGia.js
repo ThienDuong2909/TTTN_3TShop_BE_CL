@@ -11,18 +11,18 @@ const ThayDoiGia = sequelize.define('ThayDoiGia', {
       key: 'MaSP',
     },
   },
-  NgayThayDoi: {
-    type: DataTypes.DATEONLY,
-    allowNull: false,
-    primaryKey: true,
-  },
   Gia: {
     type: DataTypes.DECIMAL(18, 2),
+    allowNull: false,
+  },
+  NgayThayDoi: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
   },
   NgayApDung: {
     type: DataTypes.DATEONLY,
     allowNull: false,
+    primaryKey: true,
   },
 }, {
   tableName: 'ThayDoiGia',

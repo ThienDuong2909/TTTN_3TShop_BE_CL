@@ -43,8 +43,9 @@ const TraHangController = {
 
       const parsedPage = Math.max(1, parseInt(page) || 1);
       const parsedLimit = Math.max(1, Math.min(100, parseInt(limit) || 10));
+      const parsedTrangThai = status ? parseInt(status) : null;
 
-      const data = await TraHangService.getReturnRequests(parsedPage, parsedLimit, status);
+      const data = await TraHangService.getReturnRequests(parsedPage, parsedLimit, parsedTrangThai);
       return response.success(res, data, 'Lấy danh sách yêu cầu trả hàng thành công');
     } catch (err) {
       console.error('Error in getReturnRequests:', err);
@@ -52,10 +53,10 @@ const TraHangController = {
     }
   },
 
-  // Nhân viên tạo phiếu trả hàng
+  // Tạo phiếu trả hàng
   createReturnSlip: async (req, res) => {
     try {
-      const { maDDH, danhSachSanPham, lyDo } = req.body;
+      const { maDDH, danhSachSanPham, lyDo, trangThaiPhieu = 1 } = req.body;
       const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
 
       if (!maTK) {
@@ -73,7 +74,12 @@ const TraHangController = {
         return response.error(res, null, 'Thiếu thông tin đơn hàng hoặc danh sách sản phẩm trả', 400);
       }
 
-      const result = await TraHangService.createReturnSlip(maNV, maDDH, danhSachSanPham, lyDo);
+      // Validate trạng thái phiếu
+      if (trangThaiPhieu && ![1, 2, 3].includes(parseInt(trangThaiPhieu))) {
+        return response.error(res, null, 'Trạng thái phiếu trả không hợp lệ. Chỉ chấp nhận 1 (Chờ duyệt), 2 (Đã duyệt), hoặc 3 (Từ chối)', 400);
+      }
+
+      const result = await TraHangService.createReturnSlip(maDDH, danhSachSanPham, lyDo, parseInt(trangThaiPhieu));
       return response.success(res, result, 'Tạo phiếu trả hàng thành công', 201);
     } catch (err) {
       console.error('Error in createReturnSlip:', err);
@@ -85,12 +91,26 @@ const TraHangController = {
   createPaymentSlip: async (req, res) => {
     try {
       const { maPhieuTra, soTien } = req.body;
+      const maNVLap = req.user.id || req.user.MaNV; // Lấy từ JWT token
+
+      if (!maNVLap) {
+        return response.error(res, null, 'Không xác định được nhân viên', 401);
+      }
 
       if (!maPhieuTra || !soTien) {
         return response.error(res, null, 'Thiếu thông tin mã phiếu trả hàng hoặc số tiền', 400);
       }
 
-      const result = await TraHangService.createPaymentSlip(maPhieuTra, soTien);
+      // Validate số tiền
+      if (isNaN(soTien) || parseFloat(soTien) <= 0) {
+        return response.error(res, null, 'Số tiền phải là số dương', 400);
+      }
+
+      const result = await TraHangService.createReturnPayment(
+        parseInt(maPhieuTra),
+        parseFloat(soTien),
+        maNVLap
+      );
       return response.success(res, result, 'Tạo phiếu chi thành công', 201);
     } catch (err) {
       console.error('Error in createPaymentSlip:', err);
@@ -158,15 +178,48 @@ const TraHangController = {
     }
   },
 
+  // Duyệt phiếu trả hàng
+  approveReturnSlip: async (req, res) => {
+    try {
+      const { maPhieuTra } = req.params;
+      const { trangThaiPhieu } = req.body;
+      const maNV = req.user.id || req.user.MaNV; // Lấy từ JWT token
+
+      if (!maNV) {
+        return response.error(res, null, 'Không xác định được nhân viên', 401);
+      }
+
+      if (!maPhieuTra || isNaN(maPhieuTra)) {
+        return response.error(res, null, 'Mã phiếu trả hàng không hợp lệ', 400);
+      }
+
+      if (!trangThaiPhieu || ![2, 3].includes(parseInt(trangThaiPhieu))) {
+        return response.error(res, null, 'Trạng thái duyệt không hợp lệ. Chỉ chấp nhận 2 (Đã duyệt) hoặc 3 (Từ chối)', 400);
+      }
+
+      const result = await TraHangService.approveReturnSlip(
+        parseInt(maPhieuTra),
+        maNV,
+        parseInt(trangThaiPhieu)
+      );
+
+      return response.success(res, result, 'Duyệt phiếu trả hàng thành công', 200);
+    } catch (err) {
+      console.error('Error in approveReturnSlip:', err);
+      return response.error(res, err.message || 'Lỗi khi duyệt phiếu trả hàng', 400);
+    }
+  },
+
   // Lấy danh sách phiếu trả hàng
   getReturnSlips: async (req, res) => {
     try {
-      const { page = 1, limit = 10, fromDate, toDate } = req.query;
+      const { trangThai, page = 1, limit = 10 } = req.query;
 
       const parsedPage = Math.max(1, parseInt(page) || 1);
       const parsedLimit = Math.max(1, Math.min(100, parseInt(limit) || 10));
+      const parsedTrangThai = trangThai ? parseInt(trangThai) : null;
 
-      const data = await TraHangService.getReturnSlips(parsedPage, parsedLimit, fromDate, toDate);
+      const data = await TraHangService.getReturnSlips(parsedPage, parsedLimit, parsedTrangThai);
       return response.success(res, data, 'Lấy danh sách phiếu trả hàng thành công');
     } catch (err) {
       console.error('Error in getReturnSlips:', err);

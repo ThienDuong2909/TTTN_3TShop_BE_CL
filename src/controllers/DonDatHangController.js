@@ -235,7 +235,7 @@ const DonDatHangController = {
     }
   },
 
-  // Lấy thống kê đơn hàng theo trạng thái (tối ưu hiệu suất)
+  // Lấy thống kê đơn hàng theo trạng thái
   getStatistics: async (req, res) => {
     try {
       const statistics = await DonDatHangService.getOrderStatistics();

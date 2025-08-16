@@ -25,6 +25,15 @@ router.post('/slip', authorize('toanquyen'), TraHangController.createReturnSlip)
 // Tạo phiếu chi cho phiếu trả hàng
 router.post('/payment', authorize('toanquyen'), TraHangController.createPaymentSlip);
 
+// Duyệt phiếu trả hàng
+// PUT /api/tra-hang/slip/:maPhieuTra/approve
+// Body: { trangThaiPhieu: number, lyDoDuyet?: string }
+router.put('/slip/:maPhieuTra/approve',
+  authenticateJWT,
+  authorize('toanquyen'),
+  TraHangController.approveReturnSlip
+);
+
 // Lấy chi tiết phiếu trả hàng
 router.get('/slip/:id', authorize('toanquyen'), TraHangController.getReturnSlipDetail);
 

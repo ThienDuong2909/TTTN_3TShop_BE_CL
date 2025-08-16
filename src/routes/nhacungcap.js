@@ -5,6 +5,10 @@ const { authorize } = require('../middlewares/authorize');
 
 const router = express.Router();
 
+// === PUBLIC ROUTES (Chỉ cần đăng nhập) ===
+// Lấy tất cả nhà cung cấp - chỉ cần đăng nhập
+router.get('/', authenticateJWT, NhaCungCapController.getAll);
+router.get('/get-all', authenticateJWT, NhaCungCapController.getAll);
 // === AUTHENTICATED ROUTES ===
 router.use(authenticateJWT);
 

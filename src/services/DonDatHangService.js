@@ -313,7 +313,7 @@ const DonDatHangService = {
           MaTTDH as status,
           COUNT(*) as count
         FROM DonDatHang 
-        WHERE MaTTDH IS NOT NULL
+        WHERE MaTTDH IS NOT NULL AND MaTTDH != 6
         GROUP BY MaTTDH
         
         UNION ALL
@@ -322,6 +322,7 @@ const DonDatHangService = {
           'total' as status,
           COUNT(*) as count
         FROM DonDatHang
+        WHERE MaTTDH IS NOT NULL AND MaTTDH != 6
       `, {
         type: QueryTypes.SELECT
       });
@@ -333,7 +334,8 @@ const DonDatHangService = {
         2: 0, // Đã duyệt  
         3: 0, // Đang giao hàng
         4: 0, // Hoàn tất
-        5: 0  // Hủy
+        5: 0, // Hủy
+        7: 0  // Trả hàng
       };
 
       statistics.forEach(stat => {
@@ -341,7 +343,7 @@ const DonDatHangService = {
           result.total = parseInt(stat.count);
         } else {
           const statusId = parseInt(stat.status);
-          if (statusId >= 1 && statusId <= 5) {
+          if (statusId >= 1 && statusId <= 5 || statusId === 7) {
             result[statusId] = parseInt(stat.count);
           }
         }

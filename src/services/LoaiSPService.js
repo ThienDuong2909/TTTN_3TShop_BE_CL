@@ -128,6 +128,16 @@ const LoaiSPService = {
   async delete(id) {
     const loaiSP = await LoaiSP.findByPk(id);
     if (!loaiSP) return null;
+
+    // Kiểm tra xem có sản phẩm nào thuộc loại này không
+    const productCount = await SanPham.count({
+      where: { MaLoaiSP: id }
+    });
+
+    if (productCount > 0) {
+      throw new Error(`Không thể xóa loại sản phẩm này vì còn ${productCount} sản phẩm thuộc loại này. Vui lòng xóa hoặc chuyển các sản phẩm sang loại khác trước.`);
+    }
+
     await loaiSP.destroy();
     return true;
   },

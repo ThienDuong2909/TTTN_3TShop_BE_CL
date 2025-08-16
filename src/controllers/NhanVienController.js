@@ -173,6 +173,34 @@ const NhanVienController = {
     }
   },
 
+  // Lấy nhân viên giao hàng theo khu vực
+  getDeliveryStaffByArea: async (req, res) => {
+    try {
+      const { maKhuVuc } = req.params;
+      const data = await NhanVienService.getDeliveryStaffByArea(maKhuVuc);
+      return response.success(res, data, 'Lấy danh sách nhân viên giao hàng theo khu vực thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Cập nhật khu vực phụ trách
+  updateServiceAreas: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { KhuVucPhuTrach } = req.body;
+
+      if (!Array.isArray(KhuVucPhuTrach)) {
+        return response.error(res, null, 'Danh sách khu vực phụ trách phải là mảng', 400);
+      }
+
+      const data = await NhanVienService.updateServiceAreas(id, KhuVucPhuTrach);
+      return response.success(res, data, 'Cập nhật khu vực phụ trách thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
   // Lấy vai trò của nhân viên
   getRole: async (req, res) => {
     try {
@@ -192,7 +220,7 @@ const NhanVienController = {
     try {
       const { maNV } = req.params;
       const { roleId } = req.body;
-      
+
       if (!roleId) {
         return response.error(res, null, 'Vai trò là bắt buộc', 400);
       }
@@ -201,7 +229,7 @@ const NhanVienController = {
       if (isNaN(roleId) || roleId < 1 || roleId > 4) {
         return response.error(res, null, 'Vai trò không hợp lệ. Vai trò phải là số từ 1-4', 400);
       }
-      
+
       const data = await NhanVienService.updateRole(maNV, roleId);
       if (!data) {
         return response.notFound(res, 'Không tìm thấy nhân viên');
