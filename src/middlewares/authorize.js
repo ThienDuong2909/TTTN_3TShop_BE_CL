@@ -8,7 +8,7 @@ const ROLE_PERMISSIONS = {
     permissions: ['*'] // Tất cả quyền
   },
   NhanVienCuaHang: {
-    description: 'Nhân viên cửa hàng - quản lý sản phẩm, nhập hàng, đặt hàng',
+    description: 'Nhân viên cửa hàng - quản lý sản phẩm, nhập hàng, đặt hàng, duyệt trả hàng',
     permissions: [
       'product.*',           // Tất cả quyền sản phẩm
       'import.*',            // Tất cả quyền nhập hàng  
@@ -21,7 +21,9 @@ const ROLE_PERMISSIONS = {
       'order.update_status', // Cập nhật trạng thái đơn hàng
       'invoice.*',           // Quản lý hóa đơn
       'employee.view',       // Xem thông tin nhân viên
-      'department.view'      // Xem thông tin bộ phận
+      'department.view',     // Xem thông tin bộ phận
+      'return.*',            // Tất cả quyền quản lý trả hàng (tạo phiếu, duyệt, xem)
+      'promotion.*'          // Quản lý đợt giảm giá
     ]
   },
   NhanVienGiaoHang: {
@@ -35,7 +37,7 @@ const ROLE_PERMISSIONS = {
     ]
   },
   KhachHang: {
-    description: 'Khách hàng - đặt hàng, xem đơn hàng của mình',
+    description: 'Khách hàng - đặt hàng, xem đơn hàng của mình, yêu cầu trả hàng',
     permissions: [
       'product.view',        // Xem sản phẩm
       'order.create',        // Tạo đơn hàng
@@ -43,7 +45,9 @@ const ROLE_PERMISSIONS = {
       'cart.*',              // Quản lý giỏ hàng
       'profile.view',        // Xem thông tin cá nhân
       'profile.update',      // Cập nhật thông tin cá nhân
-      'comment.*'            // Quản lý bình luận (tạo, sửa, xóa bình luận của mình)
+      'comment.*',           // Quản lý bình luận (tạo, sửa, xóa bình luận của mình)
+      'return.request',      // Yêu cầu trả hàng
+      'return.view_own'      // Xem lịch sử trả hàng của mình
     ]
   }
 };

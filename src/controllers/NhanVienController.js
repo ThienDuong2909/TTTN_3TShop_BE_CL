@@ -172,6 +172,34 @@ const NhanVienController = {
       return response.error(res, err);
     }
   },
+
+  // Lấy nhân viên giao hàng theo khu vực
+  getDeliveryStaffByArea: async (req, res) => {
+    try {
+      const { maKhuVuc } = req.params;
+      const data = await NhanVienService.getDeliveryStaffByArea(maKhuVuc);
+      return response.success(res, data, 'Lấy danh sách nhân viên giao hàng theo khu vực thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
+
+  // Cập nhật khu vực phụ trách
+  updateServiceAreas: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { KhuVucPhuTrach } = req.body;
+      
+      if (!Array.isArray(KhuVucPhuTrach)) {
+        return response.error(res, null, 'Danh sách khu vực phụ trách phải là mảng', 400);
+      }
+      
+      const data = await NhanVienService.updateServiceAreas(id, KhuVucPhuTrach);
+      return response.success(res, data, 'Cập nhật khu vực phụ trách thành công');
+    } catch (err) {
+      return response.error(res, err);
+    }
+  },
 };
 
 module.exports = NhanVienController;

@@ -46,6 +46,9 @@ const BinhLuan = require("./BinhLuan");
 const DotGiamGia = require("./DotGiamGia");
 const CT_DotGiamGia = require("./CT_DotGiamGia");
 const AnhSanPham = require("./AnhSanPham");
+const PhieuChi = require("./PhieuChi");
+const KhuVuc = require("./KhuVuc");
+const NhanVien_KhuVuc = require("./NhanVien_KhuVuc");
 
 // Associations
 // SanPham
@@ -137,6 +140,12 @@ DonDatHang.hasMany(CT_DonDatHang, { foreignKey: "MaDDH" });
 ChiTietSanPham.hasMany(CT_DonDatHang, { foreignKey: "MaCTSP" });
 PhieuTraHang.hasMany(CT_DonDatHang, { foreignKey: "MaPhieuTra" });
 
+// PhieuChi
+PhieuChi.belongsTo(PhieuTraHang, { foreignKey: "MaPhieuTra" });
+PhieuChi.belongsTo(NhanVien, { foreignKey: "MaNVLap" });
+PhieuTraHang.hasOne(PhieuChi, { foreignKey: "MaPhieuTra" });
+NhanVien.hasMany(PhieuChi, { foreignKey: "MaNVLap" });
+
 // BinhLuan
 BinhLuan.belongsTo(KhachHang, { foreignKey: "MaKH" });
 BinhLuan.belongsTo(CT_DonDatHang, { foreignKey: "MaCTDonDatHang" });
@@ -151,6 +160,27 @@ CT_DotGiamGia.belongsTo(SanPham, { foreignKey: "MaSP" });
 
 // AnhSanPham
 AnhSanPham.belongsTo(SanPham, { foreignKey: "MaSP" });
+
+// NhanVien - KhuVuc relationships (Many-to-Many through NhanVien_KhuVuc)
+NhanVien.belongsToMany(KhuVuc, {
+  through: NhanVien_KhuVuc,
+  foreignKey: 'MaNV',
+  otherKey: 'MaKhuVuc',
+  as: 'KhuVucPhuTrach'
+});
+
+KhuVuc.belongsToMany(NhanVien, {
+  through: NhanVien_KhuVuc,
+  foreignKey: 'MaKhuVuc',
+  otherKey: 'MaNV',
+  as: 'NhanVienPhuTrach'
+});
+
+// Direct relationships for easier queries
+NhanVien_KhuVuc.belongsTo(NhanVien, { foreignKey: 'MaNV' });
+NhanVien_KhuVuc.belongsTo(KhuVuc, { foreignKey: 'MaKhuVuc' });
+NhanVien.hasMany(NhanVien_KhuVuc, { foreignKey: 'MaNV' });
+KhuVuc.hasMany(NhanVien_KhuVuc, { foreignKey: 'MaKhuVuc' });
 
 module.exports = {
   sequelize,
@@ -182,4 +212,7 @@ module.exports = {
   DotGiamGia,
   CT_DotGiamGia,
   AnhSanPham,
+  PhieuChi,
+  KhuVuc,
+  NhanVien_KhuVuc,
 };

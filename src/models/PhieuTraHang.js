@@ -15,7 +15,7 @@ const PhieuTraHang = sequelize.define('PhieuTraHang', {
   },
   NVLap: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true, // Cho phép null theo schema database
     references: { model: 'NhanVien', key: 'MaNV' },
   },
   NgayTra: {
@@ -26,6 +26,11 @@ const PhieuTraHang = sequelize.define('PhieuTraHang', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  TrangThai: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1 // Mặc định là 1 (Chờ duyệt)
+  }
 });
 
 module.exports = PhieuTraHang;

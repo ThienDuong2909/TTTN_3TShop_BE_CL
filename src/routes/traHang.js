@@ -36,27 +36,36 @@ router.get('/requests',
 
 // Tạo phiếu trả hàng
 // POST /api/tra-hang/slip
-// Body: { maDDH: number, danhSachSanPham: [{ maCTDDH: number, soLuongTra: number }], lyDo: string }
+// Body: { maDDH: number, danhSachSanPham: [{ maCTDDH: number, soLuongTra: number }], lyDo: string, trangThaiPhieu?: number }
 router.post('/slip',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin', 'KhachHang'),
   TraHangController.createReturnSlip
 );
 
 // Tạo phiếu chi cho phiếu trả hàng
-// POST /api/tra-hang/payment
+// POST /api/return/payment
 // Body: { maPhieuTra: number, soTien: number }
 router.post('/payment',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin'),
   TraHangController.createPaymentSlip
+);
+
+// Duyệt phiếu trả hàng
+// PUT /api/tra-hang/slip/:maPhieuTra/approve
+// Body: { trangThaiPhieu: number, lyDoDuyet?: string }
+router.put('/slip/:maPhieuTra/approve',
+  authenticateJWT,
+  authorize('NhanVienCuaHang', 'Admin'),
+  TraHangController.approveReturnSlip
 );
 
 // Lấy chi tiết phiếu trả hàng
 // GET /api/tra-hang/slip/:id
 router.get('/slip/:id',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin'),
   TraHangController.getReturnSlipDetail
 );
 
@@ -64,7 +73,7 @@ router.get('/slip/:id',
 // GET /api/tra-hang/slips?page=1&limit=10&fromDate=2025-01-01&toDate=2025-12-31
 router.get('/slips',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin'),
   TraHangController.getReturnSlips
 );
 
@@ -72,7 +81,7 @@ router.get('/slips',
 // GET /api/tra-hang/payment/:maPhieuTra
 router.get('/payment/:maPhieuTra',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin'),
   TraHangController.getPaymentSlipByReturnSlip
 );
 
@@ -80,7 +89,7 @@ router.get('/payment/:maPhieuTra',
 // GET /api/tra-hang/payments?page=1&limit=10&fromDate=2025-01-01&toDate=2025-12-31
 router.get('/payments',
   authenticateJWT,
-  authorize('NhanVien'),
+  authorize('NhanVienCuaHang', 'Admin'),
   TraHangController.getPaymentSlips
 );
 

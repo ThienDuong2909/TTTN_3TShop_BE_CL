@@ -17,6 +17,8 @@ const trangThaiDHRoutes = require("./trangThaiDH");
 const hoaDonRoutes = require("./hoadon");
 const binhLuanRoutes = require("./binhLuan");
 const traHangRoutes = require("./traHang"); // Thêm route TraHang
+const dotGiamGiaRoutes = require("./dotGiamGia"); // Thêm route DotGiamGia
+const khuVucRoutes = require("./khuVuc"); // Thêm route KhuVuc
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -66,6 +68,12 @@ router.use("/binh-luan", binhLuanRoutes);
 router.use("/comments", binhLuanRoutes); // English alias
 
 // Routes cho trả hàng
-router.use("/return", traHangRoutes); // Đăng ký route TraHang
+router.use("/return", traHangRoutes);
+
+// Routes cho đợt giảm giá
+router.use("/promotions", dotGiamGiaRoutes);
+
+// Routes cho khu vực
+router.use("/areas", khuVucRoutes); 
 
 module.exports = router;

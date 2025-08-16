@@ -1,4 +1,4 @@
-const { NhanVien, TaiKhoan, VaiTro, BoPhan, NhanVien_BoPhan, sequelize } = require('../models');
+const { NhanVien, TaiKhoan, VaiTro, BoPhan, NhanVien_BoPhan, KhuVuc, NhanVien_KhuVuc, sequelize } = require('../models');
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const XLSX = require('xlsx');
@@ -15,6 +15,14 @@ const NhanVienService = {
         {
           model: NhanVien_BoPhan,
           include: [{ model: BoPhan }]
+        },
+        {
+          model: KhuVuc,
+          as: 'KhuVucPhuTrach',
+          attributes: ['MaKhuVuc', 'TenKhuVuc'],
+          through: { 
+            attributes: ['NgayTao', 'TrangThai'] 
+          }
         }
       ]
     });
@@ -30,6 +38,14 @@ const NhanVienService = {
         {
           model: NhanVien_BoPhan,
           include: [{ model: BoPhan }]
+        },
+        {
+          model: KhuVuc,
+          as: 'KhuVucPhuTrach',
+          attributes: ['MaKhuVuc', 'TenKhuVuc'],
+          through: { 
+            attributes: ['NgayTao', 'TrangThai'] 
+          }
         }
       ]
     });
@@ -46,6 +62,14 @@ const NhanVienService = {
         {
           model: NhanVien_BoPhan,
           include: [{ model: BoPhan }]
+        },
+        {
+          model: KhuVuc,
+          as: 'KhuVucPhuTrach',
+          attributes: ['MaKhuVuc', 'TenKhuVuc'],
+          through: { 
+            attributes: ['NgayTao', 'TrangThai'] 
+          }
         }
       ]
     });
@@ -53,47 +77,70 @@ const NhanVienService = {
   
   create: async (data) => {
     const t = await sequelize.transaction();
+    let nhanVien = null; // Khai báo bên ngoài để sử dụng sau commit
+    
     try {
-      const { Email, Password, TenNV, NgaySinh, DiaChi, Luong, KhuVuc, departments } = data;
-      // Kiểm tra trùng email
-      const existed = await TaiKhoan.findOne({ where: { Email } });
-      if (existed) {
-        throw { message: 'Email đã tồn tại', code: 'EMAIL_EXISTS' };
-      }
-      // Tạo tài khoản
-      const hashedPassword = await bcrypt.hash(Password, 10);
+      const { Email, MatKhau, TenNV, NgaySinh, DiaChi, Luong, KhuVucPhuTrach, BoPhan } = data;
       
-      // Xác định vai trò dựa trên KhuVuc
-      let maVaiTro = 2; // Mặc định là NhanVienCuaHang
-      if (KhuVuc) {
-        maVaiTro = 3; // NhanVienGiaoHang nếu có KhuVuc
+      // Kiểm tra trùng email nếu có email
+      if (Email) {
+        const existed = await TaiKhoan.findOne({ where: { Email } });
+        if (existed) {
+          throw { message: 'Email đã tồn tại', code: 'EMAIL_EXISTS' };
+        }
       }
+
+      let taiKhoan = null;
       
-      const taiKhoan = await TaiKhoan.create({
-        Email,
-        Password: hashedPassword,
-        MaVaiTro: maVaiTro,
-      }, { transaction: t });
-      // Tạo nhân viên với KhuVuc nếu có
+      // Tạo tài khoản nếu có email
+      if (Email) {
+        const hashedPassword = await bcrypt.hash(MatKhau || '3TShop@2025', 10); 
+        // Xác định vai trò dựa trên KhuVucPhuTrach
+        let maVaiTro = 2; // Mặc định là NhanVienCuaHang
+        if (KhuVucPhuTrach && KhuVucPhuTrach.length > 0) {
+          maVaiTro = 3; // NhanVienGiaoHang nếu có khu vực phụ trách
+        }
+        
+        taiKhoan = await TaiKhoan.create({
+          Email,
+          Password: hashedPassword,
+          MaVaiTro: maVaiTro,
+        }, { transaction: t });
+      }
+
+      // Tạo nhân viên
       const nhanVienData = {
         TenNV,
         NgaySinh,
         DiaChi,
         Luong,
-        MaTK: taiKhoan.MaTK,
+        MaTK: taiKhoan?.MaTK || null,
       };
       
-      // Thêm KhuVuc nếu có (dành cho nhân viên giao hàng)
-      if (KhuVuc) {
-        nhanVienData.KhuVuc = KhuVuc;
-        console.log(`Tạo nhân viên giao hàng với khu vực: ${KhuVuc}`);
+      nhanVien = await NhanVien.create(nhanVienData, { transaction: t });
+      
+      // Nếu có danh sách khu vực phụ trách, tạo bản ghi trong NhanVien_KhuVuc
+      if (KhuVucPhuTrach && Array.isArray(KhuVucPhuTrach) && KhuVucPhuTrach.length > 0) {
+        for (const maKhuVuc of KhuVucPhuTrach) {
+          // Kiểm tra khu vực có tồn tại không
+          const khuVuc = await KhuVuc.findByPk(maKhuVuc);
+          if (!khuVuc) {
+            throw new Error(`Không tìm thấy khu vực với mã: ${maKhuVuc}`);
+          }
+          
+          await NhanVien_KhuVuc.create({
+            MaNV: nhanVien.MaNV,
+            MaKhuVuc: maKhuVuc,
+            NgayTao: new Date(),
+            TrangThai: 1
+          }, { transaction: t });
+        }
+        console.log(`Tạo nhân viên giao hàng với ${KhuVucPhuTrach.length} khu vực phụ trách: ${KhuVucPhuTrach.join(', ')}`);
       }
       
-      const nhanVien = await NhanVien.create(nhanVienData, { transaction: t });
-      
       // Nếu có danh sách bộ phận, tạo bản ghi trung gian
-      if (departments && Array.isArray(departments)) {
-        for (const dep of departments) {
+      if (BoPhan && Array.isArray(BoPhan)) {
+        for (const dep of BoPhan) {
           await NhanVien_BoPhan.create({
             MaNV: nhanVien.MaNV,
             MaBoPhan: dep.MaBoPhan,
@@ -105,49 +152,131 @@ const NhanVienService = {
           }, { transaction: t });
         }
       }
+      
       await t.commit();
-      // Trả về nhân viên vừa tạo kèm tài khoản và bộ phận
+      
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+
+    // Trả về nhân viên vừa tạo kèm tài khoản, bộ phận và khu vực phụ trách (bên ngoài transaction)
+    try {
       return await NhanVien.findByPk(nhanVien.MaNV, {
         include: [
+          { 
+            model: TaiKhoan, 
+            include: [{ model: VaiTro }] 
+          },
+          { 
+            model: NhanVien_BoPhan, 
+            include: [{ model: BoPhan }] 
+          },
+          {
+            model: KhuVuc,
+            as: 'KhuVucPhuTrach',
+            attributes: ['MaKhuVuc', 'TenKhuVuc'],
+            through: { 
+              attributes: ['NgayTao', 'TrangThai'] 
+            }
+          }
+        ]
+      });
+    } catch (err) {
+      // Nếu có lỗi khi query kết quả, vẫn trả về thông tin cơ bản
+      console.error('Lỗi khi lấy thông tin nhân viên vừa tạo:', err);
+      return await NhanVien.findByPk(nhanVien.MaNV);
+    }
+  },
+  
+  update: async (id, data) => {
+    const t = await sequelize.transaction();
+    try {
+      const { Email, MatKhau, TenNV, NgaySinh, DiaChi, Luong, KhuVucPhuTrach } = data;
+      const nhanVien = await NhanVien.findByPk(id, {
+        include: [{ model: TaiKhoan }]
+      });
+      if (!nhanVien) {
+        throw { message: 'Không tìm thấy nhân viên', code: 'NOT_FOUND' };
+      }
+      
+      // Cập nhật thông tin nhân viên
+      const updateData = { TenNV, NgaySinh, DiaChi, Luong };
+      await nhanVien.update(updateData, { transaction: t });
+      
+      // Cập nhật tài khoản nếu có
+      if (nhanVien.TaiKhoan) {
+        const taiKhoanUpdate = {};
+        if (Email) {
+          // Kiểm tra trùng email
+          const existed = await TaiKhoan.findOne({ 
+            where: { 
+              Email: Email, 
+              MaTK: { [Op.ne]: nhanVien.MaTK } 
+            } 
+          });
+          if (existed) {
+            throw { message: 'Email đã tồn tại', code: 'EMAIL_EXISTS' };
+          }
+          taiKhoanUpdate.Email = Email;
+        }
+        if (MatKhau) taiKhoanUpdate.Password = await bcrypt.hash(MatKhau, 10);
+        
+        // Cập nhật vai trò dựa trên KhuVucPhuTrach
+        if (KhuVucPhuTrach !== undefined) {
+          taiKhoanUpdate.MaVaiTro = (KhuVucPhuTrach && KhuVucPhuTrach.length > 0) ? 3 : 2; // 3: NhanVienGiaoHang, 2: NhanVienCuaHang
+        }
+        
+        if (Object.keys(taiKhoanUpdate).length > 0) {
+          await nhanVien.TaiKhoan.update(taiKhoanUpdate, { transaction: t });
+        }
+      }
+      
+      // Cập nhật khu vực phụ trách nếu có
+      if (KhuVucPhuTrach !== undefined) {
+        // Xóa các bản ghi cũ trong NhanVien_KhuVuc
+        await NhanVien_KhuVuc.destroy({ where: { MaNV: id } }, { transaction: t });
+        
+        // Tạo các bản ghi mới nếu có khu vực phụ trách
+        if (Array.isArray(KhuVucPhuTrach) && KhuVucPhuTrach.length > 0) {
+          for (const maKhuVuc of KhuVucPhuTrach) {
+            // Kiểm tra khu vực có tồn tại không
+            const khuVuc = await KhuVuc.findByPk(maKhuVuc);
+            if (!khuVuc) {
+              throw new Error(`Không tìm thấy khu vực với mã: ${maKhuVuc}`);
+            }
+            
+            await NhanVien_KhuVuc.create({
+              MaNV: id,
+              MaKhuVuc: maKhuVuc,
+              NgayTao: new Date(),
+              TrangThai: 1
+            }, { transaction: t });
+          }
+        }
+      }
+      
+      await t.commit();
+      
+      // Trả về nhân viên vừa cập nhật
+      return await NhanVien.findByPk(id, {
+        include: [
           { model: TaiKhoan, include: [{ model: VaiTro }] },
-          { model: NhanVien_BoPhan, include: [{ model: BoPhan }] }
+          { model: NhanVien_BoPhan, include: [{ model: BoPhan }] },
+          {
+            model: KhuVuc,
+            as: 'KhuVucPhuTrach',
+            attributes: ['MaKhuVuc', 'TenKhuVuc'],
+            through: { 
+              attributes: ['NgayTao', 'TrangThai'] 
+            }
+          }
         ]
       });
     } catch (err) {
       await t.rollback();
       throw err;
     }
-  },
-  
-  update: async (id, data) => {
-    const nhanVien = await NhanVien.findByPk(id);
-    if (!nhanVien) return null;
-
-    // Nếu có Email mới, cập nhật vào TaiKhoan
-    if (data.Email) {
-      // Kiểm tra trùng email với tài khoản khác
-      const existed = await TaiKhoan.findOne({ where: { Email: data.Email, MaTK: { [Op.ne]: nhanVien.MaTK } } });
-      if (existed) {
-        throw { message: 'Email đã tồn tại', code: 'EMAIL_EXISTS' };
-      }
-      await TaiKhoan.update(
-        { Email: data.Email },
-        { where: { MaTK: nhanVien.MaTK } }
-      );
-    }
-
-    // Cập nhật các trường khác của nhân viên
-    const updateData = { ...data };
-    delete updateData.Email; // Không update Email vào bảng NhanVien
-    await nhanVien.update(updateData);
-
-    // Trả về nhân viên đã cập nhật (kèm tài khoản)
-    return await NhanVien.findByPk(id, {
-      include: [
-        { model: TaiKhoan, include: [{ model: VaiTro }] },
-        { model: NhanVien_BoPhan, include: [{ model: BoPhan }] }
-      ]
-    });
   },
   
   delete: async (id) => {
@@ -157,7 +286,7 @@ const NhanVienService = {
     return nhanVien;
   },
 
-  chuyenBoPhan: async (MaNV, { MaBoPhanMoi, NgayChuyen, ChucVu, GhiChu, KhuVuc }) => {
+  chuyenBoPhan: async (MaNV, { MaBoPhanMoi, NgayChuyen, ChucVu, GhiChu, KhuVucPhuTrach }) => {
     const t = await sequelize.transaction();
     try {
       // 1. Tìm bản ghi bộ phận hiện tại
@@ -184,16 +313,65 @@ const NhanVienService = {
         GhiChu: GhiChu || null
       }, { transaction: t });
       
-      // 4. Nếu chuyển sang bộ phận giao hàng (mã 11) và có KhuVuc, cập nhật vào bảng NhanVien
-      if (MaBoPhanMoi == 11 && KhuVuc) {
-        await NhanVien.update(
-          { KhuVuc: KhuVuc },
-          { 
-            where: { MaNV },
+      // 4. Lấy thông tin nhân viên để kiểm tra tài khoản
+      const nhanVien = await NhanVien.findByPk(MaNV, {
+        include: [{ model: TaiKhoan }],
+        transaction: t
+      });
+      
+      // 5. Nếu chuyển sang bộ phận giao hàng (mã 11)
+      if (MaBoPhanMoi == 11) {
+        // Cập nhật vai trò tài khoản thành NhanVienGiaoHang (mã 3) nếu có tài khoản
+        if (nhanVien.TaiKhoan) {
+          await nhanVien.TaiKhoan.update({
+            MaVaiTro: 3 // NhanVienGiaoHang
+          }, { transaction: t });
+          console.log(`Cập nhật vai trò thành NhanVienGiaoHang cho nhân viên ${MaNV}`);
+        }
+        
+        // Cập nhật khu vực phụ trách nếu có
+        if (KhuVucPhuTrach && Array.isArray(KhuVucPhuTrach) && KhuVucPhuTrach.length > 0) {
+          // Xóa các bản ghi cũ trong NhanVien_KhuVuc
+          await NhanVien_KhuVuc.destroy({ 
+            where: { MaNV: MaNV },
             transaction: t 
+          });
+          
+          // Tạo các bản ghi mới cho khu vực phụ trách
+          for (const maKhuVuc of KhuVucPhuTrach) {
+            // Kiểm tra khu vực có tồn tại không
+            const khuVuc = await KhuVuc.findByPk(maKhuVuc);
+            if (!khuVuc) {
+              throw new Error(`Không tìm thấy khu vực với mã: ${maKhuVuc}`);
+            }
+            
+            await NhanVien_KhuVuc.create({
+              MaNV: MaNV,
+              MaKhuVuc: maKhuVuc,
+              NgayTao: new Date(),
+              TrangThai: 1
+            }, { transaction: t });
           }
-        );
-        console.log(`Cập nhật khu vực '${KhuVuc}' cho nhân viên ${MaNV}`);
+          console.log(`Cập nhật ${KhuVucPhuTrach.length} khu vực phụ trách cho nhân viên giao hàng ${MaNV}: ${KhuVucPhuTrach.join(', ')}`);
+        }
+      } else {
+        // 6. Nếu chuyển từ bộ phận giao hàng sang bộ phận khác
+        if (current.MaBoPhan == 11) {
+          // Cập nhật vai trò tài khoản thành NhanVienCuaHang (mã 2) nếu có tài khoản
+          if (nhanVien.TaiKhoan) {
+            await nhanVien.TaiKhoan.update({
+              MaVaiTro: 2 // NhanVienCuaHang
+            }, { transaction: t });
+            console.log(`Cập nhật vai trò thành NhanVienCuaHang cho nhân viên ${MaNV}`);
+          }
+          
+          // Xóa tất cả khu vực phụ trách khi chuyển khỏi bộ phận giao hàng
+          await NhanVien_KhuVuc.destroy({ 
+            where: { MaNV: MaNV },
+            transaction: t 
+          });
+          console.log(`Xóa tất cả khu vực phụ trách cho nhân viên ${MaNV} khi chuyển khỏi bộ phận giao hàng`);
+        }
       }
       
       await t.commit();
@@ -409,33 +587,57 @@ const NhanVienService = {
       // Trích xuất phường/xã từ địa chỉ giao hàng
       const phuongXa = NhanVienService.extractPhuongXa(diaChi);
       
-      // Nếu không tìm thấy phường/xã cụ thể, tìm tất cả nhân viên giao hàng
-      const whereClause = phuongXa ? 
-        "AND (nv.KhuVuc LIKE :phuongXa OR nv.KhuVuc IS NULL)" : 
-        "";
-      
       // Query tìm nhân viên giao hàng phụ trách khu vực và đếm số đơn đang giao
-      const deliveryStaff = await sequelize.query(`
+      let query = `
         SELECT 
           nv.MaNV,
           nv.TenNV,
-          nv.KhuVuc,
           nv.DiaChi,
+          GROUP_CONCAT(DISTINCT kv.TenKhuVuc ORDER BY kv.TenKhuVuc ASC SEPARATOR ', ') as KhuVucPhuTrach,
           COUNT(CASE WHEN dh.MaTTDH IN (3, 4) THEN 1 END) as SoDonDangGiao
         FROM nhanvien nv
         INNER JOIN nhanvien_bophan nvbp ON nv.MaNV = nvbp.MaNV 
+        LEFT JOIN NhanVien_KhuVuc nvkv ON nv.MaNV = nvkv.MaNV AND nvkv.TrangThai = 1
+        LEFT JOIN KhuVuc kv ON nvkv.MaKhuVuc = kv.MaKhuVuc
         LEFT JOIN dondathang dh ON nv.MaNV = dh.MaNV_Giao 
         WHERE nvbp.MaBoPhan = 11 
           AND nvbp.TrangThai = 'DANGLAMVIEC'
-          ${whereClause}
-        GROUP BY nv.MaNV, nv.TenNV, nv.KhuVuc, nv.DiaChi
-        ORDER BY 
-          ${phuongXa ? "CASE WHEN nv.KhuVuc LIKE :phuongXa THEN 0 ELSE 1 END," : ""}
+        GROUP BY nv.MaNV, nv.TenNV, nv.DiaChi
+        ORDER BY `;
+
+      // Thêm điều kiện ưu tiên nếu có phường/xã
+      if (phuongXa) {
+        query += `
+          CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM NhanVien_KhuVuc nvkv2 
+              INNER JOIN KhuVuc kv2 ON nvkv2.MaKhuVuc = kv2.MaKhuVuc 
+              WHERE nvkv2.MaNV = nv.MaNV 
+                AND nvkv2.TrangThai = 1 
+                AND (
+                  kv2.TenKhuVuc = :phuongXa OR
+                  kv2.TenKhuVuc LIKE :phuongXaPattern OR 
+                  LOWER(REPLACE(REPLACE(REPLACE(kv2.TenKhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
+                  LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
+                  CONCAT('phường ', LOWER(kv2.TenKhuVuc)) = LOWER(:phuongXa) OR
+                  LOWER(kv2.TenKhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
+                )
+            ) THEN 0 
+            ELSE 1 
+          END,`;
+      }
+      
+      query += `
           SoDonDangGiao ASC, 
           nv.MaNV ASC
         LIMIT 1
-      `, {
-        replacements: phuongXa ? { phuongXa: `%${phuongXa}%` } : {},
+      `;
+
+      const deliveryStaff = await sequelize.query(query, {
+        replacements: phuongXa ? { 
+          phuongXa: phuongXa,
+          phuongXaPattern: `%${phuongXa}%`
+        } : {},
         type: sequelize.QueryTypes.SELECT
       });
       
@@ -462,39 +664,54 @@ const NhanVienService = {
         SELECT 
           nv.MaNV,
           nv.TenNV,
-          nv.KhuVuc,
           nv.DiaChi,
           COUNT(CASE WHEN dh.MaTTDH IN (2, 3) THEN 1 END) as SoDonDangGiao,
+          GROUP_CONCAT(DISTINCT kv.TenKhuVuc ORDER BY kv.TenKhuVuc ASC SEPARATOR ', ') as KhuVucPhuTrach,
           CASE 
-            WHEN :phuongXa IS NOT NULL AND :phuongXa != '' AND (
-              nv.KhuVuc = :phuongXa OR
-              nv.KhuVuc LIKE :phuongXaPattern OR 
-              LOWER(REPLACE(REPLACE(REPLACE(nv.KhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
-              LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
-              CONCAT('phường ', LOWER(nv.KhuVuc)) = LOWER(:phuongXa) OR
-              LOWER(nv.KhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
+            WHEN :phuongXa IS NOT NULL AND :phuongXa != '' AND EXISTS (
+              SELECT 1 FROM NhanVien_KhuVuc nvkv2 
+              INNER JOIN KhuVuc kv2 ON nvkv2.MaKhuVuc = kv2.MaKhuVuc 
+              WHERE nvkv2.MaNV = nv.MaNV 
+                AND nvkv2.TrangThai = 1 
+                AND (
+                  kv2.TenKhuVuc = :phuongXa OR
+                  kv2.TenKhuVuc LIKE :phuongXaPattern OR 
+                  LOWER(REPLACE(REPLACE(REPLACE(kv2.TenKhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
+                  LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
+                  CONCAT('phường ', LOWER(kv2.TenKhuVuc)) = LOWER(:phuongXa) OR
+                  LOWER(kv2.TenKhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
+                )
             ) THEN 'PHUTRACH' 
             ELSE 'KHAC' 
           END as LoaiPhuTrach
         FROM NhanVien nv
         INNER JOIN NhanVien_BoPhan nvbp ON nv.MaNV = nvbp.MaNV 
+        LEFT JOIN NhanVien_KhuVuc nvkv ON nv.MaNV = nvkv.MaNV AND nvkv.TrangThai = 1
+        LEFT JOIN KhuVuc kv ON nvkv.MaKhuVuc = kv.MaKhuVuc
         LEFT JOIN DonDatHang dh ON nv.MaNV = dh.MaNV_Giao 
         WHERE nvbp.MaBoPhan = 11 
           AND nvbp.TrangThai = 'DANGLAMVIEC'
-        GROUP BY nv.MaNV, nv.TenNV, nv.KhuVuc, nv.DiaChi
+        GROUP BY nv.MaNV, nv.TenNV, nv.DiaChi
         ORDER BY `;
 
       // Thêm điều kiện sắp xếp ưu tiên nếu có phường/xã
       if (phuongXa) {
         query += `
           CASE 
-            WHEN nv.KhuVuc = :phuongXa OR
-                 nv.KhuVuc LIKE :phuongXaPattern OR
-                 LOWER(REPLACE(REPLACE(REPLACE(nv.KhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
-                 LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
-                 CONCAT('phường ', LOWER(nv.KhuVuc)) = LOWER(:phuongXa) OR
-                 LOWER(nv.KhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
-            THEN 0 
+            WHEN EXISTS (
+              SELECT 1 FROM NhanVien_KhuVuc nvkv3 
+              INNER JOIN KhuVuc kv3 ON nvkv3.MaKhuVuc = kv3.MaKhuVuc 
+              WHERE nvkv3.MaNV = nv.MaNV 
+                AND nvkv3.TrangThai = 1 
+                AND (
+                  kv3.TenKhuVuc = :phuongXa OR
+                  kv3.TenKhuVuc LIKE :phuongXaPattern OR
+                  LOWER(REPLACE(REPLACE(REPLACE(kv3.TenKhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
+                  LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
+                  CONCAT('phường ', LOWER(kv3.TenKhuVuc)) = LOWER(:phuongXa) OR
+                  LOWER(kv3.TenKhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
+                )
+            ) THEN 0 
             ELSE 1 
           END,`;
       }
@@ -521,20 +738,26 @@ const NhanVienService = {
         
         // Log chi tiết nhân viên phụ trách
         if (priorityStaff.length > 0) {
-          console.log('Nhân viên phụ trách:', priorityStaff.map(s => `${s.TenNV} (${s.KhuVuc})`));
+          console.log('Nhân viên phụ trách:', priorityStaff.map(s => `${s.TenNV} (${s.KhuVucPhuTrach || 'Không có khu vực'})`));
         } else {
-          console.log('Kiểm tra tất cả KhuVuc của nhân viên:');
+          console.log('Kiểm tra tất cả khu vực của nhân viên:');
           deliveryStaffList.forEach(staff => {
-            console.log(`- ${staff.TenNV}: "${staff.KhuVuc}" vs "${phuongXa}"`);
-            // Thêm kiểm tra từng điều kiện
-            const khuVucNormalized = staff.KhuVuc.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
-            const phuongXaNormalized = phuongXa.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
-            const withoutPhuong = phuongXa.toLowerCase().replace(/^phường\s+/i, '');
+            console.log(`- ${staff.TenNV}: "${staff.KhuVucPhuTrach || 'Không có khu vực'}" vs "${phuongXa}"`);
             
-            console.log(`  - Exact: ${staff.KhuVuc === phuongXa}`);
-            console.log(`  - Pattern: ${staff.KhuVuc.includes(phuongXa)}`);
-            console.log(`  - Normalized: "${khuVucNormalized}" = "${phuongXaNormalized}" -> ${khuVucNormalized === phuongXaNormalized}`);
-            console.log(`  - Without prefix: "${staff.KhuVuc.toLowerCase()}" = "${withoutPhuong}" -> ${staff.KhuVuc.toLowerCase() === withoutPhuong}`);
+            if (staff.KhuVucPhuTrach) {
+              const khuVucList = staff.KhuVucPhuTrach.split(', ');
+              khuVucList.forEach(khuVuc => {
+                const khuVucNormalized = khuVuc.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
+                const phuongXaNormalized = phuongXa.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
+                const withoutPhuong = phuongXa.toLowerCase().replace(/^phường\s+/i, '');
+                
+                console.log(`  - Khu vực "${khuVuc}":`);
+                console.log(`    + Exact: ${khuVuc === phuongXa}`);
+                console.log(`    + Pattern: ${khuVuc.includes(phuongXa)}`);
+                console.log(`    + Normalized: "${khuVucNormalized}" = "${phuongXaNormalized}" -> ${khuVucNormalized === phuongXaNormalized}`);
+                console.log(`    + Without prefix: "${khuVuc.toLowerCase()}" = "${withoutPhuong}" -> ${khuVuc.toLowerCase() === withoutPhuong}`);
+              });
+            }
           });
         }
       }
@@ -561,18 +784,20 @@ const NhanVienService = {
         SELECT 
           nv.MaNV,
           nv.TenNV,
-          nv.KhuVuc,
+          GROUP_CONCAT(DISTINCT kv.TenKhuVuc ORDER BY kv.TenKhuVuc ASC SEPARATOR ', ') as KhuVucPhuTrach,
           COUNT(CASE WHEN dh.MaTTDH = 3 THEN 1 END) as DonDaPhanCong,
           COUNT(CASE WHEN dh.MaTTDH = 4 THEN 1 END) as DonDangGiao,
           COUNT(CASE WHEN dh.MaTTDH = 5 AND DATE(dh.ThoiGianGiao) = CURDATE() THEN 1 END) as DonDaGiaoHomNay,
           COUNT(CASE WHEN dh.MaTTDH IN (3, 4) THEN 1 END) as TongDonDangXuLy
         FROM nhanvien nv
         INNER JOIN nhanvien_bophan nvbp ON nv.MaNV = nvbp.MaNV 
+        LEFT JOIN NhanVien_KhuVuc nvkv ON nv.MaNV = nvkv.MaNV AND nvkv.TrangThai = 1
+        LEFT JOIN KhuVuc kv ON nvkv.MaKhuVuc = kv.MaKhuVuc
         LEFT JOIN dondathang dh ON nv.MaNV = dh.MaNV_Giao 
         WHERE nvbp.MaBoPhan = 11 
           AND nvbp.TrangThai = 'DANGLAMVIEC'
           ${whereClause}
-        GROUP BY nv.MaNV, nv.TenNV, nv.KhuVuc
+        GROUP BY nv.MaNV, nv.TenNV
         ORDER BY TongDonDangXuLy ASC, nv.TenNV ASC
       `, {
         replacements,

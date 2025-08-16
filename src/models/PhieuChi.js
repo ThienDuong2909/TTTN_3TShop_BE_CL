@@ -20,6 +20,11 @@ const PhieuChi = sequelize.define('PhieuChi', {
     allowNull: false,
     references: { model: 'PhieuTraHang', key: 'MaPhieuTra' },
   },
+  MaNVLap: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'NhanVien', key: 'MaNV' },
+  },
 });
 
 module.exports = PhieuChi;

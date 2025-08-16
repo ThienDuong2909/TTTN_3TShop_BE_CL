@@ -14,7 +14,14 @@ const NhaCungCapService = {
       data: rows,
     };
   },
-  
+
+  getAll: async () => {
+    const { count, rows } = await NhaCungCap.findAndCountAll();
+    return {
+      data: rows,
+    };
+  },
+
   getById: async (id) => {
     return await NhaCungCap.findByPk(id);
   },
