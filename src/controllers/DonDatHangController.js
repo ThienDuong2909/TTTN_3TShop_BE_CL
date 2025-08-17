@@ -419,12 +419,7 @@ const DonDatHangController = {
       const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
 
       if (!maTK) {
-        return response.error(
-          res,
-          null,
-          "Không xác định được tài khoản",
-          400
-        );
+        return response.error(res, null, "Không xác định được tài khoản", 400);
       }
 
       // Lấy MaNV từ MaTK
@@ -470,12 +465,7 @@ const DonDatHangController = {
       const maTK = req.user.MaTK; // Lấy MaTK từ JWT token
 
       if (!maTK) {
-        return response.error(
-          res,
-          null,
-          "Không xác định được tài khoản",
-          400
-        );
+        return response.error(res, null, "Không xác định được tài khoản", 400);
       }
 
       // Lấy MaNV từ MaTK
@@ -549,6 +539,23 @@ const DonDatHangController = {
       return response.success(res, data, "Hủy đơn hàng thành công");
     } catch (err) {
       return response.error(res, err.message || "Lỗi khi hủy đơn hàng");
+    }
+  },
+  getCurrentMonthOrders: async (req, res) => {
+    try {
+      const data = await DonDatHangService.getCurrentMonthOrders();
+
+      return response.success(
+        res,
+        data,
+        `Lấy danh sách đơn hàng tháng ${data.thongTinThang.thang}/${data.thongTinThang.nam} thành công (${data.thongTinThang.tongSoDonHang} đơn hàng)`
+      );
+    } catch (err) {
+      console.error("Error in getCurrentMonthOrders:", err);
+      return response.error(
+        res,
+        err.message || "Lỗi khi lấy danh sách đơn hàng tháng hiện tại"
+      );
     }
   },
 };
