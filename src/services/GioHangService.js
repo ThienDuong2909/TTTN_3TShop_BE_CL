@@ -8,6 +8,8 @@ const TrangThaiDH = require("../models/TrangThaiDH");
 const KichThuoc = require("../models/KichThuoc");
 const SanPhamService = require("./SanPhamService");
 const NhanVien = require("../models/NhanVien");
+const HoaDon = require("../models/HoaDon");
+const PhieuTraHang = require("../models/PhieuTraHang");
 
 const GioHangService = {
   addToCart: async (maKH, maSP, maHex, tenKichThuoc, soLuongInput) => {
@@ -327,8 +329,14 @@ const GioHangService = {
               include: [
                 {
                   model: require("../models/SanPham"),
+                  attributes: ["MaSP", "TenSP"], // Bỏ MoTa
                   include: [
-                    { model: require("../models/AnhSanPham") }, // Thêm ở đây
+                    { 
+                      model: require("../models/AnhSanPham"),
+                      where: { AnhChinh: true }, // Chỉ lấy ảnh chính
+                      attributes: ["DuongDan", "TenFile"],
+                      required: false
+                    },
                   ],
                 },
                 { model: require("../models/Mau") },
@@ -352,91 +360,109 @@ const GioHangService = {
           model: TrangThaiDH,
           attributes: ["MaTTDH", "TrangThai"],
         },
+        {
+          model: HoaDon,
+          attributes: ['SoHD', 'NgayLap'],
+          required: false,
+          include: [
+            {
+              model: PhieuTraHang,
+              attributes: ['MaPhieuTra', 'NgayTra', 'LyDo', 'TrangThai'],
+              required: false,
+              include: [
+                {
+                  model: NhanVien,
+                  attributes: ['MaNV', 'TenNV'],
+                  required: false
+                }
+              ]
+            }
+          ]
+        }
       ],
       order: [["NgayTao", "DESC"]],
     });
 
     // Xử lý dữ liệu để thêm danh sách bình luận cho mỗi đơn hàng
-    const ordersWithComments = orders.map((order) => {
-      const orderData = order.toJSON();
-      let danhSachBinhLuan = [];
+    // const ordersWithComments = orders.map((order) => {
+    //   const orderData = order.toJSON();
+    //   let danhSachBinhLuan = [];
 
-      // Thu thập tất cả bình luận từ các chi tiết đơn hàng
-      if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
-        orderData.CT_DonDatHangs.forEach((item) => {
-          if (item.BinhLuans && item.BinhLuans.length > 0) {
-            item.BinhLuans.forEach((binhLuan) => {
-              danhSachBinhLuan.push({
-                // Thông tin bình luận cơ bản
-                MaBL: binhLuan.MaBL,
-                MaCTDDH: item.MaCTDDH,
-                MoTa: binhLuan.MoTa,
-                SoSao: binhLuan.SoSao,
-                NgayBinhLuan: binhLuan.NgayBinhLuan,
+    //   // Thu thập tất cả bình luận từ các chi tiết đơn hàng
+    //   if (orderData.CT_DonDatHangs && orderData.CT_DonDatHangs.length > 0) {
+    //     orderData.CT_DonDatHangs.forEach((item) => {
+    //       if (item.BinhLuans && item.BinhLuans.length > 0) {
+    //         item.BinhLuans.forEach((binhLuan) => {
+    //           danhSachBinhLuan.push({
+    //             // Thông tin bình luận cơ bản
+    //             MaBL: binhLuan.MaBL,
+    //             MaCTDDH: item.MaCTDDH,
+    //             MoTa: binhLuan.MoTa,
+    //             SoSao: binhLuan.SoSao,
+    //             NgayBinhLuan: binhLuan.NgayBinhLuan,
 
-                // Thông tin khách hàng bình luận
-                KhachHang: {
-                  MaKH: binhLuan.KhachHang?.MaKH || maKH,
-                  TenKH: binhLuan.KhachHang?.TenKH || "",
-                },
+    //             // Thông tin khách hàng bình luận
+    //             KhachHang: {
+    //               MaKH: binhLuan.KhachHang?.MaKH || maKH,
+    //               TenKH: binhLuan.KhachHang?.TenKH || "",
+    //             },
 
-                // Thông tin chi tiết sản phẩm được bình luận
-                SanPham: {
-                  MaSP: item.ChiTietSanPham?.SanPham?.MaSP || 0,
-                  TenSP: item.ChiTietSanPham?.SanPham?.TenSP || "",
+    //             // Thông tin chi tiết sản phẩm được bình luận
+    //             SanPham: {
+    //               MaSP: item.ChiTietSanPham?.SanPham?.MaSP || 0,
+    //               TenSP: item.ChiTietSanPham?.SanPham?.TenSP || "",
 
-                  // Thông tin biến thể sản phẩm
-                  ChiTiet: {
-                    MaCTSP: item.MaCTSP,
-                    KichThuoc: {
-                      MaKichThuoc:
-                        item.ChiTietSanPham?.KichThuoc?.MaKichThuoc || 0,
-                      TenKichThuoc:
-                        item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
-                    },
-                    MauSac: {
-                      MaMau: item.ChiTietSanPham?.Mau?.MaMau || 0,
-                      TenMau: item.ChiTietSanPham?.Mau?.TenMau || "",
-                      MaHex: item.ChiTietSanPham?.Mau?.MaHex || "",
-                    },
-                  },
+    //               // Thông tin biến thể sản phẩm
+    //               ChiTiet: {
+    //                 MaCTSP: item.MaCTSP,
+    //                 KichThuoc: {
+    //                   MaKichThuoc:
+    //                     item.ChiTietSanPham?.KichThuoc?.MaKichThuoc || 0,
+    //                   TenKichThuoc:
+    //                     item.ChiTietSanPham?.KichThuoc?.TenKichThuoc || "",
+    //                 },
+    //                 MauSac: {
+    //                   MaMau: item.ChiTietSanPham?.Mau?.MaMau || 0,
+    //                   TenMau: item.ChiTietSanPham?.Mau?.TenMau || "",
+    //                   MaHex: item.ChiTietSanPham?.Mau?.MaHex || "",
+    //                 },
+    //               },
 
-                  // Hình ảnh sản phẩm (lấy ảnh đầu tiên)
-                  HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]
-                    ? {
-                        MaAnh: item.ChiTietSanPham.SanPham.AnhSanPhams[0].MaAnh,
-                        TenFile:
-                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].TenFile,
-                        DuongDan:
-                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].DuongDan,
-                        AnhChinh:
-                          item.ChiTietSanPham.SanPham.AnhSanPhams[0].AnhChinh,
-                        ThuTu: item.ChiTietSanPham.SanPham.AnhSanPhams[0].ThuTu,
-                      }
-                    : null,
-                },
+    //               // Hình ảnh sản phẩm (lấy ảnh đầu tiên)
+    //               HinhAnh: item.ChiTietSanPham?.SanPham?.AnhSanPhams?.[0]
+    //                 ? {
+    //                     MaAnh: item.ChiTietSanPham.SanPham.AnhSanPhams[0].MaAnh,
+    //                     TenFile:
+    //                       item.ChiTietSanPham.SanPham.AnhSanPhams[0].TenFile,
+    //                     DuongDan:
+    //                       item.ChiTietSanPham.SanPham.AnhSanPhams[0].DuongDan,
+    //                     AnhChinh:
+    //                       item.ChiTietSanPham.SanPham.AnhSanPhams[0].AnhChinh,
+    //                     ThuTu: item.ChiTietSanPham.SanPham.AnhSanPhams[0].ThuTu,
+    //                   }
+    //                 : null,
+    //             },
 
-                // Thông tin đơn hàng liên quan
-                ThongTinDonHang: {
-                  SoLuong: item.SoLuong,
-                  DonGia: parseFloat(item.DonGia) || 0,
-                  ThanhTien:
-                    (parseFloat(item.DonGia) || 0) * (item.SoLuong || 0),
-                },
-              });
-            });
-          }
-        });
-      }
+    //             // Thông tin đơn hàng liên quan
+    //             ThongTinDonHang: {
+    //               SoLuong: item.SoLuong,
+    //               DonGia: parseFloat(item.DonGia) || 0,
+    //               ThanhTien:
+    //                 (parseFloat(item.DonGia) || 0) * (item.SoLuong || 0),
+    //             },
+    //           });
+    //         });
+    //       }
+    //     });
+    //   }
+    //   return {
+    //     ...orderData,
+    //     DanhSachBinhLuan: danhSachBinhLuan,
+    //   };
+    // });
 
-      // Trả về đơn hàng với danh sách bình luận (hoặc mảng rỗng nếu không có)
-      return {
-        ...orderData,
-        DanhSachBinhLuan: danhSachBinhLuan,
-      };
-    });
-
-    return ordersWithComments;
+    // return ordersWithComments;
+    return orders;
   },
   getOrderById: async (maDDH, maKH) => {
     const order = await DonDatHang.findOne({
@@ -450,7 +476,15 @@ const GioHangService = {
               include: [
                 {
                   model: require("../models/SanPham"),
-                  include: [{ model: require("../models/AnhSanPham") }],
+                  attributes: ["MaSP", "TenSP"], // Bỏ MoTa
+                  include: [
+                    { 
+                      model: require("../models/AnhSanPham"),
+                      where: { AnhChinh: true }, // Chỉ lấy ảnh chính
+                      attributes: ["DuongDan", "TenFile"],
+                      required: false
+                    }
+                  ],
                 },
                 { model: require("../models/Mau") },
                 { model: require("../models/KichThuoc") },
@@ -470,6 +504,25 @@ const GioHangService = {
           model: NhanVien,
           as: "NguoiGiao",
         },
+        {
+          model: HoaDon,
+          attributes: ['SoHD', 'NgayLap'],
+          required: false,
+          include: [
+            {
+              model: PhieuTraHang,
+              attributes: ['MaPhieuTra', 'NgayTra', 'LyDo', 'TrangThai'],
+              required: false,
+              include: [
+                {
+                  model: NhanVien,
+                  attributes: ['MaNV', 'TenNV'],
+                  required: false
+                }
+              ]
+            }
+          ]
+        }
       ],
     });
 

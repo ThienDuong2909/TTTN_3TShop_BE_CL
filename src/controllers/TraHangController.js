@@ -64,11 +64,11 @@ const TraHangController = {
       }
 
       // Lấy MaNV từ MaTK
-      const maNV = await getMaNVFromMaTK(maTK);
+      // const maNV = await getMaNVFromMaTK(maTK);
 
-      if (!maNV) {
-        return response.error(res, null, 'Không tìm thấy thông tin nhân viên', 401);
-      }
+      // if (!maNV) {
+      //   return response.error(res, null, 'Không tìm thấy thông tin nhân viên', 401);
+      // }
 
       if (!maDDH || !danhSachSanPham || !Array.isArray(danhSachSanPham) || danhSachSanPham.length === 0) {
         return response.error(res, null, 'Thiếu thông tin đơn hàng hoặc danh sách sản phẩm trả', 400);

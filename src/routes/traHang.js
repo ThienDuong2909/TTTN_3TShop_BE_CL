@@ -20,10 +20,10 @@ router.get('/history', authorize('thongtin.xem'), TraHangController.getCustomerR
 router.get('/requests', authorize('toanquyen'), TraHangController.getReturnRequests);
 
 // Tạo phiếu trả hàng
-router.post('/slip', authorize('toanquyen'), TraHangController.createReturnSlip);
+router.post('/slip', authorize('trahang.tao'), TraHangController.createReturnSlip);
 
 // Tạo phiếu chi cho phiếu trả hàng
-router.post('/payment', authorize('toanquyen'), TraHangController.createPaymentSlip);
+router.post('/payment', authorize('phieuchi.tao', 'toanquyen'), TraHangController.createPaymentSlip);
 
 // Duyệt phiếu trả hàng
 // PUT /api/tra-hang/slip/:maPhieuTra/approve
