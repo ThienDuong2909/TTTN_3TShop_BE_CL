@@ -11,19 +11,19 @@ router.use(authenticateJWT);
 // Lấy thống kê đơn hàng theo trạng thái
 router.get(
   "/statistics",
-  authorize("donhang.xem"),
+  authorize("donhang.xem", "dathang.xem"),
   DonDatHangController.getStatistics
 );
 
 // Lấy danh sách đơn hàng theo trạng thái
 router.get(
   "/by-status",
-  authorize("donhang.xem"),
+  authorize("donhang.xem", "dathang.xem"),
   DonDatHangController.getByStatus
 );
 
 // Lấy tất cả đơn hàng
-router.get("/", authorize("donhang.xem"), DonDatHangController.getAll);
+router.get("/", authorize("donhang.xem", "dathang.xem"), DonDatHangController.getAll);
 
 // GET /don-dat-hang/current-month
 router.get(
@@ -42,7 +42,7 @@ router.get(
 // Lấy thông tin chi tiết đầy đủ của đơn hàng theo ID
 router.get(
   "/:id/detail",
-  authorize("donhang.xem"),
+  authorize("dathang.xem"),
   DonDatHangController.getDetailById
 );
 
@@ -53,14 +53,14 @@ router.get("/:id", authorize("donhang.xem"), DonDatHangController.getById);
 // Lấy đơn hàng được phân công cho nhân viên giao hàng
 router.get(
   "/delivery/assigned",
-  authorize("donhang.xem_duoc_giao"),
+  authorize("donhang.xem_duoc_giao", "dathang.xem"),
   DonDatHangController.getAssignedOrders
 );
 
 // Xác nhận đã giao hàng xong
 router.put(
   "/delivery/:id/confirm",
-  authorize("donhang.xacnhan_giaohang"),
+  authorize("donhang.xacnhan_giaohang", "dathang.xem"),
   DonDatHangController.confirmDelivery
 );
 
