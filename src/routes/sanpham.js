@@ -26,13 +26,10 @@ router.use(authenticateJWT);
 router.get("/supplier/:supplierId", authorize('sanpham.xem'), SanPhamController.getBySupplier);
 
 // === AUTHORIZED ROUTES ===
-// Thêm sản phẩm
 router.post("/", authorize('sanpham.tao'), SanPhamController.createProduct);
 
-// Sửa sản phẩm
 router.put("/:id", authorize('sanpham.sua'), SanPhamController.update);
 
-// Xóa sản phẩm
 router.delete("/:id", authorize('sanpham.xoa'), SanPhamController.delete);
 
 // Cập nhật chi tiết sản phẩm
