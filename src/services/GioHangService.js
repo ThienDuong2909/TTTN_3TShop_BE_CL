@@ -8,8 +8,12 @@ const TrangThaiDH = require("../models/TrangThaiDH");
 const KichThuoc = require("../models/KichThuoc");
 const SanPhamService = require("./SanPhamService");
 const NhanVien = require("../models/NhanVien");
+
+const moment = require("moment-timezone");
+
 const HoaDon = require("../models/HoaDon");
 const PhieuTraHang = require("../models/PhieuTraHang");
+
 
 const GioHangService = {
   addToCart: async (maKH, maSP, maHex, tenKichThuoc, soLuongInput) => {
@@ -61,9 +65,11 @@ const GioHangService = {
     });
 
     if (!donDatHang) {
+      const now = new Date();
+      const vietnamTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
       donDatHang = await DonDatHang.create({
         MaKH: Number(maKH),
-        NgayTao: new Date(),
+        NgayTao: vietnamTime,
         DiaChiGiao: khachHang.DiaChi,
         NguoiNhan: khachHang.TenKH,
         MaTTDH: 6,

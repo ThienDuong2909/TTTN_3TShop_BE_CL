@@ -19,7 +19,7 @@ const DonDatHang = sequelize.define("DonDatHang", {
     type: DataTypes.INTEGER,
     references: { model: "NhanVien", key: "MaNV" },
   },
-  NgayTao: DataTypes.DATEONLY,
+  NgayTao: DataTypes.DATE,
   DiaChiGiao: DataTypes.STRING(255),
   ThoiGianGiao: DataTypes.DATE,
   NguoiNhan: DataTypes.STRING(100),
@@ -28,10 +28,10 @@ const DonDatHang = sequelize.define("DonDatHang", {
     type: DataTypes.INTEGER,
     references: { model: "TrangThaiDH", key: "MaTTDH" },
   },
-  SDT : {
+  SDT: {
     type: DataTypes.STRING,
     allowNull: false,
-  }
+  },
 });
 
 module.exports = DonDatHang;
