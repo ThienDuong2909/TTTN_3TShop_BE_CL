@@ -24,6 +24,13 @@ router.post('/validate-period',
 // Get discount period details (Public)
 router.get('/:maDot', DotGiamGiaController.getDotGiamGiaDetail);
 
+// Get available products for discount period (Admin and Store Employee)
+router.get('/:maDot/available-products', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  DotGiamGiaController.getAvailableProductsForDiscount
+);
+
 // Add product to discount period (Admin and Store Employee)
 router.post('/:maDot/products', 
   authenticateJWT, 

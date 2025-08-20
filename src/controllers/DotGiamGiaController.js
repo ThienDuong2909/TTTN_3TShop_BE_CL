@@ -200,6 +200,28 @@ const DotGiamGiaController = {
       console.error('Error in validateDiscountPeriod:', err);
       return response.error(res, err.message || 'Lỗi khi kiểm tra khoảng thời gian đợt giảm giá', 400);
     }
+  },
+
+  // Lấy danh sách sản phẩm có thể thêm vào đợt giảm giá
+  getAvailableProductsForDiscount: async (req, res) => {
+    try {
+      const { maDot } = req.params;
+      const { keyword } = req.query;
+
+      if (!maDot || isNaN(maDot)) {
+        return response.error(res, null, 'Mã đợt giảm giá không hợp lệ', 400);
+      }
+
+      const result = await DotGiamGiaService.getAvailableProductsForDiscount(
+        parseInt(maDot),
+        keyword || ''
+      );
+
+      return response.success(res, result, 'Lấy danh sách sản phẩm có thể thêm thành công', 200);
+    } catch (err) {
+      console.error('Error in getAvailableProductsForDiscount:', err);
+      return response.error(res, err.message || 'Lỗi khi lấy danh sách sản phẩm có thể thêm', 400);
+    }
   }
 };
 
