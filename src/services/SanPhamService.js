@@ -588,7 +588,13 @@ const SanPhamService = {
     return await sequelize.transaction(async (t) => {
       // 1. Tạo sản phẩm
       const product = await SanPham.create(
-        { TenSP, MaLoaiSP, MaNCC, MoTa },
+        { 
+          TenSP, 
+          MaLoaiSP, 
+          MaNCC, 
+          MoTa, 
+          NgayTao: new Date() 
+        },
         { transaction: t }
       );
 

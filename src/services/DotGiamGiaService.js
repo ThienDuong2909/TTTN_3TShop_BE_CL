@@ -130,21 +130,21 @@ const DotGiamGiaService = {
         }
 
         // Kiểm tra sản phẩm có trong đợt giảm giá khác đang hoạt động
-        const existingInOtherDot = await CT_DotGiamGia.findOne({
-          where: { MaSP: maSP },
-          include: [{
-            model: DotGiamGia,
-            where: {
-              NgayKetThuc: { [Op.gte]: currentDate },
-              MaDot: { [Op.ne]: maDot }
-            }
-          }],
-          transaction
-        });
+        // const existingInOtherDot = await CT_DotGiamGia.findOne({
+        //   where: { MaSP: maSP },
+        //   include: [{
+        //     model: DotGiamGia,
+        //     where: {
+        //       NgayKetThuc: { [Op.gte]: currentDate },
+        //       MaDot: { [Op.ne]: maDot }
+        //     }
+        //   }],
+        //   transaction
+        // });
 
-        if (existingInOtherDot) {
-          throw new Error(`Sản phẩm ${sanPham.TenSP} đã có trong đợt giảm giá khác đang hoạt động`);
-        }
+        // if (existingInOtherDot) {
+        //   throw new Error(`Sản phẩm ${sanPham.TenSP} đã có trong đợt giảm giá khác đang hoạt động`);
+        // }
 
         // Tạo chi tiết đợt giảm giá
         const chiTiet = await CT_DotGiamGia.create({
@@ -433,6 +433,111 @@ const DotGiamGiaService = {
       };
     } catch (error) {
       await transaction.rollback();
+      throw error;
+    }
+  },
+
+  // Lấy danh sách sản phẩm có thể thêm vào đợt giảm giá
+  getAvailableProductsForDiscount: async (maDot, keyword = '') => {
+    try {
+      const currentDate = new Date();
+
+      // Kiểm tra đợt giảm giá tồn tại
+      const dotGiamGia = await DotGiamGia.findByPk(maDot);
+      if (!dotGiamGia) {
+        throw new Error('Không tìm thấy đợt giảm giá');
+      }
+
+      // Lấy danh sách MaSP đã có trong đợt giảm giá hiện tại
+      const productsInCurrentDot = await CT_DotGiamGia.findAll({
+        where: { MaDot: maDot },
+        attributes: ['MaSP'],
+        raw: true
+      });
+      const currentDotProductIds = productsInCurrentDot.map(item => item.MaSP);
+
+      // Tạo điều kiện where cho sản phẩm - chỉ loại trừ sp trong đợt hiện tại
+      const whereCondition = {};
+      
+      // Chỉ loại trừ sản phẩm đã có trong đợt giảm giá hiện tại
+      if (currentDotProductIds.length > 0) {
+        whereCondition.MaSP = {
+          [Op.notIn]: currentDotProductIds
+        };
+      }
+
+      // Thêm điều kiện tìm kiếm theo từ khóa nếu có
+      if (keyword && keyword.trim()) {
+        whereCondition.TenSP = {
+          [Op.like]: `%${keyword.trim()}%`
+        };
+      }
+
+      // Lấy danh sách sản phẩm có thể thêm vào
+      const products = await SanPham.findAll({
+        where: whereCondition,
+        include: [
+          {
+            model: AnhSanPham,
+            where: { AnhChinh: true },
+            required: false,
+            attributes: ['DuongDan']
+          },
+          {
+            model: LoaiSP,
+            attributes: ['MaLoaiSP', 'TenLoai'],
+            required: false
+          }
+        ],
+        attributes: ['MaSP', 'TenSP', 'MoTa'],
+        order: [['MaSP', 'DESC']]
+      });
+
+      // Format dữ liệu trả về
+      const availableProducts = [];
+      
+      for (const product of products) {
+        // Sử dụng raw query để lấy giá hiện tại
+        const priceQuery = `
+          SELECT Gia 
+          FROM ThayDoiGia 
+          WHERE MaSP = :maSP 
+            AND NgayApDung <= :currentDate 
+          ORDER BY NgayApDung DESC 
+          LIMIT 1
+        `;
+        
+        const priceResult = await sequelize.query(priceQuery, {
+          replacements: { 
+            maSP: product.MaSP, 
+            currentDate: currentDate.toISOString().split('T')[0]
+          },
+          type: sequelize.QueryTypes.SELECT
+        });
+        
+        const currentPrice = priceResult.length > 0 ? parseFloat(priceResult[0].Gia) : 0;
+
+        availableProducts.push({
+          MaSP: product.MaSP,
+          TenSP: product.TenSP,
+          MoTa: product.MoTa,
+          GiaHienTai: currentPrice,
+          TenLoaiSP: product.LoaiSP?.TenLoai,
+          AnhChinh: product.AnhSanPhams[0]?.DuongDan || null
+        });
+      }
+
+      return {
+        dotGiamGia: {
+          MaDot: dotGiamGia.MaDot,
+          MoTa: dotGiamGia.MoTa,
+          NgayBatDau: dotGiamGia.NgayBatDau,
+          NgayKetThuc: dotGiamGia.NgayKetThuc
+        },
+        availableProducts: availableProducts,
+        totalItems: availableProducts.length
+      };
+    } catch (error) {
       throw error;
     }
   },
