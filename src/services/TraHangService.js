@@ -718,15 +718,6 @@ const TraHangService = {
           where: { MaDDH: phieuTraHang.HoaDon.MaDDH },
           transaction
         });
-
-        // 4. Cập nhật số lượng trả về 0 và xóa liên kết phiếu trả trong CT_DonDatHang
-        await CT_DonDatHang.update({
-          MaPhieuTra: null,
-          SoLuongTra: 0
-        }, {
-          where: { MaPhieuTra: maPhieuTra },
-          transaction
-        });
       }
 
       await transaction.commit();

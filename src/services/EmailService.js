@@ -26,10 +26,10 @@ class EmailService {
     this.transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST || 'smtp.gmail.com',
       port: process.env.MAIL_PORT || 587,
-      secure: false, // true for 465, false for other ports
+      secure: false,
       auth: {
-        user: process.env.MAIL_USER || 'your-email@gmail.com',
-        pass: process.env.MAIL_PASS || 'your-app-password'
+        user: process.env.MAIL_USER || 'thanhanhynh@gmail.com',
+        pass: process.env.MAIL_PASS || 'xphh kgxp blww txky'
       }
     });
   }
@@ -211,7 +211,7 @@ class EmailService {
 
       // Nội dung email
       const mailOptions = {
-        from: process.env.MAIL_USER || 'your-email@gmail.com',
+        from: 'thanhanhynh@gmail.com',
         to: supplierEmail,
         subject: `Phiếu đặt hàng ${phieuDatHang.MaPDH} - 3TSHOP`,
         html: `

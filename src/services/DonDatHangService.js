@@ -255,15 +255,45 @@ const DonDatHangService = {
 
   // Cập nhật trạng thái đơn hàng
   updateStatus: async (maDDH, maTTDH, maNVDuyet = null, maNVGiao = null) => {
-    const order = await DonDatHang.findByPk(maDDH);
-    if (!order) return null;
+    const transaction = await sequelize.transaction();
+    try {
+      const order = await DonDatHang.findByPk(maDDH, {
+        include: [
+          {
+            model: CT_DonDatHang,
+            attributes: ["MaCTDDH", "MaCTSP", "SoLuong"],
+          },
+        ],
+        transaction,
+      });
+      if (!order) { await transaction.rollback(); return null; }
 
-    const updateData = { MaTTDH: maTTDH };
-    if (maNVDuyet) updateData.MaNV_Duyet = maNVDuyet;
-    if (maNVGiao) updateData.MaNV_Giao = maNVGiao;
+      const previousStatus = order.MaTTDH; // lưu trạng thái cũ
+      const updateData = { MaTTDH: maTTDH };
+      if (maNVDuyet) updateData.MaNV_Duyet = maNVDuyet;
+      if (maNVGiao) updateData.MaNV_Giao = maNVGiao;
 
-    await order.update(updateData);
-    return await DonDatHangService.getById(maDDH);
+      // Nếu chuyển sang HỦY (5) và trước đó chưa hoàn tất (4) & chưa hủy (5) => hoàn trả tồn kho
+      if (maTTDH === 5 && previousStatus !== 5 && previousStatus !== 4) {
+        if (order.CT_DonDatHangs && order.CT_DonDatHangs.length > 0) {
+          for (const ct of order.CT_DonDatHangs) {
+            if (ct.MaCTSP && ct.SoLuong) {
+              await ChiTietSanPham.increment(
+                { SoLuongTon: ct.SoLuong },
+                { where: { MaCTSP: ct.MaCTSP }, transaction }
+              );
+            }
+          }
+        }
+      }
+
+      await order.update(updateData, { transaction });
+      await transaction.commit();
+      return await DonDatHangService.getById(maDDH);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   // Cập nhật trạng thái nhiều đơn hàng cùng lúc
@@ -883,20 +913,42 @@ const DonDatHangService = {
     }
   },
   cancelOrder: async (maKH, maDDH) => {
-    // Tìm đơn hàng theo MaDDH và MaKH
-    const order = await DonDatHang.findOne({
-      where: {
-        MaDDH: maDDH,
-        MaKH: maKH,
-      },
-    });
-    if (!order) return null;
+    const transaction = await sequelize.transaction();
+    try {
+      const order = await DonDatHang.findOne({
+        where: { MaDDH: maDDH, MaKH: maKH },
+        include: [
+          {
+            model: CT_DonDatHang,
+            attributes: ["MaCTDDH", "MaCTSP", "SoLuong"],
+          },
+        ],
+        transaction,
+      });
+      if (!order) { await transaction.rollback(); return null; }
 
-    // Chuyển trạng thái về 5 (đã hủy)
-    order.MaTTDH = 5;
-    await order.save();
+      // Chỉ hoàn trả tồn kho nếu đơn chưa hoàn tất & chưa hủy
+      if (order.MaTTDH !== 5 && order.MaTTDH !== 4) {
+        if (order.CT_DonDatHangs && order.CT_DonDatHangs.length > 0) {
+          for (const ct of order.CT_DonDatHangs) {
+            if (ct.MaCTSP && ct.SoLuong) {
+              await ChiTietSanPham.increment(
+                { SoLuongTon: ct.SoLuong },
+                { where: { MaCTSP: ct.MaCTSP }, transaction }
+              );
+            }
+          }
+        }
+      }
 
-    return order;
+      // Cập nhật trạng thái về HỦY (5)
+      await order.update({ MaTTDH: 5 }, { transaction });
+      await transaction.commit();
+      return order;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   // Thống kê đơn hàng theo sản phẩm

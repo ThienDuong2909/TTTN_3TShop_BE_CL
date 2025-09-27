@@ -90,7 +90,14 @@ const logger = (req, res, next) => {
           }
         }
       } catch (e) {
-        log(`📄 Response: ${body.substring(0, 200)}${body.length > 200 ? '...' : ''}`);
+        // Handle buffer data (like PDF files)
+        if (Buffer.isBuffer(body)) {
+          log(`📄 Response: [Binary data - ${body.length} bytes]`);
+        } else if (typeof body === 'string') {
+          log(`📄 Response: ${body.substring(0, 200)}${body.length > 200 ? '...' : ''}`);
+        } else {
+          log(`📄 Response: [Non-string data - ${typeof body}]`);
+        }
       }
     }
     
