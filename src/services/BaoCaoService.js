@@ -124,7 +124,7 @@ const BaoCaoService = {
         if (typeof dataObject === 'object' && !Array.isArray(dataObject)) {
           processedData = Object.values(dataObject).filter(item => 
             typeof item === 'object' && 
-            item.hasOwnProperty('Loại sản phẩm') // Kiểm tra có phải là data record
+            item.hasOwnProperty('Loại sản phẩm')
           );
         }
       }
