@@ -27,7 +27,7 @@ const mapSPDataToFormat = (item) => {
       'Số lượng tồn', 'soLuongTon', 'SoLuongTon', 'quantity', 'Quantity'
     ],
     giaNhap: [
-      'Giá nhập (trung bình)', 'Giá nhập', 'giaNhap', 'GiaNhap', 'price', 'Price', 'importPrice'
+      'Giá nhập', 'Giá nhập', 'giaNhap', 'GiaNhap', 'price', 'Price', 'importPrice'
     ]
   };
 

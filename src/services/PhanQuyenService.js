@@ -374,33 +374,32 @@ class PhanQuyenService {
       if (userPermissions.includes("toanquyen")) {
         return true;
       }
+      const hasPermission = userPermissions.some((perm) => permission.includes(perm));
 
-      // Kiểm tra quyền cụ thể
-      if (!userPermissions.includes(permission)) {
-        console.log(`User ${userId} does not have permission: ${userPermissions}, | ${permission}`);
+      if (!hasPermission) {
+        console.log(`User ${userId} does not have required permissions: ${userPermissions}, | ${permission}`);
         return false;
+      } else {
+        switch (permission) {
+          case "donhang.xem_cua_minh":
+            console.log("Context for donhang.xem_cua_minh:", context, userId);
+            return context.userId === userId;
+  
+          case "donhang.xem_duoc_giao":
+            // Nếu có context.assignedTo, kiểm tra xem user có phải là người được phân công không
+            // Nếu không có context, chỉ cần có quyền là được (đã kiểm tra ở trên)
+            console.log("Context for donhang.xem_duoc_giao:", context, userId);
+            return context.assignedTo ? context.assignedTo === userId : true;
+  
+          case "binhluan.sua_cua_minh":
+          case "binhluan.xoa_cua_minh":
+            return context.authorId === userId;
+  
+          default:
+            console.log(`No special context handling for permission: ${permission}`);
+            return true;
+        }
       }
-
-      // Xử lý các trường hợp đặc biệt cần context
-      switch (permission) {
-        case "donhang.xem_cua_minh":
-          console.log("Context for donhang.xem_cua_minh:", context, userId);
-          return context.userId === userId;
-
-        case "donhang.xem_duoc_giao":
-          // Nếu có context.assignedTo, kiểm tra xem user có phải là người được phân công không
-          // Nếu không có context, chỉ cần có quyền là được (đã kiểm tra ở trên)
-          console.log("Context for donhang.xem_duoc_giao:", context, userId);
-          return context.assignedTo ? context.assignedTo === userId : true;
-
-        case "binhluan.sua_cua_minh":
-        case "binhluan.xoa_cua_minh":
-          return context.authorId === userId;
-
-        default:
-          return true;
-      }
-      return userPermissions.every((perm) => permission.includes(perm));
     } catch (error) {
       console.error("Error checking permission with context:", error);
       return false;
