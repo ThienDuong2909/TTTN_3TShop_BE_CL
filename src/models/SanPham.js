@@ -20,7 +20,7 @@ const SanPham = sequelize.define("SanPham", {
   },
   GiaNhapBQ: {
     type: DataTypes.DECIMAL,
-    allowNull: false
+    allowNull: true
   },
   MoTa: DataTypes.TEXT,
   TrangThai: {

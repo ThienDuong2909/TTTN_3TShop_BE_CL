@@ -14,7 +14,7 @@ router.get('/all', authorize('toanquyen'), PhanQuyenController.getAllPermissions
 router.get('/', authorize('toanquyen'), PhanQuyenController.getAllPermissions);
 
 // Lấy quyền theo vai trò (chỉ admin)
-router.get('/role/:vaiTroId', authorize('toanquyen'), PhanQuyenController.getPermissionsByRole);
+router.get('/role/:vaiTroId', authenticateJWT, PhanQuyenController.getPermissionsByRole);
 
 // Cập nhật quyền cho vai trò (chỉ admin)
 router.put('/role/:vaiTroId', authorize('toanquyen'), PhanQuyenController.updateRolePermissions);

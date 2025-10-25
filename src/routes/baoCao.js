@@ -1,7 +1,7 @@
 const express = require("express");
 const BaoCaoController = require("../controllers/BaoCaoController");
 const authenticateJWT = require("../middlewares/jwt");
-const authorize = require("../middlewares/authorize");
+const {authorize} = require("../middlewares/authorize");
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * @description Lấy báo cáo tồn kho của ngày hôm nay
  * @access Private (yêu cầu JWT token)
  */
-router.get("/hom-nay", authenticateJWT, BaoCaoController.getBaoCaoTonKhoHomNay);
+router.get("/hom-nay", authenticateJWT, authorize('taobaocao'), BaoCaoController.getBaoCaoTonKhoHomNay);
 
 /**
  * @route GET /api/bao-cao-ton-kho/:ngaybaocao
@@ -19,7 +19,7 @@ router.get("/hom-nay", authenticateJWT, BaoCaoController.getBaoCaoTonKhoHomNay);
  * @access Private (yêu cầu JWT token)
  * @example GET /api/bao-cao-ton-kho/2025-09-25
  */
-router.get("/:ngaybaocao", authenticateJWT, BaoCaoController.getBaoCaoTonKho);
+router.get("/:ngaybaocao", authorize('taobaocao'), BaoCaoController.getBaoCaoTonKho);
 
 /**
  * @route GET /api/bao-cao-ton-kho/:ngaybaocao/raw
@@ -28,7 +28,7 @@ router.get("/:ngaybaocao", authenticateJWT, BaoCaoController.getBaoCaoTonKho);
  * @access Private (yêu cầu JWT token)
  * @example GET /api/bao-cao-ton-kho/2025-09-25/raw
  */
-router.get("/:ngaybaocao/raw", authenticateJWT, BaoCaoController.getBaoCaoTonKhoRaw);
+router.get("/:ngaybaocao/raw", authenticateJWT, authorize('taobaocao'), BaoCaoController.getBaoCaoTonKhoRaw);
 
 /**
  * @route GET /api/bao-cao-ton-kho/:ngaybaocao/pdf
@@ -38,7 +38,7 @@ router.get("/:ngaybaocao/raw", authenticateJWT, BaoCaoController.getBaoCaoTonKho
  * @access Private (yêu cầu JWT token)
  * @example GET /api/bao-cao-ton-kho/2025-09-25/pdf?nguoilap=Nguyen Van A
  */
-router.get("/:ngaybaocao/pdf", authenticateJWT, BaoCaoController.exportBaoCaoTonKhoPDF);
+router.get("/:ngaybaocao/pdf", authenticateJWT, authorize('taobaocao'), BaoCaoController.exportBaoCaoTonKhoPDF);
 
 /**
  * @route POST /api/bao-cao-ton-kho/:ngaybaocao/save-pdf
@@ -48,6 +48,6 @@ router.get("/:ngaybaocao/pdf", authenticateJWT, BaoCaoController.exportBaoCaoTon
  * @access Private (yêu cầu JWT token)
  * @example POST /api/bao-cao-ton-kho/2025-09-25/save-pdf
  */
-router.post("/:ngaybaocao/save-pdf", authenticateJWT, BaoCaoController.saveBaoCaoTonKhoPDF);
+router.post("/:ngaybaocao/save-pdf", authenticateJWT, authorize('taobaocao'), BaoCaoController.saveBaoCaoTonKhoPDF);
 
 module.exports = router;

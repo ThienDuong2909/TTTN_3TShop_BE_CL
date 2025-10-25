@@ -469,8 +469,9 @@ class PDFReportService {
    * Tạo header cho bảng lợi nhuận
    */
   createProfitTableHeader(doc) {
-    const headers = ['STT', 'Mã SP', 'Tên sản phẩm', 'Trị giá nhập', 'Trị giá xuất', 'Lợi nhuận', '% LN'];
-    const columnWidths = [35, 60, 180, 80, 80, 80, 55];
+    // Thêm 2 cột: SL Bán, Giá nhập
+    const headers = ['STT', 'Mã SP', 'Tên sản phẩm', 'SL Bán', 'Giá nhập', 'Trị giá nhập', 'Trị giá xuất', 'Lợi nhuận', '% LN'];
+    const columnWidths = [30, 55, 150, 45, 60, 65, 65, 65, 35]; // tổng = 570
     const startX = (this.pageWidth - 570) / 2;
 
     // Vẽ background cho header
@@ -505,6 +506,9 @@ class PDFReportService {
       currentX += columnWidths[index];
     });
 
+    // Lưu cấu hình cột cho phần nội dung
+    this._profitColumnWidths = columnWidths;
+
     this.currentY += 30;
   }
 
@@ -512,7 +516,8 @@ class PDFReportService {
    * Tạo nội dung bảng lợi nhuận
    */
   createProfitTableContent(doc, groupedData) {
-    const columnWidths = [35, 60, 180, 80, 80, 80, 55];
+    // Sử dụng lại columnWidths đã lưu từ header; fallback nếu chưa có
+    const columnWidths = this._profitColumnWidths || [30, 55, 150, 45, 60, 65, 65, 65, 35];
     const startX = (this.pageWidth - 570) / 2;
     const footerReserve = this.footerReserve;
     let globalSTT = 1, totalProfit = 0;
@@ -527,7 +532,17 @@ class PDFReportService {
         if (this.currentY + rowHeight > this.pageHeight - footerReserve - 25) {
           this.addNewProfitPage(doc, true);
         }
-        this.createProfitTableRow(doc, { stt: globalSTT, maSanPham: item.maSanPham, tenSanPham: item.tenSanPham, tongTriGiaNhap: item.tongTriGiaNhap, tongTriGiaXuat: item.tongTriGiaXuat, loiNhuan: item.loiNhuan, phanTramLoiNhuan: item.phanTramLoiNhuan }, startX, columnWidths, rowHeight);
+        this.createProfitTableRow(doc, {
+          stt: globalSTT,
+          maSanPham: item.maSanPham,
+          tenSanPham: item.tenSanPham,
+          soLuongBan: item.soLuongBan || 0,
+          giaNhap: item.giaNhap || 0,
+          tongTriGiaNhap: item.tongTriGiaNhap,
+          tongTriGiaXuat: item.tongTriGiaXuat,
+          loiNhuan: item.loiNhuan,
+          phanTramLoiNhuan: item.phanTramLoiNhuan
+        }, startX, columnWidths, rowHeight);
         globalSTT++;
       });
       const categoryImportTotal = groupedData[category].reduce((s, i) => s + i.tongTriGiaNhap, 0);
@@ -539,12 +554,16 @@ class PDFReportService {
       // Hàng tổng nhóm
       doc.fontSize(10); 
       if (this.vietnameseFont) doc.font(this.vietnameseFont);
-      doc.text(this.sanitizeVietnameseText('Tổng:'), startX + columnWidths[0] + columnWidths[1] + 20, this.currentY + 5);
+      // Đặt nhãn "Tổng:" nằm sau cột Tên SP
+      const labelX = startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + 20;
+      doc.text(this.sanitizeVietnameseText('Tổng:'), labelX, this.currentY + 5);
       if (this.vietnameseFontBold) doc.font(this.vietnameseFontBold);
-      doc.fontSize(8)
-        .text(this.formatCurrency(categoryImportTotal), startX + columnWidths[0] + columnWidths[1] + columnWidths[2], this.currentY + 5, { width: columnWidths[3], align: 'center', ellipsis: true })
-        .text(this.formatCurrency(categoryExportTotal), startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3], this.currentY + 5, { width: columnWidths[4], align: 'center', ellipsis: true })
-        .text(this.formatCurrency(categoryProfitTotal), startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3] + columnWidths[4], this.currentY + 5, { width: columnWidths[5], align: 'center', ellipsis: true });
+      doc.fontSize(8);
+      const importBaseX = startX + columnWidths.slice(0, 5).reduce((a,b)=>a+b,0); // bắt đầu tại cột Trị giá nhập
+      doc
+        .text(this.formatCurrency(categoryImportTotal), importBaseX, this.currentY + 5, { width: columnWidths[5], align: 'center', ellipsis: true })
+        .text(this.formatCurrency(categoryExportTotal), importBaseX + columnWidths[5], this.currentY + 5, { width: columnWidths[6], align: 'center', ellipsis: true })
+        .text(this.formatCurrency(categoryProfitTotal), importBaseX + columnWidths[5] + columnWidths[6], this.currentY + 5, { width: columnWidths[7], align: 'center', ellipsis: true });
       if (this.vietnameseFont) doc.font(this.vietnameseFont);
       this.currentY += 30;
     });
@@ -606,10 +625,12 @@ class PDFReportService {
       rowData.stt.toString(),
       rowData.maSanPham,
       rowData.tenSanPham,
+      (rowData.soLuongBan ?? 0).toString(),
+      this.formatCurrency(rowData.giaNhap ?? 0),
       this.formatCurrency(rowData.tongTriGiaNhap),
       this.formatCurrency(rowData.tongTriGiaXuat),
       this.formatCurrency(rowData.loiNhuan),
-      rowData.phanTramLoiNhuan.toFixed(1) + '%'
+      (rowData.phanTramLoiNhuan ?? 0).toFixed(1) + '%'
     ];
     values.forEach((value, index) => {
       const align = index === 2 ? 'left' : 'center';

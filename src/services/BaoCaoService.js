@@ -61,6 +61,13 @@ const mapLoiNhuanDataToFormat = (item) => {
     tenSanPham: [
       'TenSP', 'Tên sản phẩm', 'tenSanPham', 'TenSanPham', 'productName', 'ProductName'
     ],
+    // NEW: Số lượng bán và Giá nhập từ SP lợi nhuận
+    soLuongBan: [
+      'SLBan', 'SoLuongBan', 'SL_Ban', 'SoLuongXuat', 'SoLuong', 'SLSanPhamBan'
+    ],
+    giaNhap: [
+      'GiaNhap', 'Gia_Nhap', 'DonGiaNhap', 'GiaNhapTB', 'GiaNhapTrungBinh'
+    ],
     tongTriGiaNhap: [
       'TongTriGiaNhap', 'Tổng trị giá nhập', 'tongTriGiaNhap', 'totalImportValue'
     ],
@@ -453,6 +460,8 @@ const BaoCaoService = {
         // Map dữ liệu từ SP
         const mappedItem = mapLoiNhuanDataToFormat(item);
         
+        const soLuongBan = parseInt(mappedItem.soLuongBan) || 0;
+        const giaNhap = parseFloat(mappedItem.giaNhap) || 0;
         const tongTriGiaNhap = parseFloat(mappedItem.tongTriGiaNhap) || 0;
         const tongTriGiaXuat = parseFloat(mappedItem.tongTriGiaXuat) || 0;
         const loiNhuan = parseFloat(mappedItem.loiNhuan) || 0;
@@ -463,11 +472,15 @@ const BaoCaoService = {
           loaiSanPham: mappedItem.loaiSanPham || 'Không xác định',
           maSanPham: mappedItem.maSanPham || '',
           tenSanPham: mappedItem.tenSanPham || '',
+          // NEW fields from SP
+          soLuongBan: soLuongBan,
+          giaNhap: giaNhap,
           tongTriGiaNhap: tongTriGiaNhap,
           tongTriGiaXuat: tongTriGiaXuat,
           loiNhuan: loiNhuan,
           phanTramLoiNhuan: phanTramLoiNhuan,
-          // Format giá tiền
+          // Format hiển thị
+          giaNhapFormatted: formatVNDInteger(giaNhap),
           tongTriGiaNhapFormatted: formatVNDInteger(tongTriGiaNhap),
           tongTriGiaXuatFormatted: formatVNDInteger(tongTriGiaXuat),
           loiNhuanFormatted: formatVNDInteger(loiNhuan),

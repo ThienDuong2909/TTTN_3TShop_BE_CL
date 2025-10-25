@@ -1,7 +1,7 @@
 const express = require("express");
 const BaoCaoController = require("../controllers/BaoCaoController");
 const authenticateJWT = require("../middlewares/jwt");
-const authorize = require("../middlewares/authorize");
+const {authorize} = require("../middlewares/authorize");
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @example POST /api/bao-cao-loi-nhuan
  * Body: { "ngayBatDau": "2025-09-01", "ngayKetThuc": "2025-09-25" }
  */
-router.post("/", authenticateJWT, BaoCaoController.getBaoCaoLoiNhuanSanPham);
+router.post("/", authenticateJWT, authorize('taobaocao'), BaoCaoController.getBaoCaoLoiNhuanSanPham);
 
 /**
  * @route POST /api/bao-cao-loi-nhuan/pdf
@@ -26,7 +26,7 @@ router.post("/", authenticateJWT, BaoCaoController.getBaoCaoLoiNhuanSanPham);
  * @example POST /api/bao-cao-loi-nhuan/pdf
  * Body: { "ngayBatDau": "2025-09-01", "ngayKetThuc": "2025-09-25", "nguoiLap": "Nguyen Van A" }
  */
-router.post("/pdf", authenticateJWT, BaoCaoController.exportBaoCaoLoiNhuanSanPhamPDF);
+router.post("/pdf", authenticateJWT, authorize('taobaocao'), BaoCaoController.exportBaoCaoLoiNhuanSanPhamPDF);
 
 /**
  * @route POST /api/bao-cao-loi-nhuan/save-pdf
@@ -38,6 +38,6 @@ router.post("/pdf", authenticateJWT, BaoCaoController.exportBaoCaoLoiNhuanSanPha
  * @example POST /api/bao-cao-loi-nhuan/save-pdf
  * Body: { "ngayBatDau": "2025-09-01", "ngayKetThuc": "2025-09-25", "nguoiLap": "Nguyen Van A" }
  */
-router.post("/save-pdf", authenticateJWT, BaoCaoController.saveBaoCaoLoiNhuanSanPhamPDF);
+router.post("/save-pdf", authenticateJWT, authorize('taobaocao'), BaoCaoController.saveBaoCaoLoiNhuanSanPhamPDF);
 
 module.exports = router;
