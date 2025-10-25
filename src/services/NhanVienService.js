@@ -939,6 +939,9 @@ const NhanVienService = {
 
       console.log(`✅ Tìm thấy vai trò: ${vaiTro.TenVaiTro}`);
 
+      // Lưu vai trò cũ để so sánh (nếu có tài khoản)
+      const oldRole = nhanVien.TaiKhoan ? nhanVien.TaiKhoan.MaVaiTro : null;
+
       // Cập nhật vai trò trong tài khoản
       if (nhanVien.TaiKhoan) {
         console.log(`🔄 Cập nhật vai trò cho tài khoản hiện tại`);
@@ -967,6 +970,26 @@ const NhanVienService = {
 
       await t.commit();
       console.log(`✅ Gán vai trò thành công!`);
+
+      // Sau khi commit vai trò, nếu vai trò thay đổi giữa NhanVienGiaoHang (3) và NhanVienCuaHang (2)
+      try {
+        // Nếu đổi sang NhanVienGiaoHang => chuyển bộ phận sang 11 (Giao hàng)
+        if (roleId == 3 && oldRole !== 3) {
+          console.log(`➡️ Vai trò thay đổi sang NhanVienGiaoHang, chuyển bộ phận nhân viên ${maNV} sang mã 11 (Giao hàng)`);
+          // Không bắt buộc phải có khu vực phụ trách ngay, gọi chuyenBoPhan để đóng bộ phận cũ và tạo bộ phận 11
+          await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 11, NgayChuyen: new Date() });
+        }
+
+        // Nếu đổi sang NhanVienCuaHang => nếu đang ở bộ phận 11 thì chuyển sang bộ phận Bán hàng (ưu tiên tìm TenBoPhan chứa 'bán')
+        if (roleId == 2 && oldRole === 3) {
+          console.log(`➡️ Vai trò thay đổi sang NhanVienCuaHang, kiểm tra và chuyển bộ phận nếu đang ở Giao hàng`);
+          console.log(`ℹ️ Chuyển sang bộ phận bán hàng với MaBoPhan=${salesBoPhan.MaBoPhan}`);
+          await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 9, NgayChuyen: new Date() });
+        }
+      } catch (innerErr) {
+        // Nếu việc chuyển bộ phận thất bại, log nhưng không rollback vai trò đã cập nhật
+        console.error('Lỗi khi cập nhật bộ phận sau khi đổi vai trò:', innerErr);
+      }
 
       // Trả về thông tin vai trò đã cập nhật
       return {
