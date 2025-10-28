@@ -1,41 +1,45 @@
-
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
-const logger = require('./src/middlewares/logger');
-require('dotenv').config();
-
+const express = require("express");
+const path = require("path");
+const cors = require("cors");
+const logger = require("./src/middlewares/logger");
+require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 // CORS configuration
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174",
+      "https://api.3tshop.thienduong.info",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // API Logger Middleware - Log all API calls (sau khi đã parse body)
-app.use('/api', logger);
+app.use("/api", logger);
 
 // Routes
 app.get("/", (req, res) => {
   res.send("Welcome to 3tshop!");
 });
+
+// ví dụ cho Express
+app.get("/health", (_, res) => res.status(200).send("OK"));
 
 // API routes
 app.get("/api/health", (req, res) => {
