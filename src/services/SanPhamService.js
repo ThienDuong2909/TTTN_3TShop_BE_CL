@@ -292,7 +292,8 @@ const SanPhamService = {
     });
     const productsWithBinhLuan = await calculateAvgRateForProducts([product]);
 
-    const comments = await sequelize.query(`
+    const comments = await sequelize.query(
+      `
       SELECT 
         bl.MaBL,
         bl.MoTa,
@@ -313,10 +314,12 @@ const SanPhamService = {
       LEFT JOIN Mau m ON ctsp.MaMau = m.MaMau
       WHERE ctsp.MaSP = :productId
       ORDER BY bl.NgayBinhLuan DESC
-    `, {
-      replacements: { productId: id },
-      type: sequelize.QueryTypes.SELECT
-    });
+    `,
+      {
+        replacements: { productId: id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
 
     product.dataValues.BinhLuan.DanhSachBinhLuan = comments;
 
@@ -588,12 +591,12 @@ const SanPhamService = {
     return await sequelize.transaction(async (t) => {
       // 1. Tạo sản phẩm
       const product = await SanPham.create(
-        { 
-          TenSP, 
-          MaLoaiSP, 
-          MaNCC, 
-          MoTa, 
-          NgayTao: new Date() 
+        {
+          TenSP,
+          MaLoaiSP,
+          MaNCC,
+          MoTa,
+          NgayTao: new Date(),
         },
         { transaction: t }
       );
@@ -743,6 +746,10 @@ const SanPhamService = {
     const today = new Date();
     const before30Days = new Date(today);
     before30Days.setDate(today.getDate() - 30);
+
+    console.log(
+      `Calculating best sellers from ${before30Days.toISOString()} to ${today.toISOString()}`
+    );
     const donDatHangs = await require("../models/DonDatHang").findAll({
       where: {
         NgayTao: {
@@ -753,6 +760,8 @@ const SanPhamService = {
       },
       attributes: ["MaDDH"],
     });
+
+    console.log(`Found ${donDatHangs.length} orders in the last 30 days.`);
 
     const maDDHs = donDatHangs.map((d) => d.MaDDH);
     if (maDDHs.length === 0) return [];
@@ -984,6 +993,182 @@ const SanPhamService = {
       SoLuongTon,
     });
     return detail;
+  },
+  getRecommendations: async (
+    maCTSPList,
+    k = 8,
+    excludeInCart = true,
+    requireInStock = false
+  ) => {
+    try {
+      const fetch = require("node-fetch");
+      const { Op } = require("sequelize");
+      const {
+        SanPham,
+        NhaCungCap,
+        LoaiSP,
+        AnhSanPham,
+        ThayDoiGia,
+        CT_DotGiamGia,
+        DotGiamGia,
+        KichThuoc,
+        Mau,
+        ChiTietSanPham,
+      } = require("../models");
+
+      const PYTHON_API_URL =
+        process.env.PYTHON_API_URL || "http://localhost:8000";
+
+      // 1) Gọi API Python
+      const resp = await fetch(`${PYTHON_API_URL}/recommend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: maCTSPList.map(Number),
+          k: Number(k),
+          exclude_incart: Boolean(excludeInCart),
+          require_instock: Boolean(requireInStock),
+          group_by_antecedent: true,
+          per_group_k: Number(k),
+        }),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Python API returned status ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      // data = { items: [...], groups: [...] }
+      const groups = Array.isArray(data?.groups) ? data.groups : [];
+
+      if (groups.length === 0) {
+        return { groups: [] };
+      }
+
+      // 2) Tìm số lượng antecedent nhiều nhất
+      const maxAntecedentLength = Math.max(
+        ...groups.map((g) => (g.antecedent || []).length)
+      );
+
+      // 3) Lọc chỉ lấy các nhóm có số lượng antecedent = max
+      const filteredGroups = groups.filter(
+        (g) => (g.antecedent || []).length === maxAntecedentLength
+      );
+
+      // 4) Lấy tất cả MaSP từ các nhóm đã lọc
+      const allMaSP = Array.from(
+        new Set(
+          filteredGroups.flatMap((g) =>
+            (Array.isArray(g.items) ? g.items : [])
+              .map((x) => Number(x.MaSP))
+              .filter(Boolean)
+          )
+        )
+      );
+
+      if (allMaSP.length === 0) {
+        return { groups: [] };
+      }
+
+      // 5) Lấy thông tin chi tiết sản phẩm
+      const today = new Date().toISOString().split("T")[0];
+      const products = await SanPham.findAll({
+        where: { MaSP: { [Op.in]: allMaSP } },
+        include: [
+          { model: NhaCungCap },
+          { model: LoaiSP },
+          { model: AnhSanPham },
+          {
+            model: ThayDoiGia,
+            where: { NgayApDung: { [Op.lte]: today } },
+            separate: true,
+            limit: 1,
+            order: [["NgayApDung", "DESC"]],
+            attributes: ["Gia", "NgayApDung"],
+          },
+          {
+            model: ChiTietSanPham,
+            as: "ChiTietSanPhams",
+            include: [
+              { model: KichThuoc, attributes: ["TenKichThuoc"] },
+              { model: Mau, attributes: ["TenMau", "MaHex"] },
+            ],
+            attributes: ["MaCTSP", "MaKichThuoc", "MaMau", "SoLuongTon"],
+          },
+          {
+            model: CT_DotGiamGia,
+            include: [
+              {
+                model: DotGiamGia,
+                where: {
+                  NgayBatDau: { [Op.lte]: today },
+                  NgayKetThuc: { [Op.gte]: today },
+                },
+                required: true,
+                attributes: ["NgayBatDau", "NgayKetThuc", "MoTa"],
+              },
+            ],
+            attributes: ["PhanTramGiam"],
+          },
+        ],
+      });
+
+      const productsWithBinhLuan = await calculateAvgRateForProducts(products);
+
+      // 6) Map MaSP -> product object
+      const productMap = {};
+      productsWithBinhLuan.forEach((p) => {
+        productMap[p.MaSP] = p;
+      });
+
+      // 7) Build nhóm kết quả với thông tin đầy đủ
+      const resultGroups = [];
+      for (const g of filteredGroups) {
+        const items = Array.isArray(g.items) ? g.items : [];
+        const products = [];
+
+        for (const item of items) {
+          const maSP = Number(item.MaSP);
+          const prod = productMap[maSP];
+
+          if (prod) {
+            const productData = prod.toJSON?.() || prod;
+            products.push({
+              ...productData,
+              _rec: {
+                MaSP: maSP,
+                score: item.score,
+                confidence: item.confidence,
+                support: item.support,
+                lift: item.lift,
+                antecedent: item.antecedent || [],
+                rule_size: item.rule_size || 0,
+              },
+            });
+          }
+
+          // Giới hạn mỗi nhóm tối đa k sản phẩm
+          if (products.length >= k) break;
+        }
+
+        if (products.length > 0) {
+          resultGroups.push({
+            antecedent: g.antecedent || [],
+            antecedentLength: (g.antecedent || []).length,
+            products: products,
+          });
+        }
+      }
+
+      return {
+        groups: resultGroups,
+        maxAntecedentLength: maxAntecedentLength,
+        totalGroups: resultGroups.length,
+      };
+    } catch (error) {
+      console.error("Error calling recommendation API:", error);
+      throw new Error(`Không thể lấy gợi ý sản phẩm: ${error.message}`);
+    }
   },
 };
 
