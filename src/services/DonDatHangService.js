@@ -841,7 +841,7 @@ const DonDatHangService = {
   },
 
   // Nhân viên xác nhận hoàn thành giao hàng
-  confirmDelivery: async (maDDH, maNVGiao) => {
+  confirmDelivery: async (maDDH, HinhAnh, maNVGiao) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -866,6 +866,7 @@ const DonDatHangService = {
         {
           MaTTDH: 4, // Hoàn tất
           ThoiGianGiao: new Date(),
+          HinhMinhChung: HinhAnh,
         },
         { transaction }
       );

@@ -65,6 +65,12 @@ router.put(
   DonDatHangController.confirmDelivery
 );
 
+router.put(
+  "/delivery/confirm/image",
+  authorize("donhang.xacnhan_giaohang", "donhang.xem"),
+  DonDatHangController.confirmDeliveryWithImage
+);
+
 // Cập nhật trạng thái nhiều đơn hàng cùng lúc
 router.put(
   "/batch/status",
