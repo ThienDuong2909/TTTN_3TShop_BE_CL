@@ -309,6 +309,66 @@ const SanPhamController = {
       return response.error(res, err);
     }
   },
+  getRecommendations: async (req, res) => {
+    try {
+      const {
+        items,
+        k = 8,
+        exclude_incart = true,
+        require_instock = false,
+      } = req.body;
+
+      // Validate input
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return response.error(
+          res,
+          null,
+          "Danh sách sản phẩm không hợp lệ. Vui lòng cung cấp mảng 'items' với các MaCTSP",
+          400
+        );
+      }
+
+      // Validate items are numbers
+      const invalidItems = items.filter((item) => isNaN(Number(item)));
+      if (invalidItems.length > 0) {
+        return response.error(
+          res,
+          null,
+          "Danh sách chứa MaCTSP không hợp lệ",
+          400
+        );
+      }
+
+      const recommendations = await SanPhamService.getRecommendations(
+        items,
+        k,
+        exclude_incart,
+        require_instock
+      );
+
+      return response.success(
+        res,
+        {
+          recommendations,
+          total: recommendations.length,
+          params: {
+            k: Number(k),
+            exclude_incart: Boolean(exclude_incart),
+            require_instock: Boolean(require_instock),
+          },
+        },
+        `Lấy ${recommendations.length} sản phẩm gợi ý thành công`
+      );
+    } catch (err) {
+      console.error("Error in getRecommendations:", err);
+      return response.error(
+        res,
+        null,
+        err.message || "Lỗi khi lấy gợi ý sản phẩm",
+        500
+      );
+    }
+  },
 };
 
 module.exports = SanPhamController;
