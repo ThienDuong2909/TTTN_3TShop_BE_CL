@@ -51,11 +51,18 @@ const AuthService = {
       process.env.JWT_SECRET || "secret_key",
       { expiresIn: "24h" }
     );
+
+    const isEmployee =
+      taiKhoan.VaiTro.TenVaiTro === "Admin" ||
+      taiKhoan.VaiTro.TenVaiTro === "NhanVienCuaHang" ||
+      taiKhoan.VaiTro.TenVaiTro === "NhanVienGiaoHang";
+
     return {
       token,
       user: userInfo,
       role: taiKhoan.VaiTro.TenVaiTro,
       id: userInfo.MaTK || userInfo.MaKH,
+      employeeId: isEmployee ? userInfo.MaNV : null,
     };
   },
 

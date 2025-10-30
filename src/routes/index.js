@@ -22,6 +22,9 @@ const dotGiamGiaRoutes = require("./dotGiamGia"); // Thêm route DotGiamGia
 const khuVucRoutes = require("./khuVuc"); // Thêm route KhuVuc
 const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
 const rolesRoutes = require("./roles"); // Thêm route Roles
+const nhanVienKhuVucRoutes = require("./nhanvienKhuVuc"); // Thêm route NhanVien-KhuVuc
+const baoCaoRoutes = require("./baoCao"); // Thêm route Báo cáo
+const baoCaoLoiNhuanRoutes = require("./baoCaoLoiNhuan"); // Thêm route Báo cáo lợi nhuận
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 
@@ -87,5 +90,16 @@ router.use("/permissions", phanQuyenRoutes); // English alias
 
 // Routes cho vai trò
 router.use("/roles", rolesRoutes);
+
+// Routes cho quản lý khu vực phụ trách nhân viên
+router.use("/nhan-vien", authenticateJWT, nhanVienKhuVucRoutes);
+
+// Routes cho báo cáo
+router.use("/bao-cao-ton-kho", baoCaoRoutes);
+router.use("/inventory-report", baoCaoRoutes); // English alias
+
+// Routes cho báo cáo lợi nhuận
+router.use("/bao-cao-loi-nhuan", baoCaoLoiNhuanRoutes);
+router.use("/profit-report", baoCaoLoiNhuanRoutes); // English alias
 
 module.exports = router;

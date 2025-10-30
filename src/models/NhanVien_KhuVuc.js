@@ -28,9 +28,10 @@ const NhanVien_KhuVuc = sequelize.define('NhanVien_KhuVuc', {
     allowNull: false,
     defaultValue: DataTypes.NOW
   },
-  TrangThai: {
-    type: DataTypes.TINYINT,
+  NgayBatDau: {
+    type: DataTypes.DATE,
     allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'NhanVien_KhuVuc',

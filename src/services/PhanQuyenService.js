@@ -1,5 +1,11 @@
-const { PhanQuyen, VaiTro, PhanQuyen_VaiTro, TaiKhoan, NhanVien } = require('../models');
-const { Op } = require('sequelize');
+const {
+  PhanQuyen,
+  VaiTro,
+  PhanQuyen_VaiTro,
+  TaiKhoan,
+  NhanVien,
+} = require("../models");
+const { Op } = require("sequelize");
 
 class PhanQuyenService {
   /**
@@ -12,13 +18,17 @@ class PhanQuyenService {
     try {
       // Lấy thông tin tài khoản và vai trò
       const taiKhoan = await TaiKhoan.findByPk(userId, {
-        include: [{
-          model: VaiTro,
-          include: [{
-            model: PhanQuyen,
-            through: { attributes: [] }
-          }]
-        }]
+        include: [
+          {
+            model: VaiTro,
+            include: [
+              {
+                model: PhanQuyen,
+                through: { attributes: [] },
+              },
+            ],
+          },
+        ],
       });
 
       if (!taiKhoan || !taiKhoan.VaiTro) {
@@ -26,11 +36,13 @@ class PhanQuyenService {
       }
 
       // Chuyển permissions thành array nếu là string
-      const permissionArray = Array.isArray(permissions) ? permissions : [permissions];
+      const permissionArray = Array.isArray(permissions)
+        ? permissions
+        : [permissions];
 
       // Kiểm tra xem user có quyền toàn quyền không
       const hasFullPermission = taiKhoan.VaiTro.PhanQuyens.some(
-        quyen => quyen.Ten === 'toanquyen'
+        (quyen) => quyen.Ten === "toanquyen"
       );
 
       if (hasFullPermission) {
@@ -38,13 +50,15 @@ class PhanQuyenService {
       }
 
       // Kiểm tra từng quyền cụ thể
-      const userPermissions = taiKhoan.VaiTro.PhanQuyens.map(quyen => quyen.Ten);
-      
-      return permissionArray.every(permission => 
+      const userPermissions = taiKhoan.VaiTro.PhanQuyens.map(
+        (quyen) => quyen.Ten
+      );
+
+      return permissionArray.every((permission) =>
         userPermissions.includes(permission)
       );
     } catch (error) {
-      console.error('Error checking permission:', error);
+      console.error("Error checking permission:", error);
       return false;
     }
   }
@@ -57,22 +71,26 @@ class PhanQuyenService {
   static async getUserPermissions(userId) {
     try {
       const taiKhoan = await TaiKhoan.findByPk(userId, {
-        include: [{
-          model: VaiTro,
-          include: [{
-            model: PhanQuyen,
-            through: { attributes: [] }
-          }]
-        }]
+        include: [
+          {
+            model: VaiTro,
+            include: [
+              {
+                model: PhanQuyen,
+                through: { attributes: [] },
+              },
+            ],
+          },
+        ],
       });
 
       if (!taiKhoan || !taiKhoan.VaiTro) {
         return [];
       }
 
-      return taiKhoan.VaiTro.PhanQuyens.map(quyen => quyen.Ten);
+      return taiKhoan.VaiTro.PhanQuyens.map((quyen) => quyen.Ten);
     } catch (error) {
-      console.error('Error getting user permissions:', error);
+      console.error("Error getting user permissions:", error);
       return [];
     }
   }
@@ -84,18 +102,20 @@ class PhanQuyenService {
   static async getAllPermissions() {
     try {
       const permissions = await PhanQuyen.findAll({
-        attributes: ['id', 'Ten', 'TenHienThi'],
-        order: [['Ten', 'ASC']]
+        attributes: ["id", "Ten", "TenHienThi"],
+        order: [["Ten", "ASC"]],
       });
 
+      console.log("All permissions fetched:", permissions);
+
       // Chuyển đổi format để phù hợp với frontend
-      return permissions.map(permission => ({
+      return permissions.map((permission) => ({
         key: permission.Ten,
         name: permission.TenHienThi,
-        description: permission.TenHienThi
+        description: permission.TenHienThi,
       }));
     } catch (error) {
-      console.error('Error getting all permissions:', error);
+      console.error("Error getting all permissions:", error);
       throw error;
     }
   }
@@ -107,23 +127,25 @@ class PhanQuyenService {
   static async getAllRoles() {
     try {
       const roles = await VaiTro.findAll({
-        include: [{
-          model: PhanQuyen,
-          through: { attributes: [] },
-          attributes: ['id', 'Ten', 'TenHienThi']
-        }],
-        order: [['MaVaiTro', 'ASC']]
+        include: [
+          {
+            model: PhanQuyen,
+            through: { attributes: [] },
+            attributes: ["id", "Ten", "TenHienThi"],
+          },
+        ],
+        order: [["MaVaiTro", "ASC"]],
       });
 
       // Chuyển đổi format để phù hợp với frontend
-      return roles.map(role => ({
+      return roles.map((role) => ({
         id: role.MaVaiTro,
         name: role.TenVaiTro,
         displayName: role.TenVaiTro,
-        permissions: role.PhanQuyens.map(pq => pq.Ten)
+        permissions: role.PhanQuyens.map((pq) => pq.Ten),
       }));
     } catch (error) {
-      console.error('Error getting all roles:', error);
+      console.error("Error getting all roles:", error);
       throw error;
     }
   }
@@ -136,10 +158,12 @@ class PhanQuyenService {
   static async getPermissionsByRole(vaiTroId) {
     try {
       const vaiTro = await VaiTro.findByPk(vaiTroId, {
-        include: [{
-          model: PhanQuyen,
-          through: { attributes: [] }
-        }]
+        include: [
+          {
+            model: PhanQuyen,
+            through: { attributes: [] },
+          },
+        ],
       });
 
       if (!vaiTro) {
@@ -148,7 +172,7 @@ class PhanQuyenService {
 
       return vaiTro.PhanQuyens;
     } catch (error) {
-      console.error('Error getting permissions by role:', error);
+      console.error("Error getting permissions by role:", error);
       throw error;
     }
   }
@@ -161,11 +185,16 @@ class PhanQuyenService {
   static async getPermissionsByEmployee(employeeId) {
     try {
       const nhanVien = await NhanVien.findByPk(employeeId, {
-        include: [{ model: TaiKhoan, include: [{ model: VaiTro, include: [PhanQuyen] }] }]
+        include: [
+          {
+            model: TaiKhoan,
+            include: [{ model: VaiTro, include: [PhanQuyen] }],
+          },
+        ],
       });
 
       if (!nhanVien) {
-        throw new Error('Nhân viên không tồn tại');
+        throw new Error("Nhân viên không tồn tại");
       }
 
       if (!nhanVien.TaiKhoan || !nhanVien.TaiKhoan.VaiTro) {
@@ -174,7 +203,7 @@ class PhanQuyenService {
 
       return nhanVien.TaiKhoan.VaiTro.PhanQuyens || [];
     } catch (error) {
-      console.error('Error getting permissions by employee:', error);
+      console.error("Error getting permissions by employee:", error);
       throw error;
     }
   }
@@ -190,19 +219,19 @@ class PhanQuyenService {
       // Kiểm tra vai trò có tồn tại không
       const vaiTro = await VaiTro.findByPk(vaiTroId);
       if (!vaiTro) {
-        throw new Error('ROLE_NOT_FOUND');
+        throw new Error("ROLE_NOT_FOUND");
       }
 
       // Xóa tất cả quyền hiện tại của vai trò
       await PhanQuyen_VaiTro.destroy({
-        where: { VaiTroId: vaiTroId }
+        where: { VaiTroId: vaiTroId },
       });
 
       // Thêm quyền mới
       if (permissionIds && permissionIds.length > 0) {
-        const rolePermissions = permissionIds.map(permissionId => ({
+        const rolePermissions = permissionIds.map((permissionId) => ({
           VaiTroId: vaiTroId,
-          PhanQuyenId: permissionId
+          PhanQuyenId: permissionId,
         }));
 
         await PhanQuyen_VaiTro.bulkCreate(rolePermissions);
@@ -210,7 +239,7 @@ class PhanQuyenService {
 
       return true;
     } catch (error) {
-      console.error('Error updating role permissions:', error);
+      console.error("Error updating role permissions:", error);
       throw error;
     }
   }
@@ -225,23 +254,25 @@ class PhanQuyenService {
       const phanQuyens = await PhanQuyen.findAll({
         where: {
           Ten: {
-            [Op.in]: permissions
-          }
+            [Op.in]: permissions,
+          },
         },
-        attributes: ['id', 'Ten']
+        attributes: ["id", "Ten"],
       });
 
       // Kiểm tra xem tất cả permissions có tồn tại không
       if (phanQuyens.length !== permissions.length) {
-        const foundPermissions = phanQuyens.map(pq => pq.Ten);
-        const missingPermissions = permissions.filter(p => !foundPermissions.includes(p));
-        console.error('Missing permissions:', missingPermissions);
-        throw new Error('INVALID_PERMISSIONS');
+        const foundPermissions = phanQuyens.map((pq) => pq.Ten);
+        const missingPermissions = permissions.filter(
+          (p) => !foundPermissions.includes(p)
+        );
+        console.error("Missing permissions:", missingPermissions);
+        throw new Error("INVALID_PERMISSIONS");
       }
 
-      return phanQuyens.map(pq => pq.id);
+      return phanQuyens.map((pq) => pq.id);
     } catch (error) {
-      console.error('Error converting permissions to IDs:', error);
+      console.error("Error converting permissions to IDs:", error);
       throw error;
     }
   }
@@ -254,24 +285,26 @@ class PhanQuyenService {
   static async getRoleWithPermissions(vaiTroId) {
     try {
       const vaiTro = await VaiTro.findByPk(vaiTroId, {
-        include: [{
-          model: PhanQuyen,
-          through: { attributes: [] },
-          attributes: ['id', 'Ten', 'TenHienThi']
-        }]
+        include: [
+          {
+            model: PhanQuyen,
+            through: { attributes: [] },
+            attributes: ["id", "Ten", "TenHienThi"],
+          },
+        ],
       });
 
       if (!vaiTro) {
-        throw new Error('ROLE_NOT_FOUND');
+        throw new Error("ROLE_NOT_FOUND");
       }
 
       return {
         roleId: vaiTro.MaVaiTro,
         roleName: vaiTro.TenVaiTro,
-        permissions: vaiTro.PhanQuyens.map(pq => pq.Ten)
+        permissions: vaiTro.PhanQuyens.map((pq) => pq.Ten),
       };
     } catch (error) {
-      console.error('Error getting role with permissions:', error);
+      console.error("Error getting role with permissions:", error);
       throw error;
     }
   }
@@ -287,17 +320,17 @@ class PhanQuyenService {
     try {
       const taiKhoan = await TaiKhoan.findByPk(userId);
       if (!taiKhoan) {
-        throw new Error('Tài khoản không tồn tại');
+        throw new Error("Tài khoản không tồn tại");
       }
 
       if (!taiKhoan.MaVaiTro) {
-        throw new Error('Tài khoản chưa được gán vai trò');
+        throw new Error("Tài khoản chưa được gán vai trò");
       }
 
       await this.updateRolePermissions(taiKhoan.MaVaiTro, permissionIds);
       return true;
     } catch (error) {
-      console.error('Error assigning permissions to user:', error);
+      console.error("Error assigning permissions to user:", error);
       throw error;
     }
   }
@@ -312,16 +345,16 @@ class PhanQuyenService {
     try {
       const nhanVien = await NhanVien.findByPk(employeeId);
       if (!nhanVien) {
-        throw new Error('Nhân viên không tồn tại');
+        throw new Error("Nhân viên không tồn tại");
       }
 
       if (!nhanVien.MaTK) {
-        throw new Error('Nhân viên chưa liên kết tài khoản');
+        throw new Error("Nhân viên chưa liên kết tài khoản");
       }
 
       return await this.assignPermissionsToUser(nhanVien.MaTK, permissionIds);
     } catch (error) {
-      console.error('Error assigning permissions to employee:', error);
+      console.error("Error assigning permissions to employee:", error);
       throw error;
     }
   }
@@ -336,39 +369,42 @@ class PhanQuyenService {
   static async checkPermissionWithContext(userId, permission, context = {}) {
     try {
       const userPermissions = await this.getUserPermissions(userId);
-      
+
       // Kiểm tra quyền toàn quyền
-      if (userPermissions.includes('toanquyen')) {
+      if (userPermissions.includes("toanquyen")) {
         return true;
       }
+      const hasPermission = userPermissions.some((perm) => permission.includes(perm));
 
-      // Kiểm tra quyền cụ thể
-      if (!userPermissions.includes(permission)) {
+      if (!hasPermission) {
+        console.log(`User ${userId} does not have required permissions: ${userPermissions}, | ${permission}`);
         return false;
-      }
-
-      // Xử lý các trường hợp đặc biệt cần context
-      switch (permission) {
-        case 'donhang.xem_cua_minh':
-          return context.userId === userId;
-        
-        case 'donhang.xem_duoc_giao':
-          // Nếu có context.assignedTo, kiểm tra xem user có phải là người được phân công không
-          // Nếu không có context, chỉ cần có quyền là được (đã kiểm tra ở trên)
-          return context.assignedTo ? context.assignedTo === userId : true;
-        
-        case 'binhluan.sua_cua_minh':
-        case 'binhluan.xoa_cua_minh':
-          return context.authorId === userId;
-        
-        default:
-          return true;
+      } else {
+        switch (permission) {
+          case "donhang.xem_cua_minh":
+            console.log("Context for donhang.xem_cua_minh:", context, userId);
+            return context.userId === userId;
+  
+          case "donhang.xem_duoc_giao":
+            // Nếu có context.assignedTo, kiểm tra xem user có phải là người được phân công không
+            // Nếu không có context, chỉ cần có quyền là được (đã kiểm tra ở trên)
+            console.log("Context for donhang.xem_duoc_giao:", context, userId);
+            return context.assignedTo ? context.assignedTo === userId : true;
+  
+          case "binhluan.sua_cua_minh":
+          case "binhluan.xoa_cua_minh":
+            return context.authorId === userId;
+  
+          default:
+            console.log(`No special context handling for permission: ${permission}`);
+            return true;
+        }
       }
     } catch (error) {
-      console.error('Error checking permission with context:', error);
+      console.error("Error checking permission with context:", error);
       return false;
     }
   }
 }
 
-module.exports = PhanQuyenService; 
+module.exports = PhanQuyenService;

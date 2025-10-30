@@ -8,7 +8,8 @@ const {
   SanPham,
   KichThuoc,
   NhaCungCap,
-  Mau 
+  Mau,
+  sequelize 
 } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const xlsx = require('xlsx');
@@ -212,6 +213,25 @@ const PhieuNhapService = {
             { where: { MaCTSP: ct.MaCTSP }, transaction }
           );
 
+          // Tính giá nhập bình quân cho sản phẩm
+          const chiTietSP = await ChiTietSanPham.findByPk(ct.MaCTSP, {
+            attributes: ['MaSP'],
+            transaction
+          });
+          
+          if (chiTietSP && chiTietSP.MaSP) {
+            try {
+              await sequelize.query("CALL SP_GiaNhapBQ_2(?)", {
+                replacements: [chiTietSP.MaSP],
+                type: sequelize.QueryTypes.RAW,
+                transaction
+              });
+              console.log(`Đã tính giá nhập bình quân cho sản phẩm: ${chiTietSP.MaSP}`);
+            } catch (spError) {
+              console.error(`Lỗi khi tính giá nhập bình quân cho sản phẩm ${chiTietSP.MaSP}:`, spError);
+            }
+          }
+
         } catch (error) {
           errors.push({
             record: recordIndex,
@@ -306,6 +326,24 @@ const PhieuNhapService = {
         { SoLuongTon: ct.SoLuong },
         { where: { MaCTSP: ct.MaCTSP } }
       );
+
+      // Tính giá nhập bình quân cho sản phẩm
+      const chiTietSP = await ChiTietSanPham.findByPk(ct.MaCTSP, {
+        attributes: ['MaSP']
+      });
+      
+      if (chiTietSP && chiTietSP.MaSP) {
+        try {
+          await sequelize.query("CALL SP_GiaNhapBQ_2(?)", {
+            replacements: [chiTietSP.MaSP],
+            type: sequelize.QueryTypes.RAW
+          });
+          console.log(`Đã tính giá nhập bình quân cho sản phẩm: ${chiTietSP.MaSP}`);
+        } catch (spError) {
+          console.error(`Lỗi khi tính giá nhập bình quân cho sản phẩm ${chiTietSP.MaSP}:`, spError);
+          // Không throw error để không làm dừng quá trình cập nhật
+        }
+      }
     }
     
     return { message: 'Cập nhật tồn kho thành công' };
@@ -365,4 +403,4 @@ const PhieuNhapService = {
   },
 };
 
-module.exports = PhieuNhapService; 
+module.exports = PhieuNhapService;

@@ -8,6 +8,7 @@ class PhanQuyenController {
   static async getAllPermissions(req, res) {
     try {
       const permissions = await PhanQuyenService.getAllPermissions();
+      console.log('Permissions in controller:', permissions);
       return response.success(res, permissions, 'Lấy danh sách quyền thành công');
     } catch (error) {
       console.error('Error getting all permissions:', error);

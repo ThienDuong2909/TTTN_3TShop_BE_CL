@@ -99,12 +99,15 @@ const NhanVienController = {
   // Tìm nhân viên giao hàng tối ưu cho đơn hàng
   findOptimalDeliveryStaff: async (req, res) => {
     try {
-      const { diaChi } = req.body;
+      const { thoigiangiao, diaChi } = req.body;
+      if (!thoigiangiao) {
+        return response.error(res, null, 'Thời gian giao hàng là bắt buộc', 400);
+      }
       if (!diaChi) {
         return response.error(res, null, 'Địa chỉ giao hàng là bắt buộc', 400);
       }
       
-      const data = await NhanVienService.findOptimalDeliveryStaff(diaChi);
+      const data = await NhanVienService.findOptimalDeliveryStaff(thoigiangiao, diaChi);
       return response.success(res, data, 'Tìm nhân viên giao hàng tối ưu thành công');
     } catch (err) {
       return response.error(res, err);

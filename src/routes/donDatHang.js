@@ -2,6 +2,7 @@ const express = require("express");
 const DonDatHangController = require("../controllers/DonDatHangController");
 const authenticateJWT = require("../middlewares/jwt");
 const { authorize } = require("../middlewares/authorize");
+const { user } = require("../configs/database");
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.get(
 // Lấy thông tin chi tiết đầy đủ của đơn hàng theo ID
 router.get(
   "/:id/detail",
-  authorize("dathang.xem"),
+  authorize(["donhang.xem_duoc_giao", "donhang.xem", "donhang.xem_cua_minh" ]), 
   DonDatHangController.getDetailById
 );
 
@@ -53,15 +54,21 @@ router.get("/:id", authorize("donhang.xem"), DonDatHangController.getById);
 // Lấy đơn hàng được phân công cho nhân viên giao hàng
 router.get(
   "/delivery/assigned",
-  authorize("donhang.xem_duoc_giao", "dathang.xem"),
+  authorize("donhang.xem_duoc_giao", "donhang.xem"),
   DonDatHangController.getAssignedOrders
 );
 
 // Xác nhận đã giao hàng xong
 router.put(
   "/delivery/:id/confirm",
-  authorize("donhang.xacnhan_giaohang", "dathang.xem"),
+  authorize("donhang.xacnhan_giaohang", "donhang.xem"),
   DonDatHangController.confirmDelivery
+);
+
+router.put(
+  "/delivery/confirm/image",
+  authorize("donhang.xacnhan_giaohang", "donhang.xem"),
+  DonDatHangController.confirmDeliveryWithImage
 );
 
 // Cập nhật trạng thái nhiều đơn hàng cùng lúc

@@ -18,6 +18,10 @@ const SanPham = sequelize.define("SanPham", {
     type: DataTypes.INTEGER,
     references: { model: "NhaCungCap", key: "MaNCC" },
   },
+  GiaNhapBQ: {
+    type: DataTypes.DECIMAL,
+    allowNull: true
+  },
   MoTa: DataTypes.TEXT,
   TrangThai: {
     type: DataTypes.BOOLEAN,

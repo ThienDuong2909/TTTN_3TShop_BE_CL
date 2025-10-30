@@ -32,6 +32,10 @@ const DonDatHang = sequelize.define("DonDatHang", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  HinhMinhChung: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 module.exports = DonDatHang;

@@ -34,6 +34,11 @@ function authorize(permissions, options = {}) {
         context.userId = userId;
       }
 
+      if (requiredPermissions.includes('donhang.xem_duoc_giao') && context.assignedTo == null) {
+        console.log('Filling context.assignedTo with current user ID:', req.user.MaTK);
+        context.userId = userId;
+      }
+
       if ((requiredPermissions.includes('binhluan.sua_cua_minh') || requiredPermissions.includes('binhluan.xoa_cua_minh')) && context.authorId == null) {
         context.authorId = userId;
       }

@@ -502,6 +502,49 @@ const DonDatHangController = {
       return response.error(res, err.message || "Lỗi khi xác nhận giao hàng");
     }
   },
+  confirmDeliveryWithImage: async (req, res) => {
+    try {
+      const { id, image } = req.body;
+      const maTK = req.user.MaTK; 
+      if (!maTK) {
+        return response.error(res, null, "Không xác định được tài khoản", 400);
+      }
+
+      // Lấy MaNV từ MaTK
+      const maNVGiao = await getMaNVFromMaTK(maTK);
+
+      if (!maNVGiao) {
+        return response.error(
+          res,
+          null,
+          "Không tìm thấy thông tin nhân viên",
+          400
+        );
+      }
+
+      if (!id || isNaN(id)) {
+        return response.error(res, null, "Mã đơn hàng không hợp lệ", 400);
+      }
+
+      const data = await DonDatHangService.confirmDelivery(
+        parseInt(id),
+        image,
+        maNVGiao
+      );
+
+      if (!data) {
+        return response.notFound(
+          res,
+          "Không tìm thấy đơn hàng hoặc đơn hàng không được phân công cho bạn"
+        );
+      }
+
+      return response.success(res, data, "Xác nhận giao hàng thành công");
+    } catch (err) {
+      console.error("Error in confirmDelivery:", err);
+      return response.error(res, err.message || "Lỗi khi xác nhận giao hàng");
+    }
+  },
   getRevenueReport: async (req, res) => {
     try {
       const { ngayBatDau, ngayKetThuc } = req.body;
