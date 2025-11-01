@@ -27,6 +27,7 @@ const baoCaoRoutes = require("./baoCao"); // Thêm route Báo cáo
 const baoCaoLoiNhuanRoutes = require("./baoCaoLoiNhuan"); // Thêm route Báo cáo lợi nhuận
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
+const thongBaoRoutes = require("./thongbao");
 
 // const kichThuocRoutes = require("./kichthuoc");
 // const trangThaiDatHangRoutes = require("./trangthaidathang");
@@ -90,6 +91,7 @@ router.use("/permissions", phanQuyenRoutes); // English alias
 
 // Routes cho vai trò
 router.use("/roles", rolesRoutes);
+router.use("/notifications", thongBaoRoutes);
 
 // Routes cho quản lý khu vực phụ trách nhân viên
 router.use("/nhan-vien", authenticateJWT, nhanVienKhuVucRoutes);
