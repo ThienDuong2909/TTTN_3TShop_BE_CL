@@ -641,6 +641,7 @@ const DonDatHangService = {
           },
           TongSoLuong: tongSoLuong,
           TongTien: tongTien,
+          HinhMinhChung: orderData.HinhMinhChung || null,
         },
         ThongTinNguoiNhan: {
           HoTen: orderData.NguoiNhan || "",
