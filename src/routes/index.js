@@ -24,6 +24,7 @@ const phanQuyenRoutes = require("./phanQuyen"); // Thêm route PhanQuyen
 const rolesRoutes = require("./roles"); // Thêm route Roles
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
+const thongBaoRoutes = require("./thongbao");
 
 // const kichThuocRoutes = require("./kichthuoc");
 // const trangThaiDatHangRoutes = require("./trangthaidathang");
@@ -87,5 +88,6 @@ router.use("/permissions", phanQuyenRoutes); // English alias
 
 // Routes cho vai trò
 router.use("/roles", rolesRoutes);
+router.use("/notifications", thongBaoRoutes);
 
 module.exports = router;
