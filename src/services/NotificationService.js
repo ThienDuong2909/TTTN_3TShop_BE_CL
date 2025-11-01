@@ -62,7 +62,7 @@ class NotificationService {
         noiDung: body,
         loaiThongBao: loaiThongBao,
         maDDH: maDDH || null,
-        ngayTao: getServerTimestamp(),
+        ngayTao: new Date(),
         daDoc: false,
         ...data,
       };

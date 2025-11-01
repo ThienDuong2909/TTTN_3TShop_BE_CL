@@ -10,7 +10,7 @@ let isInitialized = false;
 function initializeFirebase() {
   if (!isInitialized) {
     try {
-      const serviceAccount = require("../../firebase-service-account.json");
+      const serviceAccount = require("../../delivery-3tshop-firebase-adminsdk-fbsvc-f5bb924f72.json");
 
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
