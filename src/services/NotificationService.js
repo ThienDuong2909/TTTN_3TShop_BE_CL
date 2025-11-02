@@ -57,14 +57,17 @@ class NotificationService {
 
       const notificationRecord = {
         id: notificationId,
-        maNhanVien: maNhanVien,
         tieuDe: title,
         noiDung: body,
-        loaiThongBao: loaiThongBao,
-        maDDH: maDDH || null,
-        ngayTao: new Date(),
-        daDoc: false,
-        ...data,
+        loai: loaiThongBao,
+        ngayTao: getServerTimestamp(),
+        ngayGui: getServerTimestamp(),
+        trangThai: "unread",
+        duLieu: {
+          orderId: maDDH || null,
+          screen: "OrderDetail", // Màn hình sẽ mở khi click vào thông báo
+          ...data, // Các dữ liệu bổ sung
+        },
       };
 
       // Lưu vào Realtime Database

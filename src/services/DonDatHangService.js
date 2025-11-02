@@ -746,17 +746,12 @@ const DonDatHangService = {
 
       // Gửi thông báo cho nhân viên giao hàng (không chặn luồng chính)
       NotificationService.sendNotificationToEmployee(maNVGiao, {
-        title: '🚚 Đơn hàng mới được phân công',
-        body: `Bạn có đơn hàng #${maDDH} cần giao đến khách hàng ${order.NguoiNhan}. Thời gian giao hàng dự kiến là ${order.ThoiGianGiao.toLocaleString()}.`,
+        title: "🚚 Đơn hàng mới vừa được phân công",
+        body: `Bạn có đơn hàng mới #${maDDH} cần giao đến khách hàng ${order.NguoiNhan}. Thời gian giao hàng dự kiến là ${order.ThoiGianGiao.toLocaleString()}.`,
         data: {
-          // maDDH: String(maDDH),
-          // diaChiGiao: order.DiaChiGiao || '',
-          // nguoiNhan: order.NguoiNhan || '',
-          // sdt: order.SDT || '',
-          // tenKhachHang: order.KhachHang?.TenKH || ''
         },
         maDDH: maDDH,
-        loaiThongBao: 'PHAN_CONG_DON_HANG'
+        loaiThongBao: "ORDER_ASSIGNED",
       })
       .then(result => {
         console.log('✓ Kết quả gửi thông báo:', result);
