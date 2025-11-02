@@ -6,3 +6,4 @@ docker-compose*
 .env
 coverage
 dist/*.map
+delivery-3tshop-firebase.json

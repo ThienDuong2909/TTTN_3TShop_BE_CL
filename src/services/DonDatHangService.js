@@ -15,7 +15,8 @@ const {
   BinhLuan,
 } = require("../models");
 const sequelize = require("../models/sequelize");
-const { Op } = require("sequelize");
+const { Op, or } = require("sequelize");
+const NotificationService = require("./NotificationService");
 
 const DonDatHangService = {
   // Lấy danh sách đơn hàng theo trạng thái
@@ -688,7 +689,16 @@ const DonDatHangService = {
 
     try {
       // Kiểm tra đơn hàng tồn tại
-      const order = await DonDatHang.findByPk(maDDH, { transaction });
+      const order = await DonDatHang.findByPk(maDDH, { 
+        include: [
+          {
+            model: KhachHang,
+            attributes: ['TenKH', 'SDT', 'DiaChi']
+          }
+        ],
+        transaction 
+      });
+      
       if (!order) {
         throw new Error("Không tìm thấy đơn hàng");
       }
@@ -733,6 +743,23 @@ const DonDatHangService = {
       );
 
       await transaction.commit();
+
+      // Gửi thông báo cho nhân viên giao hàng (không chặn luồng chính)
+      NotificationService.sendNotificationToEmployee(maNVGiao, {
+        title: "🚚 Đơn hàng mới vừa được phân công",
+        body: `Bạn có đơn hàng mới #${maDDH} cần giao đến khách hàng ${order.NguoiNhan}. Thời gian giao hàng dự kiến là ${order.ThoiGianGiao.toLocaleString()}.`,
+        data: {
+        },
+        maDDH: maDDH,
+        loaiThongBao: "ORDER_ASSIGNED",
+      })
+      .then(result => {
+        console.log('✓ Kết quả gửi thông báo:', result);
+      })
+      .catch(notifError => {
+        console.error('✗ Lỗi khi gửi thông báo:', notifError.message);
+        // Không throw error để không ảnh hưởng đến việc phân công đơn hàng
+      });
 
       // Trả về thông tin đơn hàng đã cập nhật
       return await DonDatHangService.getById(maDDH);
