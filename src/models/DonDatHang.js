@@ -36,6 +36,10 @@ const DonDatHang = sequelize.define("DonDatHang", {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  NgayCapNhat: {
+    type: DataTypes.DATE,
+    allowNull: false,
+  }
 });
 
 module.exports = DonDatHang;
