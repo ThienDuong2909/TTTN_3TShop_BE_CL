@@ -893,8 +893,8 @@ const DonDatHangService = {
       await order.update(
         {
           MaTTDH: 4, // Hoàn tất
-          ThoiGianGiao: new Date(),
           HinhMinhChung: HinhAnh,
+          NgayCapNhat: new Date(),
         },
         { transaction }
       );
