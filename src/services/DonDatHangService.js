@@ -750,10 +750,9 @@ const DonDatHangService = {
       // Gửi thông báo cho nhân viên giao hàng (không chặn luồng chính)
       NotificationService.sendNotificationToEmployee(maNVGiao, {
         title: "🚚 Đơn hàng mới vừa được phân công",
-        body: `Bạn có đơn hàng mới #${maDDH} cần giao đến khách hàng ${
-          order.NguoiNhan
-        }. Thời gian giao hàng dự kiến là ${order.ThoiGianGiao.toLocaleString()}.`,
-        data: {},
+        body: `Bạn có đơn hàng mới 📦 #${maDDH} cần giao đến khách hàng ${order.NguoiNhan}. Thời gian giao hàng dự kiến là 🕛 ${formatDateTimeShort(order.ThoiGianGiao)}.`,
+        data: {
+        },
         maDDH: maDDH,
         loaiThongBao: "ORDER_ASSIGNED",
       })
