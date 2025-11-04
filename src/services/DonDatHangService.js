@@ -17,6 +17,7 @@ const {
 const sequelize = require("../models/sequelize");
 const { Op, or } = require("sequelize");
 const NotificationService = require("./NotificationService");
+const { formatDateTimeShort } = require("../utils/formatter");
 
 const DonDatHangService = {
   // Lấy danh sách đơn hàng theo trạng thái
@@ -740,31 +741,29 @@ const DonDatHangService = {
         {
           MaNV_Giao: maNVGiao,
           MaTTDH: 3, // Trạng thái "Đang giao hàng"
-          ThoiGianGiao: new Date(),
+          NgayCapNhat: new Date(),
         },
         { transaction }
       );
 
-      await transaction.commit();
-
+      
       // Gửi thông báo cho nhân viên giao hàng (không chặn luồng chính)
       NotificationService.sendNotificationToEmployee(maNVGiao, {
         title: "🚚 Đơn hàng mới vừa được phân công",
         body: `Bạn có đơn hàng mới 📦 #${maDDH} cần giao đến khách hàng ${order.NguoiNhan}. Thời gian giao hàng dự kiến là 🕛 ${formatDateTimeShort(order.ThoiGianGiao)}.`,
-        data: {
-        },
+        data: {},
         maDDH: maDDH,
         loaiThongBao: "ORDER_ASSIGNED",
       })
-        .then((result) => {
-          console.log("✓ Kết quả gửi thông báo:", result);
-        })
-        .catch((notifError) => {
-          console.error("✗ Lỗi khi gửi thông báo:", notifError.message);
-          // Không throw error để không ảnh hưởng đến việc phân công đơn hàng
-        });
+      .then((result) => {
+        console.log("✓ Kết quả gửi thông báo:", result);
+      })
+      .catch((notifError) => {
+        console.error("✗ Lỗi khi gửi thông báo:", notifError.message);
+        // Không throw error để không ảnh hưởng đến việc phân công đơn hàng
+      });
 
-      // Trả về thông tin đơn hàng đã cập nhật
+      await transaction.commit();  
       return await DonDatHangService.getById(maDDH);
     } catch (error) {
       await transaction.rollback();

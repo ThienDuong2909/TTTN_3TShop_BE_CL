@@ -3,7 +3,7 @@
  * @param {Date|string} date - Đối tượng Date hoặc chuỗi ngày tháng
  * @returns {string} Chuỗi ngày đã được format theo dd/MM/yyyy
  */
-const formatDate = (date) => {
+export const formatDate = (date) => {
   if (!date) return '';
   
   const d = new Date(date);
@@ -21,7 +21,7 @@ const formatDate = (date) => {
  * @param {Date|string} date - Đối tượng Date hoặc chuỗi ngày tháng
  * @returns {string} Chuỗi ngày giờ đã được format theo dd/MM/yyyy HH:mm:ss
  */
-const formatDateTime = (date) => {
+export const formatDateTime = (date) => {
   if (!date) return '';
   
   const d = new Date(date);
@@ -42,7 +42,7 @@ const formatDateTime = (date) => {
  * @param {Date|string} date - Đối tượng Date hoặc chuỗi ngày tháng
  * @returns {string} Chuỗi thời gian đã được format theo HH:mm:ss
  */
-const formatTime = (date) => {
+export const formatTime = (date) => {
   if (!date) return '';
   
   const d = new Date(date);
@@ -60,7 +60,7 @@ const formatTime = (date) => {
  * @param {Date|string} date - Đối tượng Date hoặc chuỗi ngày tháng
  * @returns {string} Chuỗi ngày giờ đã được format theo dd/MM/yyyy HH:mm
  */
-const formatDateTimeShort = (date) => {
+export const formatDateTimeShort = (date) => {
   if (!date) return '';
   
   const d = new Date(date);
@@ -75,9 +75,3 @@ const formatDateTimeShort = (date) => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
-module.exports = {
-  formatDate,
-  formatDateTime,
-  formatTime,
-  formatDateTimeShort
-};
