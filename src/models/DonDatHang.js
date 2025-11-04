@@ -38,7 +38,7 @@ const DonDatHang = sequelize.define("DonDatHang", {
   },
   NgayCapNhat: {
     type: DataTypes.DATE,
-    allowNull: false,
+    allowNull: true,
   }
 });
 
