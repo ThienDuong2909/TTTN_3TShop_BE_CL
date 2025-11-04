@@ -55,6 +55,7 @@ class NotificationService {
       const notificationRef = db.ref(`notifications/${maNhanVien}`).push();
       const notificationId = notificationRef.key;
 
+      // Cấu trúc dữ liệu thông báo mới
       const notificationRecord = {
         id: notificationId,
         tieuDe: title,
@@ -168,7 +169,7 @@ class NotificationService {
       );
 
       await notificationRef.update({
-        daDoc: true,
+        trangThai: "read",
         ngayDoc: getServerTimestamp(),
       });
 
@@ -264,8 +265,8 @@ class NotificationService {
       const db = getDatabase();
       const notificationsRef = db
         .ref(`notifications/${maNhanVien}`)
-        .orderByChild("daDoc")
-        .equalTo(false);
+        .orderByChild("trangThai")
+        .equalTo("unread");
 
       const snapshot = await notificationsRef.once("value");
       const count = snapshot.numChildren();
@@ -294,8 +295,8 @@ class NotificationService {
 
       snapshot.forEach((childSnapshot) => {
         const notification = childSnapshot.val();
-        if (!notification.daDoc) {
-          updates[`${childSnapshot.key}/daDoc`] = true;
+        if (notification.trangThai === "unread") {
+          updates[`${childSnapshot.key}/trangThai`] = "read";
           updates[`${childSnapshot.key}/ngayDoc`] = getServerTimestamp();
         }
       });

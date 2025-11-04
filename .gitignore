@@ -31,3 +31,4 @@ uploads/
 .vscode/ 
 
 delivery-3tshop-firebase.json
+firebase-service-account.json
