@@ -6,6 +6,7 @@ const { authorize } = require("../middlewares/authorize");
 const router = express.Router();
 
 // === PUBLIC ROUTES (Chỉ xem thông tin) ===
+
 // Lấy cấu hình hiện tại của FP-Growth (MIN_SUP, MIN_CONF)
 // GET /api/fpgrowth/config
 router.get("/config", FpGrowthController.getConfig);
@@ -13,6 +14,25 @@ router.get("/config", FpGrowthController.getConfig);
 // Kiểm tra trạng thái Python API
 // GET /api/fpgrowth/health
 router.get("/health", FpGrowthController.checkHealth);
+
+// Lấy thông tin model metadata mới nhất
+// GET /api/fpgrowth/model
+router.get("/model", FpGrowthController.getModelMetadata);
+
+// Lấy danh sách rules với thông tin chi tiết sản phẩm
+// GET /api/fpgrowth/rules
+// Query params: modelId?, limit?, offset?, minConfidence?, minLift?
+router.get("/rules", FpGrowthController.getRulesWithDetails);
+
+// Tìm kiếm rules theo MaSP cụ thể
+// GET /api/fpgrowth/rules/search
+// Query params: maSP (required), modelId?, searchIn? (antecedent|consequent|both)
+router.get("/rules/search", FpGrowthController.searchRulesByProduct);
+
+// Lấy top sản phẩm được recommend nhiều nhất
+// GET /api/fpgrowth/rules/top-products
+// Query params: modelId?, limit?
+router.get("/rules/top-products", FpGrowthController.getTopRecommendedProducts);
 
 // === PROTECTED ROUTES (Chỉ Admin/Manager) ===
 // Cập nhật cấu hình FP-Growth

@@ -1,6 +1,8 @@
 // FpGrowthService.js
 // Service xử lý các API liên quan đến FP-Growth (MIN_SUP, MIN_CONF)
 
+const FpGrowthRulesService = require("./FpGrowthRulesService");
+
 class FpGrowthService {
   constructor() {
     this.PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
@@ -197,6 +199,34 @@ class FpGrowthService {
         error: error.message || "Python API không hoạt động",
       };
     }
+  }
+
+  /**
+   * Lấy rules với thông tin chi tiết sản phẩm
+   */
+  async getRulesWithDetails(options) {
+    return await FpGrowthRulesService.getRulesWithProductDetails(options);
+  }
+
+  /**
+   * Tìm kiếm rules theo sản phẩm
+   */
+  async searchRulesByProduct(options) {
+    return await FpGrowthRulesService.searchRulesByProduct(options);
+  }
+
+  /**
+   * Lấy top sản phẩm được recommend nhiều nhất
+   */
+  async getTopRecommendedProducts(options) {
+    return await FpGrowthRulesService.getTopRecommendedProducts(options);
+  }
+
+  /**
+   * Lấy model metadata mới nhất
+   */
+  async getLatestModelMetadata() {
+    return await FpGrowthRulesService.getLatestModelMetadata();
   }
 }
 

@@ -25,6 +25,8 @@ const rolesRoutes = require("./roles"); // Thêm route Roles
 const nhanVienKhuVucRoutes = require("./nhanvienKhuVuc"); // Thêm route NhanVien-KhuVuc
 const baoCaoRoutes = require("./baoCao"); // Thêm route Báo cáo
 const baoCaoLoiNhuanRoutes = require("./baoCaoLoiNhuan"); // Thêm route Báo cáo lợi nhuận
+const fpGrowthRoutes = require("./fpGrowth"); // Thêm route FP-Growth
+
 const authenticateJWT = require("../middlewares/jwt");
 const authorize = require("../middlewares/authorize");
 const thongBaoRoutes = require("./thongbao");
@@ -103,5 +105,8 @@ router.use("/inventory-report", baoCaoRoutes); // English alias
 // Routes cho báo cáo lợi nhuận
 router.use("/bao-cao-loi-nhuan", baoCaoLoiNhuanRoutes);
 router.use("/profit-report", baoCaoLoiNhuanRoutes); // English alias
+
+// Routes cho FP-Growth (gợi ý sản phẩm)
+router.use("/fpgrowth", fpGrowthRoutes);
 
 module.exports = router;
