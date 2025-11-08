@@ -631,7 +631,7 @@ const NhanVienService = {
             nv.TenNV,
             nv.DiaChi,
             GROUP_CONCAT(DISTINCT kv.TenKhuVuc ORDER BY kv.TenKhuVuc ASC SEPARATOR ', ') as KhuVucPhuTrach,
-            COUNT(CASE WHEN dh.MaTTDH IN (3, 4) THEN 1 END) as SoDonDangGiao
+            COUNT(CASE WHEN dh.MaTTDH = 3 THEN 1 END) as SoDonDangGiao
         FROM NhanVien nv
         INNER JOIN NhanVien_BoPhan nvbp ON nv.MaNV = nvbp.MaNV 
         LEFT JOIN NhanVien_KhuVuc nvkv ON nv.MaNV = nvkv.MaNV 
@@ -699,69 +699,30 @@ const NhanVienService = {
       // Chuẩn hóa thời gian giao
       let giaoDate = thoiGianGiao ? new Date(thoiGianGiao) : new Date();
       if (isNaN(giaoDate.getTime())) giaoDate = new Date();
-      const giaoDateStr = giaoDate.toISOString().slice(0, 19).replace('T', ' ');
 
       const phuongXa = NhanVienService.extractPhuongXa(diaChi);
 
-      let query = `
-        SELECT 
-          nv.MaNV,
-          nv.TenNV,
-          nv.DiaChi,
-          GROUP_CONCAT(DISTINCT kv.TenKhuVuc ORDER BY kv.TenKhuVuc ASC SEPARATOR ', ') as KhuVucPhuTrach,
-          COUNT(CASE WHEN dh.MaTTDH IN (3, 4) THEN 1 END) as SoDonDangGiao
-        FROM NhanVien nv
-        INNER JOIN NhanVien_BoPhan nvbp ON nv.MaNV = nvbp.MaNV 
-        LEFT JOIN NhanVien_KhuVuc nvkv ON nv.MaNV = nvkv.MaNV 
-          AND (nvkv.NgayBatDau IS NULL OR DATE(nvkv.NgayBatDau) <= DATE(:giaoDate))
-        LEFT JOIN KhuVuc kv ON nvkv.MaKhuVuc = kv.MaKhuVuc
-        LEFT JOIN DonDatHang dh ON nv.MaNV = dh.MaNV_Giao 
-        WHERE nvbp.MaBoPhan = 11 
-          AND nvbp.TrangThai = 'DANGLAMVIEC'
-        GROUP BY nv.MaNV, nv.TenNV, nv.DiaChi
-        ORDER BY `;
+      // Gọi stored procedure để lấy danh sách nhân viên
+      const staffList = await sequelize.query(
+        'CALL sp_get_available_delivery_staff_2(:giaoDate, :phuongXa)',
+        {
+          replacements: {
+            giaoDate: giaoDate,
+            phuongXa: phuongXa || null
+          }
+        }
+      );
 
-      // Thêm điều kiện ưu tiên nếu có phường/xã
-      if (phuongXa) {
-        query += `
-          CASE 
-            WHEN EXISTS (
-              SELECT 1 FROM NhanVien_KhuVuc nvkv2 
-              INNER JOIN KhuVuc kv2 ON nvkv2.MaKhuVuc = kv2.MaKhuVuc 
-              WHERE nvkv2.MaNV = nv.MaNV 
-                AND (nvkv2.NgayBatDau IS NULL OR DATE(nvkv2.NgayBatDau) <= DATE(:giaoDate))
-                AND (
-                  kv2.TenKhuVuc = :phuongXa OR
-                  kv2.TenKhuVuc LIKE :phuongXaPattern OR 
-                  LOWER(REPLACE(REPLACE(REPLACE(kv2.TenKhuVuc, ' ', ''), 'ư', 'u'), 'đ', 'd')) = 
-                  LOWER(REPLACE(REPLACE(REPLACE(:phuongXa, ' ', ''), 'ư', 'u'), 'đ', 'd')) OR
-                  CONCAT('phường ', LOWER(kv2.TenKhuVuc)) = LOWER(:phuongXa) OR
-                  LOWER(kv2.TenKhuVuc) = LOWER(REPLACE(:phuongXa, 'phường ', ''))
-                )
-            ) THEN 0 
-            ELSE 1 
-          END,`;
-      }
+      console.log("Kết quả từ SP: ", staffList);
 
-      query += `
-          SoDonDangGiao ASC, 
-          nv.MaNV ASC
-      `;
-
-      const staffList = await sequelize.query(query, {
-        replacements: {
-          giaoDate: giaoDateStr,
-          phuongXa: phuongXa || null,
-          phuongXaPattern: phuongXa ? `%${phuongXa}%` : null
-        },
-        type: sequelize.QueryTypes.SELECT
-      });
+      // Kết quả từ stored procedure được trả về trong results[0]
+      // const staffList = results[0] || [];
 
       console.log(`Tìm thấy ${staffList.length} nhân viên giao hàng`);
 
       // Log thêm thông tin để debug
       if (phuongXa) {
-        const priorityStaff = staffList.filter(staff => staff.LoaiPhuTrach === 'PHUTRACH');
+        const priorityStaff = staffList.filter(staff => staff.UuTien === 0);
         console.log(`Có ${priorityStaff.length} nhân viên phụ trách khu vực ${phuongXa}`);
 
         // Log chi tiết nhân viên phụ trách
@@ -770,25 +731,12 @@ const NhanVienService = {
         } else {
           console.log('Kiểm tra tất cả khu vực của nhân viên:');
           staffList.forEach(staff => {
-            console.log(`- ${staff.TenNV}: "${staff.KhuVucPhuTrach || 'Không có khu vực'}" vs "${phuongXa}"`);
-
-            if (staff.KhuVucPhuTrach) {
-              const khuVucList = staff.KhuVucPhuTrach.split(', ');
-              khuVucList.forEach(khuVuc => {
-                const khuVucNormalized = khuVuc.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
-                const phuongXaNormalized = phuongXa.toLowerCase().replace(/\s+/g, '').replace(/ư/g, 'u').replace(/đ/g, 'd');
-                const withoutPhuong = phuongXa.toLowerCase().replace(/^phường\s+/i, '');
-
-                console.log(`  - Khu vực "${khuVuc}":`);
-                console.log(`    + Exact: ${khuVuc === phuongXa}`);
-                console.log(`    + Pattern: ${khuVuc.includes(phuongXa)}`);
-                console.log(`    + Normalized: "${khuVucNormalized}" = "${phuongXaNormalized}" -> ${khuVucNormalized === phuongXaNormalized}`);
-                console.log(`    + Without prefix: "${khuVuc.toLowerCase()}" = "${withoutPhuong}" -> ${khuVuc.toLowerCase() === withoutPhuong}`);
-              });
-            }
+            console.log(`- ${staff.TenNV}: "${staff.KhuVucPhuTrach || 'Không có khu vực'}" vs "${phuongXa}" [Ưu tiên: ${staff.UuTien}]`);
           });
         }
       }
+
+      console.log("Kết thúc truy vấn danh sách nhân viên giao hàng", staffList.map(s => `${s.TenNV} (Đang giao: ${s.SoDonDangGiao}, Ưu tiên: ${s.UuTien})`).join('; '));
 
       return staffList;
     } catch (error) {
