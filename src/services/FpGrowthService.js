@@ -1,6 +1,8 @@
 // FpGrowthService.js
 // Service xử lý các API liên quan đến FP-Growth (MIN_SUP, MIN_CONF)
 
+const FpGrowthRulesService = require("./FpGrowthRulesService");
+
 class FpGrowthService {
   constructor() {
     this.PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
@@ -165,6 +167,47 @@ class FpGrowthService {
   }
 
   /**
+   * Refresh model từ cache (nếu có) hoặc rebuild
+   * @param {boolean} force - true: luôn rebuild, false: load từ cache nếu có
+   * @returns {Promise<Object>}
+   */
+  async refreshModelFromCache(force = false) {
+    try {
+      const resp = await fetch(
+        `${this.PYTHON_API_URL}/refresh?force=${force}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(
+          `Python API returned status ${resp.status}: ${errorText}`
+        );
+      }
+
+      const data = await resp.json();
+      return {
+        success: true,
+        data: {
+          ok: data.ok,
+          transactions: data.transactions,
+          rules: data.rules,
+          loaded_from_cache: !force, // Indicator về việc có load từ cache không
+        },
+      };
+    } catch (error) {
+      console.error("Error refreshing FP-Growth model from cache:", error);
+      return {
+        success: false,
+        error: error.message || "Không thể kết nối đến Python API",
+      };
+    }
+  }
+
+  /**
    * Kiểm tra health của Python API
    * @returns {Promise<Object>}
    */
@@ -197,6 +240,34 @@ class FpGrowthService {
         error: error.message || "Python API không hoạt động",
       };
     }
+  }
+
+  /**
+   * Lấy rules với thông tin chi tiết sản phẩm
+   */
+  async getRulesWithDetails(options) {
+    return await FpGrowthRulesService.getRulesWithProductDetails(options);
+  }
+
+  /**
+   * Tìm kiếm rules theo sản phẩm
+   */
+  async searchRulesByProduct(options) {
+    return await FpGrowthRulesService.searchRulesByProduct(options);
+  }
+
+  /**
+   * Lấy top sản phẩm được recommend nhiều nhất
+   */
+  async getTopRecommendedProducts(options) {
+    return await FpGrowthRulesService.getTopRecommendedProducts(options);
+  }
+
+  /**
+   * Lấy model metadata mới nhất
+   */
+  async getLatestModelMetadata() {
+    return await FpGrowthRulesService.getLatestModelMetadata();
   }
 }
 

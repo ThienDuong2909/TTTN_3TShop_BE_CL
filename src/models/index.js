@@ -51,6 +51,9 @@ const KhuVuc = require("./KhuVuc");
 const NhanVien_KhuVuc = require("./NhanVien_KhuVuc");
 const PhanQuyen = require("./PhanQuyen");
 const PhanQuyen_VaiTro = require("./PhanQuyen_VaiTro");
+const FP_ModelMetadata = require("./FP_ModelMetadata");
+const FP_Rules = require("./FP_Rules");
+const FP_FrequentItemsets = require("./FP_FrequentItemsets");
 
 // Associations
 // SanPham
@@ -196,6 +199,13 @@ NhanVien_KhuVuc.belongsTo(KhuVuc, { foreignKey: 'MaKhuVuc' });
 NhanVien.hasMany(NhanVien_KhuVuc, { foreignKey: 'MaNV' });
 KhuVuc.hasMany(NhanVien_KhuVuc, { foreignKey: 'MaKhuVuc' });
 
+// FP-Growth Model Associations
+FP_ModelMetadata.hasMany(FP_Rules, { foreignKey: 'model_id', as: 'Rules' });
+FP_Rules.belongsTo(FP_ModelMetadata, { foreignKey: 'model_id', as: 'Model' });
+
+FP_ModelMetadata.hasMany(FP_FrequentItemsets, { foreignKey: 'model_id', as: 'FrequentItemsets' });
+FP_FrequentItemsets.belongsTo(FP_ModelMetadata, { foreignKey: 'model_id', as: 'Model' });
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -231,4 +241,7 @@ module.exports = {
   PhieuChi,
   KhuVuc,
   NhanVien_KhuVuc,
+  FP_ModelMetadata,
+  FP_Rules,
+  FP_FrequentItemsets,
 };
