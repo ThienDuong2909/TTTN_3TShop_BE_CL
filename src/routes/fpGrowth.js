@@ -34,6 +34,13 @@ router.get("/rules/search", FpGrowthController.searchRulesByProduct);
 // Query params: modelId?, limit?
 router.get("/rules/top-products", FpGrowthController.getTopRecommendedProducts);
 
+// Làm mới model từ cache (load từ DB cache nếu có)
+// GET /api/fpgrowth/refresh-cache
+// Query params: force? (true/false, mặc định: false)
+// force=false: Load từ cache DB nếu có
+// force=true: Luôn rebuild model mới
+router.get("/refresh-cache", FpGrowthController.refreshModelFromCache);
+
 // === PROTECTED ROUTES (Chỉ Admin/Manager) ===
 // Cập nhật cấu hình FP-Growth
 // POST /api/fpgrowth/config

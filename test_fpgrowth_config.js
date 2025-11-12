@@ -40,6 +40,58 @@ function logInfo(message) {
 let adminToken = "";
 
 // =============================================================================
+// 0. Test GET /api/fpgrowth/refresh-cache (Load từ cache)
+// =============================================================================
+async function testRefreshFromCache() {
+  logSection("TEST 0: GET /api/fpgrowth/refresh-cache (Load từ cache)");
+
+  try {
+    logInfo("Gọi API refresh-cache với force=false (load từ cache)...");
+
+    const response = await fetch(`${BASE_URL}/refresh-cache?force=false`);
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      logSuccess("Load model từ cache thành công");
+      console.log("Response:", JSON.stringify(data, null, 2));
+      console.log(`  - Transactions: ${data.data.transactions}`);
+      console.log(`  - Rules: ${data.data.rules}`);
+    } else {
+      logError("Load model từ cache thất bại");
+      console.log("Response:", JSON.stringify(data, null, 2));
+    }
+  } catch (error) {
+    logError(`Lỗi khi gọi API: ${error.message}`);
+  }
+}
+
+// =============================================================================
+// 0b. Test GET /api/fpgrowth/refresh-cache với force=true
+// =============================================================================
+async function testRefreshForceRebuild() {
+  logSection(
+    "TEST 0b: GET /api/fpgrowth/refresh-cache?force=true (Force rebuild)"
+  );
+
+  try {
+    logInfo("Gọi API refresh-cache với force=true (force rebuild)...");
+
+    const response = await fetch(`${BASE_URL}/refresh-cache?force=true`);
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      logSuccess("Rebuild model thành công");
+      console.log("Response:", JSON.stringify(data, null, 2));
+    } else {
+      logError("Rebuild model thất bại");
+      console.log("Response:", JSON.stringify(data, null, 2));
+    }
+  } catch (error) {
+    logError(`Lỗi khi gọi API: ${error.message}`);
+  }
+}
+
+// =============================================================================
 // 1. Test GET /api/fpgrowth/health (Public)
 // =============================================================================
 async function testHealth() {
@@ -380,6 +432,10 @@ async function testUpdateOnlyMinSup() {
 async function runAllTests() {
   log("\n🚀 BẮT ĐẦU TEST FP-GROWTH CONFIG API", "yellow");
   log("=".repeat(80), "yellow");
+
+  // Test refresh cache endpoints trước
+  await testRefreshFromCache();
+  await testRefreshForceRebuild();
 
   // Test public endpoints
   await testHealth();

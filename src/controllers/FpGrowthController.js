@@ -111,6 +111,41 @@ class FpGrowthController {
   }
 
   /**
+   * GET /api/fpgrowth/refresh-cache
+   * Làm mới model từ cache (không force rebuild)
+   * Query params: force? (true/false, mặc định: false)
+   */
+  async refreshModelFromCache(req, res) {
+    try {
+      const force = req.query.force === "true" || req.query.force === true;
+
+      const result = await FpGrowthService.refreshModelFromCache(force);
+
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: result.error || "Không thể làm mới model FP-Growth từ cache",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: force
+          ? "Đã rebuild model FP-Growth thành công"
+          : "Đã load model FP-Growth từ cache thành công",
+        data: result.data,
+      });
+    } catch (error) {
+      console.error("Error in refreshModelFromCache:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi server khi làm mới model FP-Growth từ cache",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
    * GET /api/fpgrowth/health
    * Kiểm tra trạng thái của Python API
    */

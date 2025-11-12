@@ -94,7 +94,9 @@ async function testGetRulesWithDetails() {
       data.data.rules.slice(0, 3).forEach((rule, index) => {
         console.log(`\n📌 Rule ${index + 1}:`);
         console.log(
-          `   Antecedent: [${rule.antecedent_ids.join(", ")}] → Consequent: ${rule.consequent_id}`
+          `   Antecedent: [${rule.antecedent_ids.join(", ")}] → Consequent: ${
+            rule.consequent_id
+          }`
         );
         console.log(`   Confidence: ${(rule.confidence * 100).toFixed(1)}%`);
         console.log(`   Support: ${(rule.support * 100).toFixed(1)}%`);
@@ -202,25 +204,21 @@ async function testSearchRulesByProduct(maSP) {
         (r) => r.consequent_id === maSP
       );
 
-      console.log(
-        `\n📊 Thống kê:`
-      );
+      console.log(`\n📊 Thống kê:`);
       console.log(
         `   - Xuất hiện trong giỏ (antecedent): ${asAntecedent.length} rules`
       );
-      console.log(
-        `   - Được gợi ý (consequent): ${asConsequent.length} rules`
-      );
+      console.log(`   - Được gợi ý (consequent): ${asConsequent.length} rules`);
 
       // Hiển thị vài rules mẫu
       if (asAntecedent.length > 0) {
-        console.log(
-          `\n💡 Khi khách mua sản phẩm này, nên gợi ý:`
-        );
+        console.log(`\n💡 Khi khách mua sản phẩm này, nên gợi ý:`);
         asAntecedent.slice(0, 3).forEach((rule) => {
           if (rule.consequent_product) {
             console.log(
-              `   - ${rule.consequent_product.TenSP} (Confidence: ${(rule.confidence * 100).toFixed(1)}%)`
+              `   - ${rule.consequent_product.TenSP} (Confidence: ${(
+                rule.confidence * 100
+              ).toFixed(1)}%)`
             );
           }
         });
@@ -257,9 +255,13 @@ async function testGetTopRecommendedProducts() {
       data.data.products.slice(0, 5).forEach((item, index) => {
         console.log(`\n${index + 1}. ${item.product.TenSP}`);
         console.log(`   - MaSP: ${item.product.MaSP}`);
-        console.log(`   - Xuất hiện trong: ${item.statistics.rule_count} rules`);
         console.log(
-          `   - Avg Confidence: ${(item.statistics.avg_confidence * 100).toFixed(1)}%`
+          `   - Xuất hiện trong: ${item.statistics.rule_count} rules`
+        );
+        console.log(
+          `   - Avg Confidence: ${(
+            item.statistics.avg_confidence * 100
+          ).toFixed(1)}%`
         );
         console.log(
           `   - Avg Support: ${(item.statistics.avg_support * 100).toFixed(1)}%`
@@ -328,9 +330,7 @@ async function runAllTests() {
     logError(
       "\n❌ Không có model trong database. Vui lòng chạy Python API để tạo model trước."
     );
-    logInfo(
-      "💡 Chạy: python fp_rec_api.py và gọi POST /refresh để tạo model"
-    );
+    logInfo("💡 Chạy: python fp_rec_api.py và gọi POST /refresh để tạo model");
     return;
   }
 

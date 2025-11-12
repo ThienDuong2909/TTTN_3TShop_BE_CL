@@ -167,6 +167,47 @@ class FpGrowthService {
   }
 
   /**
+   * Refresh model từ cache (nếu có) hoặc rebuild
+   * @param {boolean} force - true: luôn rebuild, false: load từ cache nếu có
+   * @returns {Promise<Object>}
+   */
+  async refreshModelFromCache(force = false) {
+    try {
+      const resp = await fetch(
+        `${this.PYTHON_API_URL}/refresh?force=${force}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(
+          `Python API returned status ${resp.status}: ${errorText}`
+        );
+      }
+
+      const data = await resp.json();
+      return {
+        success: true,
+        data: {
+          ok: data.ok,
+          transactions: data.transactions,
+          rules: data.rules,
+          loaded_from_cache: !force, // Indicator về việc có load từ cache không
+        },
+      };
+    } catch (error) {
+      console.error("Error refreshing FP-Growth model from cache:", error);
+      return {
+        success: false,
+        error: error.message || "Không thể kết nối đến Python API",
+      };
+    }
+  }
+
+  /**
    * Kiểm tra health của Python API
    * @returns {Promise<Object>}
    */
