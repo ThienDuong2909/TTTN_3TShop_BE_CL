@@ -17,6 +17,8 @@ app.use(
       "http://127.0.0.1:5173",
       "http://127.0.0.1:5174",
       "https://api.3tshop.thienduong.info",
+      "https://3tshop.thienduong.info",
+      "https://www.3tshop.thienduong.info",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
