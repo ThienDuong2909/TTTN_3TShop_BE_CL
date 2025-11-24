@@ -8,6 +8,7 @@ const router = express.Router();
 // Đăng nhập (POST /auth/login)
 // Body: { email, password }
 router.post("/login", AuthController.login);
+router.post("/google-login", AuthController.loginGoogle);
 
 // Đăng ký (POST /auth/register)
 // Khách hàng: { Email, Password, TenKH, DiaChi, SDT, CCCD }

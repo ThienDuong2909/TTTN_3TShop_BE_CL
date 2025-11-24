@@ -1,6 +1,8 @@
 const { TaiKhoan, VaiTro, NhanVien, KhachHang } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const AuthService = {
   login: async (email, password) => {
@@ -64,6 +66,92 @@ const AuthService = {
       id: userInfo.MaTK || userInfo.MaKH,
       employeeId: isEmployee ? userInfo.MaNV : null,
     };
+  },
+
+  loginGoogle: async (idToken) => {
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      const { email, name, picture } = payload;
+
+      // Check if user exists
+      let taiKhoan = await TaiKhoan.findOne({
+        where: { Email: email },
+        include: [{ model: VaiTro }],
+      });
+
+      if (!taiKhoan) {
+        // Register new user
+        taiKhoan = await TaiKhoan.create({
+          Email: email,
+          Password: null,
+          AuthType: 'google',
+          MaVaiTro: 4, // KhachHang
+        });
+
+        // Create KhachHang
+        await KhachHang.create({
+          TenKH: name,
+          MaTK: taiKhoan.MaTK,
+          AnhDaiDien: picture,
+        });
+
+        // Reload to get VaiTro
+        taiKhoan = await TaiKhoan.findOne({
+          where: { MaTK: taiKhoan.MaTK },
+          include: [{ model: VaiTro }],
+        });
+      }
+
+      // Get user info based on role
+      let userInfo = null;
+      if (
+        taiKhoan.VaiTro.TenVaiTro === "Admin" ||
+        taiKhoan.VaiTro.TenVaiTro === "NhanVienCuaHang" ||
+        taiKhoan.VaiTro.TenVaiTro === "NhanVienGiaoHang"
+      ) {
+        userInfo = await NhanVien.findOne({
+          where: { MaTK: taiKhoan.MaTK },
+          include: [{ model: TaiKhoan, include: [{ model: VaiTro }] }],
+        });
+      } else {
+        userInfo = await KhachHang.findOne({
+          where: { MaTK: taiKhoan.MaTK },
+          include: [{ model: TaiKhoan, include: [{ model: VaiTro }] }],
+        });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          MaTK: taiKhoan.MaTK,
+          Email: taiKhoan.Email,
+          VaiTro: taiKhoan.VaiTro.TenVaiTro,
+          id: taiKhoan.MaTK,
+        },
+        process.env.JWT_SECRET || "secret_key",
+        { expiresIn: "24h" }
+      );
+
+      const isEmployee =
+        taiKhoan.VaiTro.TenVaiTro === "Admin" ||
+        taiKhoan.VaiTro.TenVaiTro === "NhanVienCuaHang" ||
+        taiKhoan.VaiTro.TenVaiTro === "NhanVienGiaoHang";
+
+      return {
+        token,
+        user: userInfo,
+        role: taiKhoan.VaiTro.TenVaiTro,
+        id: userInfo.MaTK || userInfo.MaKH,
+        employeeId: isEmployee ? userInfo.MaNV : null,
+      };
+    } catch (error) {
+      console.error("Google login error:", error);
+      throw new Error("Đăng nhập Google thất bại: " + error.message);
+    }
   },
 
   register: async (userData) => {
