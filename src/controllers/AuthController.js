@@ -22,6 +22,23 @@ const AuthController = {
       );
     }
   },
+  loginGoogle: async (req, res) => {
+    try {
+      const { idToken } = req.body;
+      if (!idToken) {
+        return response.validationError(res, null, "Thiếu idToken");
+      }
+      const result = await AuthService.loginGoogle(idToken);
+      return response.success(res, result, "Đăng nhập Google thành công");
+    } catch (err) {
+      return response.error(
+        res,
+        { code: "AUTH_ERROR", detail: err.message },
+        "Đăng nhập Google thất bại",
+        401
+      );
+    }
+  },
   register: async (req, res) => {
     try {
       const result = await AuthService.register(req.body);
@@ -39,6 +56,7 @@ const AuthController = {
       const result = await AuthService.logout(token);
       return response.success(res, result, "Đăng xuất thành công");
     } catch (err) {
+      console.log("err", err.message);
       return response.error(res, err.message, "Đăng xuất thất bại");
     }
   },

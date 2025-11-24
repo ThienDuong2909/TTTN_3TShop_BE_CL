@@ -14,7 +14,11 @@ const TaiKhoan = sequelize.define('TaiKhoan', {
   },
   Password: {
     type: DataTypes.STRING(255),
-    allowNull: false,
+    allowNull: true, // Allow null for Google login
+  },
+  AuthType: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'local', // 'local' or 'google'
   },
   MaVaiTro: {
     type: DataTypes.INTEGER,
@@ -22,4 +26,4 @@ const TaiKhoan = sequelize.define('TaiKhoan', {
   },
 });
 
-module.exports = TaiKhoan; 
+module.exports = TaiKhoan;
