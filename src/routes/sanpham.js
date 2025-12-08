@@ -28,36 +28,39 @@ router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 // Lấy sản phẩm theo nhà cung cấp
 router.get(
   "/supplier/:supplierId",
-  authorize("sanpham.xem"),
+  authorize("sanpham.xem","toanquyen"),
   SanPhamController.getBySupplier
 );
 
 // === AUTHORIZED ROUTES ===
-router.post("/", authorize("sanpham.tao"), SanPhamController.createProduct);
+router.post("/",authenticateJWT, authorize("sanpham.tao","toanquyen"), SanPhamController.createProduct);
 
-router.put("/:id", authorize("sanpham.sua"), SanPhamController.update);
+router.put("/:id", authenticateJWT, authorize("sanpham.sua","toanquyen"), SanPhamController.update);
 
-router.delete("/:id", authorize("sanpham.xoa"), SanPhamController.delete);
-
+router.delete("/:id",authenticateJWT, authorize("sanpham.xoa","toanquyen"), SanPhamController.delete);
 // Cập nhật chi tiết sản phẩm
 router.put(
   "/detail/:maCTSP/stock",
-  authorize("sanpham.sua"),
+  authenticateJWT,
+  authorize("sanpham.sua","toanquyen"),
   SanPhamController.updateProductDetailStock
 );
 router.put(
   "/:id/update",
-  authorize("sanpham.sua"),
+  authenticateJWT,
+  authorize("sanpham.sua","toanquyen"),
   SanPhamController.updateProduct
 );
 router.post(
   "/update-stock",
-  authorize("sanpham.sua"),
+  authenticateJWT,
+  authorize("sanpham.sua","toanquyen"),
   SanPhamController.updateMultipleProductDetailStocks
 );
 router.post(
   "/add-detail",
-  authorize("sanpham.tao"),
+  authenticateJWT,
+  authorize("sanpham.tao","toanquyen"),
   SanPhamController.addProductDetail
 );
 
