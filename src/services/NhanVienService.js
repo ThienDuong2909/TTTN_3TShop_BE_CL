@@ -919,24 +919,25 @@ const NhanVienService = {
       await t.commit();
       console.log(`✅ Gán vai trò thành công!`);
 
-      // Sau khi commit vai trò, nếu vai trò thay đổi giữa NhanVienGiaoHang (3) và NhanVienCuaHang (2)
+      // Sau khi commit vai trò, tự động chuyển bộ phận tương ứng
       try {
-        // Nếu đổi sang NhanVienGiaoHang => chuyển bộ phận sang 11 (Giao hàng)
-        if (roleId == 3 && oldRole !== 3) {
-          console.log(`➡️ Vai trò thay đổi sang NhanVienGiaoHang, chuyển bộ phận nhân viên ${maNV} sang mã 11 (Giao hàng)`);
-          // Không bắt buộc phải có khu vực phụ trách ngay, gọi chuyenBoPhan để đóng bộ phận cũ và tạo bộ phận 11
-          await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 11, NgayChuyen: new Date() });
-        }
-
-        // Nếu đổi sang NhanVienCuaHang => nếu đang ở bộ phận 11 thì chuyển sang bộ phận Bán hàng (ưu tiên tìm TenBoPhan chứa 'bán')
-        if (roleId == 2 && oldRole === 3) {
-          console.log(`➡️ Vai trò thay đổi sang NhanVienCuaHang, kiểm tra và chuyển bộ phận nếu đang ở Giao hàng`);
-          console.log(`ℹ️ Chuyển sang bộ phận bán hàng với MaBoPhan=${salesBoPhan.MaBoPhan}`);
-          await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 9, NgayChuyen: new Date() });
+        // Kiểm tra nếu vai trò có thay đổi
+        if (oldRole !== roleId) {
+          // Nếu đổi sang NhanVienGiaoHang (3) => chuyển bộ phận sang 11 (Giao hàng)
+          if (roleId == 3) {
+            console.log(`➡️ Vai trò thay đổi sang NhanVienGiaoHang, chuyển bộ phận nhân viên ${maNV} sang mã 11 (Giao hàng)`);
+            await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 11, NgayChuyen: new Date() });
+          }
+          // Nếu đổi sang NhanVienCuaHang (2) => chuyển sang bộ phận Bán hàng (9)
+          else if (roleId == 2 && oldRole === 3) {
+            console.log(`➡️ Vai trò thay đổi sang NhanVienCuaHang, chuyển bộ phận nhân viên ${maNV} sang mã 9 (Bán hàng)`);
+            await NhanVienService.chuyenBoPhan(maNV, { MaBoPhanMoi: 9, NgayChuyen: new Date() });
+          }
         }
       } catch (innerErr) {
         // Nếu việc chuyển bộ phận thất bại, log nhưng không rollback vai trò đã cập nhật
-        console.error('Lỗi khi cập nhật bộ phận sau khi đổi vai trò:', innerErr);
+        console.error('⚠️ Lỗi khi tự động chuyển bộ phận sau khi đổi vai trò:', innerErr.message || innerErr);
+        console.log('ℹ️ Vai trò đã được cập nhật thành công, vui lòng chuyển bộ phận thủ công nếu cần');
       }
 
       // Trả về thông tin vai trò đã cập nhật
