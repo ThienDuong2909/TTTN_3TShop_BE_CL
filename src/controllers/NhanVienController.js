@@ -237,7 +237,16 @@ const NhanVienController = {
       if (!data) {
         return response.notFound(res, 'Không tìm thấy nhân viên');
       }
-      return response.success(res, data, 'Gán vai trò cho nhân viên thành công');
+      
+      // Thông báo thành công với thông tin về việc tự động chuyển bộ phận
+      let message = 'Gán vai trò cho nhân viên thành công';
+      if (roleId == 3) {
+        message += '. Nhân viên đã được tự động chuyển sang bộ phận Giao hàng';
+      } else if (roleId == 2) {
+        message += '. Nhân viên đã được tự động chuyển sang bộ phận Bán hàng';
+      }
+      
+      return response.success(res, data, message);
     } catch (err) {
       console.error('Lỗi trong updateRole controller:', err);
       if (err.message === 'Vai trò không hợp lệ') {
