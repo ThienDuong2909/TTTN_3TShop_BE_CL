@@ -28,6 +28,7 @@ router.post("/kiem-tra-ton-kho", SanPhamController.checkStockAvailability);
 // Lấy sản phẩm theo nhà cung cấp
 router.get(
   "/supplier/:supplierId",
+  authenticateJWT,
   authorize("sanpham.xem","toanquyen"),
   SanPhamController.getBySupplier
 );

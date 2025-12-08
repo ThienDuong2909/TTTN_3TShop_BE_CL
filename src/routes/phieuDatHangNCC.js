@@ -9,36 +9,36 @@ const router = express.Router();
 router.use(authenticateJWT);
 
 // Tạo phiếu đặt hàng NCC
-router.post('/', authorize('dathang.tao'), controller.create);
+router.post('/',authenticateJWT, authorize('dathang.tao'), controller.create);
 
 // Lấy tất cả phiếu đặt hàng NCC
-router.get('/', authorize('dathang.xem'), controller.getAll);
+router.get('/', authenticateJWT, authorize('dathang.xem'), controller.getAll);
 
 // Lấy phiếu đặt hàng có thể nhập
-router.get('/available-for-receipt', authorize('dathang.xem'), controller.getAvailableForReceipt);
+router.get('/available-for-receipt', authenticateJWT, authorize('dathang.xem'), controller.getAvailableForReceipt);
 
 // Lấy phiếu đặt hàng theo ID
-router.get('/:id', authorize('dathang.xem'), controller.getById);
+router.get('/:id', authenticateJWT, authorize('dathang.xem'), controller.getById);
 
 // Lấy thông tin để nhập hàng
-router.get('/:id/for-receipt', authorize('dathang.xem'), controller.getForReceipt);
+router.get('/:id/for-receipt', authenticateJWT, authorize('dathang.xem'), controller.getForReceipt);
 
 // Lấy trạng thái đã nhập
-router.get('/:id/received-status', authorize('dathang.xem'), controller.getReceivedStatusByPDH);
+router.get('/:id/received-status', authenticateJWT, authorize('dathang.xem'), controller.getReceivedStatusByPDH);
 
 // Cập nhật phiếu đặt hàng
-router.put('/:id', authorize('dathang.sua'), controller.update);
+router.put('/:id', authenticateJWT, authorize('dathang.sua'), controller.update);
 
 // Cập nhật trạng thái
-router.put('/:id/status', authorize('dathang.sua'), controller.updateStatus);
+router.put('/:id/status', authenticateJWT, authorize('dathang.sua'), controller.updateStatus);
 
 // Cập nhật ngày kiến nghị giao
-router.put('/:id/ngay-kien-nghi-giao', authorize('dathang.sua'), controller.updateNgayKienNghiGiao);
+router.put('/:id/ngay-kien-nghi-giao', authenticateJWT, authorize('dathang.sua'), controller.updateNgayKienNghiGiao);
 
 // Tải Excel
-router.get('/:id/download-excel', authorize('dathang.xem'), controller.downloadExcel);
+router.get('/:id/download-excel', authenticateJWT, authorize('dathang.xem'), controller.downloadExcel);
 
 // Lấy thông tin Excel
-router.get('/:id/excel-info', authorize('dathang.xem'), controller.getExcelInfo);
+router.get('/:id/excel-info', authenticateJWT, authorize('dathang.xem'), controller.getExcelInfo);
 
 module.exports = router; 
