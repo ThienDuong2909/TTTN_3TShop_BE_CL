@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@fontsource/roboto": "^5.2.8",
+    "@payos/node": "^2.0.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",

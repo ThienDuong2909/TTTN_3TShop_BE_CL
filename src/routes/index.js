@@ -109,4 +109,7 @@ router.use("/profit-report", baoCaoLoiNhuanRoutes); // English alias
 // Routes cho FP-Growth (gợi ý sản phẩm)
 router.use("/fpgrowth", fpGrowthRoutes);
 
+const paymentRoutes = require("./paymentRoutes");
+router.use("/payment", paymentRoutes);
+
 module.exports = router;

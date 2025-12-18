@@ -52,6 +52,24 @@ const GioHangController = {
     }
   },
 
+  updateCartItem: async (req, res) => {
+    try {
+      const { maKH, maCTSP, soLuong } = req.body;
+      if (!maKH || !maCTSP || soLuong === undefined) {
+        return response.error(res, null, "Thiếu thông tin cập nhật");
+      }
+
+      const data = await GioHangService.updateCartItem(maKH, maCTSP, soLuong);
+      return response.success(
+        res,
+        data,
+        "Cập nhật số lượng sản phẩm thành công"
+      );
+    } catch (err) {
+      return response.error(res, err.message || "Lỗi cập nhật giỏ hàng");
+    }
+  },
+
   placeOrder: async (req, res) => {
     try {
       const { maKH, dsSanPham, diaChiGiao, nguoiNhan, SDT, thoiGianGiao } =
