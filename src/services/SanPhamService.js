@@ -202,7 +202,7 @@ const SanPhamService = {
       where: {
         NgayTao: {
           [Op.gte]: before30DaysStr,
-          [Op.lte]: todayStr,
+          [Op.lte]: today,
         },
       },
       include: [

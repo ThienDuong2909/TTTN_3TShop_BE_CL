@@ -14,6 +14,9 @@ router.post("/them", authorize('giohang.them'), GioHangController.addToCart);
 // Xóa sản phẩm khỏi giỏ hàng - chỉ khách hàng
 router.delete("/xoa", authorize('giohang.xoa'), GioHangController.removeFromCart);
 
+// Cập nhật số lượng sản phẩm trong giỏ hàng - chỉ khách hàng
+router.put("/cap-nhat", authorize('giohang.them'), GioHangController.updateCartItem);
+
 // Đặt hàng - chỉ khách hàng
 router.post("/dat-hang", authorize('donhang.tao'), GioHangController.placeOrder);
 

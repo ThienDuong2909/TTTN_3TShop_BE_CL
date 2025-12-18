@@ -39,6 +39,10 @@ const DonDatHang = sequelize.define("DonDatHang", {
   NgayCapNhat: {
     type: DataTypes.DATE,
     allowNull: true,
+  },
+  payosOrderCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 });
 

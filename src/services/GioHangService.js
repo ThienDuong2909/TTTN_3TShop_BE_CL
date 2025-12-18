@@ -1,12 +1,15 @@
 const { Op } = require("sequelize");
+const sequelize = require("../models/sequelize");
 const DonDatHang = require("../models/DonDatHang");
 const CT_DonDatHang = require("../models/CT_DonDatHang");
 const ChiTietSanPham = require("../models/ChiTietSanPham");
 const KhachHang = require("../models/KhachHang");
+const TaiKhoan = require("../models/TaiKhoan");
 const Mau = require("../models/Mau");
 const TrangThaiDH = require("../models/TrangThaiDH");
 const KichThuoc = require("../models/KichThuoc");
 const SanPhamService = require("./SanPhamService");
+const EmailService = require("./EmailService");
 const NhanVien = require("../models/NhanVien");
 
 const moment = require("moment-timezone");
@@ -184,6 +187,64 @@ const GioHangService = {
 
     return updatedCart;
   },
+
+  updateCartItem: async (maKH, maCTSP, soLuong) => {
+    const transaction = await sequelize.transaction();
+    try {
+      if (!maKH || !maCTSP || soLuong === undefined) {
+        throw new Error("Thiếu thông tin cập nhật giỏ hàng");
+      }
+
+      const donDatHang = await DonDatHang.findOne({
+        where: { MaKH: Number(maKH), MaTTDH: 6 },
+        include: [{ model: CT_DonDatHang }],
+        transaction,
+      });
+
+      if (!donDatHang) {
+        await transaction.rollback();
+        throw new Error("Không tìm thấy giỏ hàng");
+      }
+
+      const item = donDatHang.CT_DonDatHangs.find(
+        (ct) => ct.MaCTSP === Number(maCTSP)
+      );
+
+      if (!item) {
+        await transaction.rollback();
+        throw new Error("Sản phẩm không tồn tại trong giỏ hàng");
+      }
+
+      const newQuantity = Number(soLuong);
+      if (newQuantity <= 0) {
+        // Nếu số lượng <= 0 thì xóa sản phẩm
+        await CT_DonDatHang.destroy({
+          where: {
+            MaCTDDH: item.MaCTDDH,
+          },
+          transaction,
+        });
+      } else {
+        await CT_DonDatHang.update(
+          { SoLuong: newQuantity },
+          {
+            where: {
+              MaCTDDH: item.MaCTDDH,
+            },
+            transaction,
+          }
+        );
+      }
+
+      await transaction.commit();
+
+      // Trả về giỏ hàng đã cập nhật
+      return await GioHangService.getCartByCustomer(maKH);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
   placeOrder: async (
     maKH,
     dsSanPham,
@@ -192,70 +253,163 @@ const GioHangService = {
     SDT,
     thoiGianGiao
   ) => {
-    const donDatHang = await DonDatHang.findOne({
-      where: { MaKH: Number(maKH), MaTTDH: 6 },
-      include: [{ model: CT_DonDatHang }],
-    });
+    console.log("=== START placeOrder ===");
+    console.log("Input:", { maKH, dsSanPham, diaChiGiao, nguoiNhan, SDT, thoiGianGiao });
 
-    if (!donDatHang) throw new Error("Không tìm thấy đơn hàng đang chờ");
+    // Bắt đầu transaction
+    const transaction = await sequelize.transaction();
 
-    for (const sp of dsSanPham) {
-      const { maCTSP, soLuong } = sp;
+    try {
+      const donDatHang = await DonDatHang.findOne({
+        where: { MaKH: Number(maKH), MaTTDH: 6 },
+        include: [{ model: CT_DonDatHang }],
+        transaction,
+      });
+      console.log("donDatHang", donDatHang);
 
-      const chiTietSP = await ChiTietSanPham.findOne({
-        where: {
-          MaCTSP: Number(maCTSP),
+      if (!donDatHang) {
+        console.error("ERROR: Không tìm thấy đơn hàng đang chờ (MaTTDH=6) cho MaKH:", maKH);
+        await transaction.rollback();
+        throw new Error("Không tìm thấy đơn hàng đang chờ");
+      }
+      console.log("Found DonDatHang:", donDatHang.MaDDH);
+
+      for (const sp of dsSanPham) {
+        const { maCTSP, soLuong } = sp;
+        console.log(`Processing Item - MaCTSP: ${maCTSP}, SoLuong: ${soLuong}`);
+
+        const chiTietSP = await ChiTietSanPham.findOne({
+          where: {
+            MaCTSP: Number(maCTSP),
+          },
+          transaction, // Thêm transaction vào query
+        });
+
+        if (!chiTietSP) {
+          console.error(`ERROR: Không tìm thấy ChiTietSanPham với MaCTSP: ${maCTSP}`);
+          await transaction.rollback();
+          throw new Error("Không tìm thấy chi tiết sản phẩm phù hợp");
+        }
+        console.log(`Found ChiTietSanPham: ${chiTietSP.MaCTSP}, TonKho: ${chiTietSP.SoLuongTon}`);
+
+        const ctDon = donDatHang.CT_DonDatHangs.find(
+          (item) => item.MaCTSP === chiTietSP.MaCTSP
+        );
+
+        if (!ctDon) {
+          console.error(`ERROR: Sản phẩm ${maCTSP} không có trong chi tiết đơn hàng (CT_DonDatHang)`);
+          await transaction.rollback();
+          throw new Error(`Sản phẩm ${maCTSP} chưa có trong đơn hàng`);
+        }
+
+        if (soLuong > chiTietSP.SoLuongTon) {
+          console.error(`ERROR: Không đủ tồn kho. Cần: ${soLuong}, Có: ${chiTietSP.SoLuongTon}`);
+          await transaction.rollback();
+          throw new Error(`Sản phẩm ${maCTSP} không đủ tồn kho`);
+        }
+
+        console.log("Updating CT_DonDatHang and ChiTietSanPham...");
+
+        // Cập nhật lại số lượng đặt
+        await CT_DonDatHang.update(
+          { SoLuong: soLuong },
+          {
+            where: { MaCTDDH: ctDon.MaCTDDH },
+            transaction, // Thêm transaction vào query
+          }
+        );
+
+        // Trừ tồn kho
+        await ChiTietSanPham.update(
+          { SoLuongTon: chiTietSP.SoLuongTon - soLuong },
+          {
+            where: { MaCTSP: chiTietSP.MaCTSP },
+            transaction, // Thêm transaction vào query
+          }
+        );
+      }
+
+      console.log("Validating success. Updating DonDatHang status...");
+
+      // Cập nhật trạng thái đơn hàng và thêm SDT, ThoiGianGiao
+      await DonDatHang.update(
+        {
+          MaTTDH: 1,
+          DiaChiGiao: diaChiGiao,
+          NguoiNhan: nguoiNhan,
+          SDT: SDT,
+          ThoiGianGiao: thoiGianGiao,
         },
+        {
+          where: { MaDDH: donDatHang.MaDDH },
+          transaction, // Thêm transaction vào query
+        }
+      );
+
+      console.log("Commit Internal Transaction...");
+
+      // Commit transaction nếu tất cả thao tác thành công
+      await transaction.commit();
+      console.log("Transaction Committed Successfully.");
+
+      // Trả về đơn hàng đã cập nhật với đầy đủ thông tin để gửi email
+      const updatedOrder = await DonDatHang.findOne({
+        where: { MaDDH: donDatHang.MaDDH },
+        include: [
+          {
+            model: CT_DonDatHang,
+            include: [
+              {
+                model: ChiTietSanPham,
+                include: [
+                  {
+                    model: require("../models/SanPham"),
+                    attributes: ["MaSP", "TenSP"],
+                  },
+                  { model: Mau },
+                  { model: KichThuoc },
+                ],
+              },
+            ],
+          },
+        ],
       });
 
-      if (!chiTietSP) {
-        throw new Error("Không tìm thấy chi tiết sản phẩm phù hợp");
+      // Gửi email xác nhận đơn hàng cho khách hàng (async, không chờ kết quả)
+      // Lấy thông tin khách hàng và email
+      try {
+        const khachHang = await KhachHang.findOne({
+          where: { MaKH: Number(maKH) },
+          include: [
+            {
+              model: TaiKhoan,
+              attributes: ["Email"],
+            },
+          ],
+        });
+
+        if (khachHang && khachHang.TaiKhoan && khachHang.TaiKhoan.Email) {
+          // Gửi email không đồng bộ (không await)
+          EmailService.sendOrderConfirmationEmail(
+            updatedOrder,
+            khachHang.TaiKhoan.Email,
+            khachHang.TenKH
+          ).catch((err) => {
+            console.error("Lỗi khi gửi email xác nhận đơn hàng:", err);
+          });
+        }
+      } catch (emailError) {
+        // Log lỗi nhưng không ảnh hưởng đến kết quả đặt hàng
+        console.error("Lỗi khi xử lý gửi email:", emailError);
       }
 
-      const ctDon = donDatHang.CT_DonDatHangs.find(
-        (item) => item.MaCTSP === chiTietSP.MaCTSP
-      );
-
-      if (!ctDon) {
-        throw new Error(`Sản phẩm ${maCTSP} chưa có trong đơn hàng`);
-      }
-
-      if (soLuong > chiTietSP.SoLuongTon) {
-        throw new Error(`Sản phẩm ${maCTSP} không đủ tồn kho`);
-      }
-
-      // Cập nhật lại số lượng đặt
-      await CT_DonDatHang.update(
-        { SoLuong: soLuong },
-        { where: { MaCTDDH: ctDon.MaCTDDH } }
-      );
-
-      // Trừ tồn kho
-      await ChiTietSanPham.update(
-        { SoLuongTon: chiTietSP.SoLuongTon - soLuong },
-        { where: { MaCTSP: chiTietSP.MaCTSP } }
-      );
+      return updatedOrder;
+    } catch (error) {
+      console.error("UNKNOWN ERROR in placeOrder, Rolling back...", error);
+      // Rollback transaction nếu có lỗi
+      await transaction.rollback();
+      throw error;
     }
-
-    // Cập nhật trạng thái đơn hàng và thêm SDT, ThoiGianGiao
-    await DonDatHang.update(
-      {
-        MaTTDH: 1, // CHỜ XÁC NHẬN
-        DiaChiGiao: diaChiGiao,
-        NguoiNhan: nguoiNhan,
-        SDT: SDT,
-        ThoiGianGiao: thoiGianGiao,
-      },
-      { where: { MaDDH: donDatHang.MaDDH } }
-    );
-
-    // Trả về đơn hàng đã cập nhật
-    const updatedOrder = await DonDatHang.findOne({
-      where: { MaDDH: donDatHang.MaDDH },
-      include: [{ model: CT_DonDatHang }],
-    });
-
-    return updatedOrder;
   },
 
   getCartByCustomer: async (maKH) => {
@@ -337,7 +491,7 @@ const GioHangService = {
                   model: require("../models/SanPham"),
                   attributes: ["MaSP", "TenSP"], // Bỏ MoTa
                   include: [
-                    { 
+                    {
                       model: require("../models/AnhSanPham"),
                       where: { AnhChinh: true }, // Chỉ lấy ảnh chính
                       attributes: ["DuongDan", "TenFile"],
@@ -484,7 +638,7 @@ const GioHangService = {
                   model: require("../models/SanPham"),
                   attributes: ["MaSP", "TenSP"], // Bỏ MoTa
                   include: [
-                    { 
+                    {
                       model: require("../models/AnhSanPham"),
                       where: { AnhChinh: true }, // Chỉ lấy ảnh chính
                       attributes: ["DuongDan", "TenFile"],
