@@ -327,11 +327,8 @@ class FpGrowthRulesService {
     const confidencePercent = (rule.confidence * 100).toFixed(1);
     const supportPercent = (rule.support * 100).toFixed(1);
 
-    return `Khách hàng mua ${antecedentNames} thì có ${confidencePercent}% khả năng sẽ mua "${
-      consequentProduct.TenSP
-    }" (xuất hiện cùng nhau trong ${supportPercent}% đơn hàng, lift = ${rule.lift.toFixed(
-      2
-    )})`;
+    return `Khách hàng mua ${antecedentNames} thì có ${confidencePercent}% khả năng sẽ mua "${consequentProduct.TenSP
+      }" (xuất hiện cùng nhau trong ${supportPercent}% đơn hàng)`;
   }
 
   /**

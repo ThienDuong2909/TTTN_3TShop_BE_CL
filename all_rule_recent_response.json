@@ -1,0 +1,124 @@
+{
+    "rules": [
+        {
+            "antecedent": [
+                2,
+                5
+            ],
+            "itemsets": [
+                [
+                    7
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 0.969697,
+            "lift": 1.51515
+        },
+        {
+            "antecedent": [
+                2,
+                7
+            ],
+            "itemsets": [
+                [
+                    5
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 1.0,
+            "lift": 1.47059
+        },
+        {
+            "antecedent": [
+                5,
+                7
+            ],
+            "itemsets": [
+                [
+                    2
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 1.0,
+            "lift": 1.11111
+        },
+        {
+            "antecedent": [
+                5
+            ],
+            "itemsets": [
+                [
+                    2
+                ]
+            ],
+            "support": 0.66,
+            "confidence": 0.970588,
+            "lift": 1.07843
+        },
+        {
+            "antecedent": [
+                5
+            ],
+            "itemsets": [
+                [
+                    7
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 0.941176,
+            "lift": 1.47059
+        },
+        {
+            "antecedent": [
+                6
+            ],
+            "itemsets": [
+                [
+                    2
+                ]
+            ],
+            "support": 0.54,
+            "confidence": 1.0,
+            "lift": 1.11111
+        },
+        {
+            "antecedent": [
+                7
+            ],
+            "itemsets": [
+                [
+                    5
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 1.0,
+            "lift": 1.47059
+        },
+        {
+            "antecedent": [
+                7
+            ],
+            "itemsets": [
+                [
+                    2
+                ]
+            ],
+            "support": 0.64,
+            "confidence": 1.0,
+            "lift": 1.11111
+        },
+        {
+            "antecedent": [
+                8
+            ],
+            "itemsets": [
+                [
+                    2
+                ]
+            ],
+            "support": 0.52,
+            "confidence": 1.0,
+            "lift": 1.11111
+        }
+    ]
+}

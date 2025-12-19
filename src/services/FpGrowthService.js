@@ -243,6 +243,138 @@ class FpGrowthService {
   }
 
   /**
+   * Lấy tất cả rules gần đây từ Python API (không qua DB)
+   * Trả về format giống getRulesWithDetails
+   */
+  async getAllRuleRecent() {
+    try {
+      const resp = await fetch(`${this.PYTHON_API_URL}/all-rule-recent`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(
+          `Python API returned status ${resp.status}: ${errorText}`
+        );
+      }
+
+      const data = await resp.json();
+      const rules = data.rules || [];
+
+      if (rules.length === 0) {
+        return {
+          success: true,
+          data: {
+            rules: [],
+            total: 0,
+          },
+        };
+      }
+
+      // Thu thập tất cả MaSP để lấy thông tin chi tiết
+      const allMaSP = new Set();
+      rules.forEach((rule) => {
+        if (Array.isArray(rule.antecedent)) {
+          rule.antecedent.forEach((id) => allMaSP.add(id));
+        }
+        // Lấy tất cả MaSP từ itemsets (hỗ trợ cả [id] và [[id]])
+        if (Array.isArray(rule.itemsets)) {
+          rule.itemsets.forEach((item) => {
+            if (Array.isArray(item)) {
+              item.forEach((id) => allMaSP.add(id));
+            } else {
+              allMaSP.add(item);
+            }
+          });
+        }
+      });
+
+      // Lấy chi tiết sản phẩm
+      const productsResult = await FpGrowthRulesService.getProductDetails([
+        ...allMaSP,
+      ]);
+      if (!productsResult.success) {
+        return productsResult;
+      }
+
+      const productMap = {};
+      productsResult.data.forEach((p) => {
+        productMap[p.MaSP] = p;
+      });
+
+      // Format rules
+      const rulesWithDetails = rules.map((rule, index) => {
+        const antecedentIds = rule.antecedent || [];
+        const itemsetIds = rule.itemsets || [];
+
+        const antecedentProducts = antecedentIds
+          .map((id) => productMap[id])
+          .filter(Boolean);
+
+        // Chuẩn hóa itemsets thành mảng lồng nhau (list of lists) nếu Python trả về mảng phẳng
+        // Ví dụ: [7] -> [[7]], [[7]] -> [[7]]
+        const normalizedItemsetIds = (itemsetIds.length > 0 && !Array.isArray(itemsetIds[0]))
+          ? [itemsetIds]
+          : itemsetIds;
+
+        // Chuyển đổi itemsets từ IDs thành Detailed Products
+        const itemsetsDetailed = normalizedItemsetIds.map((subset) => {
+          if (Array.isArray(subset)) {
+            return subset.map((id) => productMap[id]).filter(Boolean);
+          }
+          return [];
+        });
+
+        // Lấy consequent_id (sản phẩm đầu tiên của tập hợp gợi ý đầu tiên)
+        const firstConsequentId = Array.isArray(itemsetIds[0])
+          ? (itemsetIds[0] && itemsetIds[0][0])
+          : itemsetIds[0];
+
+        const consequentProduct = productMap[firstConsequentId];
+
+        return {
+          rule_id: `recent_${index + 1}`,
+          antecedent_ids: antecedentIds,
+          itemset_ids: itemsetIds, // Giữ nguyên format gốc từ Python
+          support: rule.support,
+          confidence: rule.confidence,
+          lift: rule.lift,
+          antecedent_products: antecedentProducts,
+          itemsets_detailed: itemsetsDetailed, // Luôn trả về mảng lồng nhau chứa chi tiết SP
+          // Duy trì các trường cũ để tương thích với các component khác
+          consequent_id: firstConsequentId,
+          consequent_product: consequentProduct,
+          interpretation: FpGrowthRulesService.generateRuleInterpretation(
+            antecedentProducts,
+            consequentProduct,
+            rule
+          ),
+        };
+      });
+
+      return {
+        success: true,
+        data: {
+          rules: rulesWithDetails,
+          total: rulesWithDetails.length,
+          model_info: {
+            source: "Python API (Recent Rules)",
+            created_at: new Date().toISOString(),
+          },
+        },
+      };
+    } catch (error) {
+      console.error("Error in getAllRuleRecent:", error);
+      return {
+        success: false,
+        error: error.message || "Không thể lấy rules mới nhất từ Python API",
+      };
+    }
+  }
+
+  /**
    * Lấy rules với thông tin chi tiết sản phẩm
    */
   async getRulesWithDetails(options) {
