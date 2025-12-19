@@ -62,6 +62,7 @@ exports.createPaymentLink = async (req, res) => {
 
         // 5. Create Payment Request Body
         const domain = process.env.CLIENT_URL || "http://localhost:5173";
+        console.log("domain", domain);
         const body = {
             orderCode: orderCode,
             amount: totalAmount,
