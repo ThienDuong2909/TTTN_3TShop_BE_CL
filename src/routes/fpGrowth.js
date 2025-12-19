@@ -24,6 +24,10 @@ router.get("/model", FpGrowthController.getModelMetadata);
 // Query params: modelId?, limit?, offset?, minConfidence?, minLift?
 router.get("/rules", FpGrowthController.getRulesWithDetails);
 
+// Lấy tất cả rules gần đây trực tiếp từ Python API (không qua DB)
+// GET /api/fpgrowth/all-rule-recent
+router.get("/all-rule-recent", FpGrowthController.getAllRuleRecent);
+
 // Tìm kiếm rules theo MaSP cụ thể
 // GET /api/fpgrowth/rules/search
 // Query params: maSP (required), modelId?, searchIn? (antecedent|consequent|both)

@@ -221,6 +221,36 @@ class FpGrowthController {
   }
 
   /**
+   * GET /api/fpgrowth/all-rule-recent
+   * Lấy tất cả rules gần đây trực tiếp từ Python API (không qua DB)
+   */
+  async getAllRuleRecent(req, res) {
+    try {
+      const result = await FpGrowthService.getAllRuleRecent();
+
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: result.error || "Không thể lấy danh sách rules mới nhất",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Lấy danh sách rules mới nhất thành công",
+        data: result.data,
+      });
+    } catch (error) {
+      console.error("Error in getAllRuleRecent:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi server khi lấy danh sách rules mới nhất",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
    * GET /api/fpgrowth/rules/search
    * Tìm kiếm rules theo MaSP cụ thể
    * Query params: maSP (required), modelId?, searchIn? (antecedent|consequent|both)
