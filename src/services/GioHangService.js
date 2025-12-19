@@ -688,6 +688,46 @@ const GioHangService = {
 
     return order;
   },
+  clearCart: async (maKH) => {
+    const transaction = await sequelize.transaction();
+    try {
+      if (!maKH) {
+        throw new Error("Thiếu mã khách hàng");
+      }
+
+      const donDatHang = await DonDatHang.findOne({
+        where: {
+          MaKH: Number(maKH),
+          MaTTDH: 6,
+        },
+        transaction,
+      });
+
+      if (!donDatHang) {
+        await transaction.rollback();
+        // Nếu không có giỏ hàng coi như đã xoá (hoặc rỗng)
+        return { message: "Giỏ hàng đã rỗng" };
+      }
+
+      // Xoá toàn bộ chi tiết đơn hàng
+      await CT_DonDatHang.destroy({
+        where: {
+          MaDDH: donDatHang.MaDDH,
+        },
+        transaction,
+      });
+
+      // Tuỳ chọn: Có thể xoá luôn DonDatHang nếu muốn, 
+      // nhưng giữ lại để tái sử dụng cũng được.
+      // Ở đây chỉ xoá items.
+
+      await transaction.commit();
+      return { message: "Đã xoá toàn bộ giỏ hàng thành công" };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
 };
 
 module.exports = GioHangService;
