@@ -334,7 +334,7 @@ const GioHangService = {
       // Cập nhật trạng thái đơn hàng và thêm SDT, ThoiGianGiao
       await DonDatHang.update(
         {
-          MaTTDH: 1,
+          MaTTDH: 2,
           DiaChiGiao: diaChiGiao,
           NguoiNhan: nguoiNhan,
           SDT: SDT,
