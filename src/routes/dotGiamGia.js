@@ -52,6 +52,13 @@ router.put('/:maDot/products/:maSP',
   DotGiamGiaController.updatePhanTramGiam
 );
 
+// Update discount period information (Admin and Store Employee)
+router.put('/:maDot', 
+  authenticateJWT, 
+  authorize('Admin', 'NhanVienCuaHang'), 
+  DotGiamGiaController.updateDotGiamGia
+);
+
 // Delete discount period (Admin and Store Employee)
 router.delete('/:maDot', 
   authenticateJWT, 
