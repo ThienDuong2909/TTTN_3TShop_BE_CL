@@ -587,7 +587,7 @@ const DotGiamGiaService = {
   },
 
   // Validate discount period dates for overlapping
-  validateDiscountPeriod: async (ngayBatDau, ngayKetThuc) => {
+  validateDiscountPeriod: async (ngayBatDau, ngayKetThuc, excludeMaDot = null) => {
     try {
       // Validate input dates
       const startDate = new Date(ngayBatDau);
@@ -633,6 +633,11 @@ const DotGiamGiaService = {
         ]
       };
 
+      // Exclude current discount period if updating
+      if (excludeMaDot) {
+        whereCondition.MaDot = { [Op.ne]: excludeMaDot };
+      }
+
       const overlappingPeriods = await DotGiamGia.findAll({
         where: whereCondition,
         attributes: ['MaDot', 'NgayBatDau', 'NgayKetThuc', 'MoTa']
@@ -658,6 +663,89 @@ const DotGiamGiaService = {
         message: 'Khoảng thời gian hợp lệ, không có xung đột với đợt giảm giá khác'
       };
     } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update discount period information
+  updateDotGiamGia: async (maDot, updateData) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { ngayBatDau, ngayKetThuc, moTa } = updateData;
+
+      // Check if discount period exists
+      const dotGiamGia = await DotGiamGia.findByPk(maDot, { transaction });
+      if (!dotGiamGia) {
+        throw new Error('Không tìm thấy đợt giảm giá');
+      }
+
+      // Validate dates if provided
+      if (ngayBatDau && ngayKetThuc) {
+        const startDate = new Date(ngayBatDau);
+        const endDate = new Date(ngayKetThuc);
+
+        if (startDate >= endDate) {
+          throw new Error('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+        }
+
+        // Check for overlapping periods, excluding current period
+        const validation = await DotGiamGiaService.validateDiscountPeriod(
+          ngayBatDau, 
+          ngayKetThuc, 
+          maDot
+        );
+
+        if (!validation.valid) {
+          throw new Error('Đang có đợt giảm giá khác diễn ra. Vui lòng chọn thời gian giảm giá khác.');
+        }
+      } else if (ngayBatDau || ngayKetThuc) {
+        // If only one date is provided, use existing date for the other
+        const finalNgayBatDau = ngayBatDau || dotGiamGia.NgayBatDau;
+        const finalNgayKetThuc = ngayKetThuc || dotGiamGia.NgayKetThuc;
+
+        const startDate = new Date(finalNgayBatDau);
+        const endDate = new Date(finalNgayKetThuc);
+
+        if (startDate >= endDate) {
+          throw new Error('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+        }
+
+        // Check for overlapping periods
+        const validation = await DotGiamGiaService.validateDiscountPeriod(
+          finalNgayBatDau, 
+          finalNgayKetThuc, 
+          maDot
+        );
+
+        if (!validation.valid) {
+          throw new Error('Đang có đợt giảm giá khác diễn ra. Vui lòng chọn thời gian giảm giá khác.');
+        }
+      }
+
+      // Prepare update object
+      const updateObject = {};
+      if (ngayBatDau) updateObject.NgayBatDau = ngayBatDau;
+      if (ngayKetThuc) updateObject.NgayKetThuc = ngayKetThuc;
+      if (moTa !== undefined) updateObject.MoTa = moTa;
+
+      // Update discount period
+      await dotGiamGia.update(updateObject, { transaction });
+
+      await transaction.commit();
+
+      // Get updated discount period details
+      const updatedDotGiamGia = await DotGiamGia.findByPk(maDot);
+
+      return {
+        MaDot: updatedDotGiamGia.MaDot,
+        NgayBatDau: updatedDotGiamGia.NgayBatDau,
+        NgayKetThuc: updatedDotGiamGia.NgayKetThuc,
+        MoTa: updatedDotGiamGia.MoTa,
+        ThongBao: 'Cập nhật đợt giảm giá thành công'
+      };
+    } catch (error) {
+      await transaction.rollback();
       throw error;
     }
   }

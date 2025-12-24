@@ -222,6 +222,38 @@ const DotGiamGiaController = {
       console.error('Error in getAvailableProductsForDiscount:', err);
       return response.error(res, err.message || 'Lỗi khi lấy danh sách sản phẩm có thể thêm', 400);
     }
+  },
+
+  // Cập nhật thông tin đợt giảm giá
+  updateDotGiamGia: async (req, res) => {
+    try {
+      const { maDot } = req.params;
+      const { ngayBatDau, ngayKetThuc, moTa } = req.body;
+
+      if (!maDot || isNaN(maDot)) {
+        return response.error(res, null, 'Mã đợt giảm giá không hợp lệ', 400);
+      }
+
+      // Validate at least one field is provided
+      if (!ngayBatDau && !ngayKetThuc && moTa === undefined) {
+        return response.error(res, null, 'Phải cung cấp ít nhất một trường để cập nhật (ngayBatDau, ngayKetThuc, hoặc moTa)', 400);
+      }
+
+      const updateData = {};
+      if (ngayBatDau) updateData.ngayBatDau = ngayBatDau;
+      if (ngayKetThuc) updateData.ngayKetThuc = ngayKetThuc;
+      if (moTa !== undefined) updateData.moTa = moTa;
+
+      const result = await DotGiamGiaService.updateDotGiamGia(
+        parseInt(maDot),
+        updateData
+      );
+
+      return response.success(res, result, 'Cập nhật đợt giảm giá thành công', 200);
+    } catch (err) {
+      console.error('Error in updateDotGiamGia:', err);
+      return response.error(res, err.message || 'Lỗi khi cập nhật đợt giảm giá', 400);
+    }
   }
 };
 
