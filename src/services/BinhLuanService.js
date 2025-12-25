@@ -1,9 +1,9 @@
-const { 
-  BinhLuan, 
-  KhachHang, 
-  CT_DonDatHang, 
-  DonDatHang, 
-  ChiTietSanPham, 
+const {
+  BinhLuan,
+  KhachHang,
+  CT_DonDatHang,
+  DonDatHang,
+  ChiTietSanPham,
   SanPham,
   KichThuoc,
   Mau,
@@ -16,11 +16,11 @@ const BinhLuanService = {
   // Tạo bình luận mới
   create: async (maTK, maCTDonDatHang, moTa, soSao) => {
     const transaction = await sequelize.transaction();
-    
+
     try {
       // Kiểm tra khách hàng tồn tại
       const khachHang = await KhachHang.findOne({
-        where: {MaTK: maTK}
+        where: { MaTK: maTK }
       }, { transaction });
       if (!khachHang) {
         throw new Error('Khách hàng không tồn tại');
@@ -42,16 +42,16 @@ const BinhLuanService = {
         throw new Error('Chi tiết đơn hàng không tồn tại hoặc không thuộc về bạn');
       }
 
-      // Kiểm tra đơn hàng đã được giao chưa (trạng thái = 4 - Đã giao hàng)
-      if (chiTietDonHang.DonDatHang.MaTTDH !== 4) {
+      // Kiểm tra đơn hàng đã được giao chưa (trạng thái = 4 - Đã giao hàng và 7 là trả hàng)
+      if (chiTietDonHang.DonDatHang.MaTTDH !== 4 && chiTietDonHang.DonDatHang.MaTTDH !== 7) {
         throw new Error('Chỉ có thể bình luận sản phẩm sau khi đơn hàng đã được giao');
       }
 
       // Kiểm tra đã bình luận chưa
       const existingComment = await BinhLuan.findOne({
-        where: { 
+        where: {
           MaKH: khachHang.MaKH,
-          MaCTDonDatHang: maCTDonDatHang 
+          MaCTDonDatHang: maCTDonDatHang
         },
         transaction
       });
@@ -91,7 +91,7 @@ const BinhLuanService = {
     try {
       // Kiểm tra khách hàng tồn tại
       const khachHang = await KhachHang.findOne({
-        where: {MaTK: maTK}
+        where: { MaTK: maTK }
       }, { transaction });
 
       if (!khachHang) {
@@ -135,7 +135,7 @@ const BinhLuanService = {
           }
 
           // Kiểm tra đơn hàng đã được giao chưa
-          if (chiTietDonHang.DonDatHang.MaTTDH !== 4) {
+          if (chiTietDonHang.DonDatHang.MaTTDH !== 4 && chiTietDonHang.DonDatHang.MaTTDH !== 7) {
             throw new Error(`Bình luận ${i + 1}: Chỉ có thể bình luận sản phẩm sau khi đơn hàng đã được giao`);
           }
 
@@ -408,7 +408,7 @@ const BinhLuanService = {
   // Lấy bình luận của khách hàng
   getByCustomer: async (maKH, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-    
+
     const { count, rows } = await BinhLuan.findAndCountAll({
       where: { MaKH: maKH },
       include: [
@@ -459,13 +459,13 @@ const BinhLuanService = {
   // Cập nhật bình luận
   update: async (maBL, maKH, moTa, soSao) => {
     const transaction = await sequelize.transaction();
-    
+
     try {
       // Kiểm tra bình luận tồn tại và thuộc về khách hàng
       const binhLuan = await BinhLuan.findOne({
-        where: { 
-          MaBL: maBL, 
-          MaKH: maKH 
+        where: {
+          MaBL: maBL,
+          MaKH: maKH
         },
         transaction
       });
@@ -498,13 +498,13 @@ const BinhLuanService = {
   // Xóa bình luận
   delete: async (maBL, maKH) => {
     const transaction = await sequelize.transaction();
-    
+
     try {
       // Kiểm tra bình luận tồn tại và thuộc về khách hàng
       const binhLuan = await BinhLuan.findOne({
-        where: { 
-          MaBL: maBL, 
-          MaKH: maKH 
+        where: {
+          MaBL: maBL,
+          MaKH: maKH
         },
         transaction
       });
@@ -573,7 +573,7 @@ const BinhLuanService = {
   // Lấy tất cả bình luận (cho admin)
   getAll: async (page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-    
+
     const { count, rows } = await BinhLuan.findAndCountAll({
       include: [
         {
